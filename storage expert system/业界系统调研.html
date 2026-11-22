@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>业界存储 AIOps 与专家系统调研</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ink:#152a22; --muted:#405950; --paper:#f2f6f1; --card:#fff;
+  --line:#d6e1d7; --accent:#08644a; --code:#edf4ee; --soft:#e6efe8;
+  --hero:#12352a; --hero-text:#f2fbf6; --hero-link:#d8eee3;
+}
+@media (prefers-color-scheme:dark) {
+  :root { --ink:#e7f0ea; --muted:#a9beb4; --paper:#0d1512; --card:#14201b;
+    --line:#2a3d35; --accent:#7cdcb6; --code:#0a120f; --soft:#18261f; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink);
+  font:16px/1.78 system-ui,"Microsoft YaHei","Noto Sans SC",sans-serif; }
+a { color:var(--accent); text-underline-offset:.2em; }
+a:focus-visible, summary:focus-visible, .table-wrap:focus-visible {
+  outline:2px solid var(--accent); outline-offset:4px; }
+.page-width { width:min(1180px,calc(100% - 40px)); margin-inline:auto; }
+.skip { position:absolute; left:.75rem; top:.75rem; z-index:2; padding:.4rem .7rem;
+  background:var(--card); transform:translateY(-180%); }
+.skip:focus { transform:translateY(0); }
+header { background:var(--hero); color:var(--hero-text); padding:22px 0 30px; }
+.primary { display:flex; flex-wrap:wrap; gap:5px 19px; margin:0 0 23px; }
+.primary a { color:var(--hero-link); font-size:.9rem; }
+.primary a[aria-current="page"] { color:var(--hero-text); font-weight:700; }
+.primary a:focus-visible { outline-color:var(--hero-text); }
+h1, h2, h3, h4, h5, h6 { line-height:1.36; overflow-wrap:anywhere; }
+h1 { font-size:clamp(1.75rem,4.6vw,3rem); letter-spacing:-.035em; margin:0; }
+h2 { font-size:clamp(1.3rem,3vw,1.7rem); margin:2.1rem 0 .7rem; }
+h3 { font-size:1.15rem; margin:1.7rem 0 .5rem; color:var(--accent); }
+h4, h5, h6 { margin:1.4rem 0 .5rem; }
+h2[id], h3[id], h4[id], h5[id], h6[id] { scroll-margin-top:1rem; }
+.layout { display:grid; grid-template-columns:245px minmax(0,1fr); gap:24px;
+  align-items:start; padding-block:24px 44px; }
+.toc { position:sticky; top:1rem; max-height:calc(100vh - 2rem); overflow:auto;
+  border:1px solid var(--line); background:var(--card); border-radius:12px; }
+.toc nav { padding:0 14px 14px; font-size:.86rem; line-height:1.5; }
+summary { cursor:pointer; font-weight:650; color:var(--accent); padding:11px 14px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc li { margin:.42em 0; }
+.toc a { display:block; overflow-wrap:anywhere; }
+.toc .sub { padding-left:.8em; }
+article { min-width:0; padding:clamp(16px,3.2vw,38px); background:var(--card);
+  border:1px solid var(--line); border-radius:12px; overflow-wrap:anywhere; }
+article > :first-child { margin-top:0; }
+article > :last-child { margin-bottom:0; }
+p { margin:0 0 1em; }
+li + li { margin-top:.25em; }
+ul, ol { padding-left:1.6em; }
+blockquote { margin:1em 0; padding:.5em 0 .5em 1em; border-left:3px solid var(--accent); color:var(--muted); }
+blockquote > :last-child { margin-bottom:0; }
+code { font: .89em ui-monospace,"Cascadia Code",Consolas,monospace;
+  background:var(--code); border-radius:4px; padding:.1em .25em; }
+pre { border:1px solid var(--line); border-radius:8px; overflow:auto;
+  padding:.85rem 1rem; background:var(--code); line-height:1.55; overflow-wrap:normal; }
+pre code { padding:0; font-size:.86rem; }
+.table-wrap { max-width:100%; overflow:auto; border:1px solid var(--line);
+  border-radius:8px; margin:1rem 0; }
+table { border-collapse:collapse; width:100%; min-width:32rem; font-size:.9rem; }
+th, td { text-align:left; padding:.52em .7em; border-bottom:1px solid var(--line); vertical-align:top; }
+th { background:var(--soft); }
+tbody tr:last-child td { border-bottom:0; }
+article details { border:1px solid var(--line); border-radius:8px; padding:0 .85rem; margin:1rem 0; }
+article details summary { padding-inline:0; }
+img { max-width:100%; height:auto; }
+hr { border:0; border-top:1px solid var(--line); margin:1.5rem 0; }
+footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
+@media (max-width:760px) {
+  .page-width { width:calc(100% - 26px); }
+  .layout { grid-template-columns:minmax(0,1fr); gap:15px; padding-top:15px; }
+  .toc { position:static; max-height:min(15rem,50vh); }
+  .primary { margin-bottom:.9rem; }
+}
+@media print {
+  header { padding:0 0 1rem; background:none; color:#000; }
+  .layout { display:block; }
+  .primary,.toc,footer,.skip { display:none; }
+  article { border:0; padding:0; background:none; }
+  table { min-width:0; }
+  pre { white-space:pre-wrap; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳转到正文</a>
+<header>
+  <div class="page-width">
+    <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
+<a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
+<a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
+<a href="./PB级存储运维实操.html">三站实操</a></nav>
+    <h1>业界存储 AIOps 与专家系统调研</h1>
+  </div>
+</header>
+<main id="main" class="page-width layout">
+  <details class="toc" open><summary>本页目录</summary><nav aria-label="本页目录"><ul><li><a href="#0-读法">0. 读法</a></li>
+<li><a href="#1-主模板everpure-pure1--fusion">1. 主模板：Everpure Pure1 + Fusion</a></li>
+<li><a href="#2-netapp-autosupport--digital-advisor">2. NetApp AutoSupport + Digital Advisor</a></li>
+<li><a href="#3-netapp-data-infrastructure-insightsdii">3. NetApp Data Infrastructure Insights（DII）</a></li>
+<li><a href="#4-华为-imaster-dme--dme-iq--datamaster">4. 华为 iMaster DME / DME IQ / DataMaster</a></li>
+<li><a href="#5-dell-aiops--powerstore">5. Dell AIOps / PowerStore</a></li>
+<li><a href="#6-aws-devops-agent">6. AWS DevOps Agent</a></li>
+<li><a href="#7-横向对比">7. 横向对比</a></li>
+<li><a href="#8-2026-年值得跟进的工程变化">8. 2026 年值得跟进的工程变化</a></li>
+<li><a href="#附录-厂商原始资料">附录 厂商原始资料</a></li>
+<li class="sub"><a href="#补充阅读顺序">补充阅读顺序</a></li></ul></nav></details>
+  <article>
+<p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">深入篇</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a> · <a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a></p>
+<p>核验日期：2026-11-18。本文按“数据从哪来 → 怎么分析 → 怎么调查 → 怎么动作 → 证据边界”比较系统，不按厂商宣传排名。公开资料缺少统一工作负载、统一权限和相同故障集下的横向测试，因此<strong>不给行业性能排名</strong>。</p>
+<p>2026-11-21 专题更新见<a href="./%E4%B8%9A%E7%95%8CAI%E8%BF%90%E7%BB%B4%E4%BA%A7%E5%93%81%E4%B8%8E%E5%8D%8E%E4%B8%BADME%E5%AF%B9%E6%A0%87.html">业界 AI 运维产品与华为 DME 对标</a>，正文拆解各产品的数据、调查和动作设计，逐项对照 DME，并用写入延迟和卷扩容两道任务说明适用场景。</p>
+<h2 id="0-读法">0. 读法</h2>
+<p>每个系统都按同一张“五层图”拆：</p>
+<pre><code class="language-text">设备/应用
+   │ 遥测、日志、变更、拓扑
+   ▼
+采集与数据层（采集器/云/数据湖）
+   │
+   ▼
+分析与知识层（基线/异常/预测/规则/知识库）
+   │
+   ▼
+调查与工具层（Copilot/Agent/MCP/查询）
+   │
+   ▼
+动作与验证层（工单/编排/审批/回滚）
+</code></pre>
+<p>看一个产品时，先问五个问题：</p>
+<ol>
+<li>数据是设备侧还是应用侧？原始数据能不能导出？</li>
+<li>分析是规则、统计、预测还是 LLM？有没有公开指标？</li>
+<li>调查有没有工具契约/证据/时间语义？</li>
+<li>动作是只读、建议、受监督还是自动？权限/回滚是什么？</li>
+<li>评测有没有公开故障集/负对照/盲评？</li>
+</ol>
+<h2 id="1-主模板everpure-pure1--fusion">1. 主模板：Everpure Pure1 + Fusion</h2>
+<p><strong>架构</strong>：</p>
+<pre><code class="language-text">FlashArray/FlashBlade
+   │ 遥测/健康/容量/性能
+   ▼
+Pure1（设备群管理面、AI Copilot、MCP Server）
+   │ 只读查询
+   ├─ 站点/租户/设备群健康
+   └─ 容量/性能/告警
+
+Fusion（阵列内部关系）
+   ├─ 阵列/卷/文件系统/工作负载/预设/拓扑
+   ├─ 部分性能查询需直连令牌
+   └─ 可选受监督写工具（默认隐藏，需配置）
+</code></pre>
+<p><strong>机制</strong>：Pure1 解决“哪片设备群不健康”，Fusion 解决“哪个卷/工作负载、和谁共享”。MCP 把查询变成有 schema 的工具，Copilot/Agent 通过工具拿事实；写工具默认隐藏，调查与处置分开授权。</p>
+<p><strong>例子</strong>：订单延迟升高 → Pure1 找到 array-3 前端延迟高 → Fusion 找到 orders-vol 与 backup-vol 同池 → 查变更发现备份 02:12 启动 → 形成“共享后端争用”假设，并列网络/磁盘/负载反证。</p>
+<p><strong>证据边界</strong>：Pure1/Fusion 的公开资料能证明“有这些工具/查询”，不能证明 Copilot 的内部模型、通用 RCA 准确率；写工具权限要以部署版本、工具清单、令牌为准。</p>
+<p><a href="#%E9%99%84%E5%BD%95-%E5%8E%82%E5%95%86%E5%8E%9F%E5%A7%8B%E8%B5%84%E6%96%99">出处 1</a></p>
+<h2 id="2-netapp-autosupport--digital-advisor">2. NetApp AutoSupport + Digital Advisor</h2>
+<p><strong>架构</strong>：</p>
+<pre><code class="language-text">ONTAP 集群
+   │ AutoSupport（遥测/日志/配置）
+   ▼
+Active IQ（资产、合同、版本、风险规则）
+   ├─ 健康/风险
+   ├─ 容量趋势
+   └─ 升级/生命周期建议
+        │
+        ▼
+Digital Advisor（看板/报告/建议）
+</code></pre>
+<p><strong>机制</strong>：AutoSupport 把遥测与配置/日志一起送云端；Active IQ 把设备、版本、支持合同、风险规则关联；Digital Advisor 输出风险、容量、升级建议。它强在“资产 + 合同 + 版本”的联合判断，不是单一 ML。</p>
+<p><strong>例子</strong>：卷已用 80%，近几周每周增加 2 个百分点。若趋势持续，约 5 周将达到 90%。再对照合同与版本支持期限，决定扩容和升级的先后。</p>
+<p><strong>证据边界</strong>：风险规则/建议的依据、误报率、模型细节未公开；容量趋势是厂商口径，需结合本地增长和业务变化。</p>
+<p><a href="#%E9%99%84%E5%BD%95-%E5%8E%82%E5%95%86%E5%8E%9F%E5%A7%8B%E8%B5%84%E6%96%99">出处 2</a></p>
+<h2 id="3-netapp-data-infrastructure-insightsdii">3. NetApp Data Infrastructure Insights（DII）</h2>
+<p><strong>架构</strong>：</p>
+<pre><code class="language-text">多源数据（ONTAP/E-Series/StorageGRID/交换机/VMware/云）
+   │ 采集器
+   ▼
+DII 数据层（资产、性能、容量、日志、告警、采集健康）
+   ├─ Monitor（阈值/异常/容量/性能）
+   ├─ 看板/报告
+   └─ MCP（Preview，租户内只读）
+</code></pre>
+<p><strong>机制</strong>：DII 把“采集健康/资产身份”作为可查询对象，先验证数据齐全，再查容量/性能。MCP 当前是 Preview，工具范围是租户内只读；适合调查，不适合处置。</p>
+<p><strong>例子</strong>：阵列性能异常，同时 3 个采集器有 1 个断连。查询受影响对象和最后采集时间，标注哪些卷缺测，再分析可见子集。</p>
+<p><strong>证据边界</strong>：MCP 是 Preview，工具清单/权限以当前文档为准；Monitor 的输出是事件/告警，不是自动根因。</p>
+<p><a href="#%E9%99%84%E5%BD%95-%E5%8E%82%E5%95%86%E5%8E%9F%E5%A7%8B%E8%B5%84%E6%96%99">出处 3</a></p>
+<h2 id="4-华为-imaster-dme--dme-iq--datamaster">4. 华为 iMaster DME / DME IQ / DataMaster</h2>
+<p><strong>架构</strong>：</p>
+<pre><code class="language-text">存储/交换机/服务器/虚拟化/容器
+   │ 南向 REST/SNMP/SSH/CSI
+   ▼
+DME（配置库/历史库/搜索/告警/拓扑/智能分析/智能体/编排）
+   │ 北向 REST/SNMP/Ansible/CSI
+   ▼
+云管/ITSM/自建平台
+
+另一条云服务链：DME IQ（移动 APP、Call Home、工单、在线客服、预测）
+</code></pre>
+<p><strong>机制</strong>：DME 是设备侧管理面，DataMaster 的对话式运维和故障 Agent 见产品页。优化 Agent、云地协同见博客，25.1.0 交付范围待核实。DME IQ 另有云端预测和远程支持说明。25.1.0 白皮书披露多厂商纳管、SAN/NAS/容器拓扑、I/O 路径与故障树、健康评分、容量 1 年、性能 2 周、硬盘健康度 14 天和特定 SAS HDD 故障 30 天。白皮书称故障智能体覆盖 64% 的闪存故障场景，并列出分钟级 7 天、30 分钟 6 个月、天级 2 年的性能保留。最大 175 套存储来自彩页，实际规模依部署规格确认。</p>
+<p><strong>例子</strong>：容量告警 → 健康扣分 → 容量预测（180 天→1 年）→ 扩容建议/工单 → 审批 → 资源发放 → 验证水位。</p>
+<p><strong>证据边界</strong>：厂商指标（80%/5 倍/90%/1-3-5 分钟）没有公开测试集/误报率；知识图谱还出现在交通银行联合项目披露中，标准版图谱契约和通用 MCP 交付需单独核对。逐环节见<a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a>。</p>
+<p><a href="#%E9%99%84%E5%BD%95-%E5%8E%82%E5%95%86%E5%8E%9F%E5%A7%8B%E8%B5%84%E6%96%99">出处 4</a></p>
+<h2 id="5-dell-aiops--powerstore">5. Dell AIOps / PowerStore</h2>
+<p><strong>架构</strong>：</p>
+<pre><code class="language-text">PowerStore/基础设施
+   │ 遥测/性能/容量/告警
+   ▼
+Dell AIOps（CloudIQ 类）
+   ├─ 健康评分
+   ├─ 预测分析
+   ├─ 性能基线/资源争用/容量突增
+   └─ GenAI Assistant
+        │
+        ▼
+分级响应/工单/报告
+</code></pre>
+<p><strong>机制</strong>：健康评分是多指标加权/扣分；性能分析把历史基线、资源争用、容量突增分开；GenAI Assistant 负责解释/建议。健康分是入口，不是根因。</p>
+<p><strong>例子</strong>：卷容量 24 小时突增 20%、IOPS 不变 → 提示容量异常增长，建议查快照/克隆/日志；为什么增长仍要查应用/变更。</p>
+<p><strong>证据边界</strong>：评分模型/权重/误报未公开；GenAI 回答是否有来源引用未公开。</p>
+<p><a href="#%E9%99%84%E5%BD%95-%E5%8E%82%E5%95%86%E5%8E%9F%E5%A7%8B%E8%B5%84%E6%96%99">出处 5</a></p>
+<h2 id="6-aws-devops-agent">6. AWS DevOps Agent</h2>
+<p><strong>架构</strong>：</p>
+<pre><code class="language-text">Agent Space
+   ├─ 应用拓扑（服务/资源/依赖）
+   ├─ 告警/日志/指标/变更
+   ├─ 调查工具（只读 AWS API）
+   └─ 沙箱（临时环境、网络白名单）
+        │
+        ▼
+   调查结论/证据/建议
+</code></pre>
+<p><strong>机制</strong>：Agent Space 限定可见应用/账号/数据；跨源调查把应用症状与基础设施/变更/日志放同一时间线；沙箱只读 + 网络白名单限制爆炸半径。服务卡说明评估口径/角色/限制。</p>
+<p><strong>例子</strong>：部署后 5 分钟错误率升，先查部署范围、配置、下游依赖和日志。若建议修改生产资源，走另行启用的定向动作、授权与审批流程。</p>
+<p><strong>证据边界</strong>：跨栈覆盖随集成变化。阵列内部状态须通过原厂或自建工具提供，定向写操作默认关闭。</p>
+<p><a href="#%E9%99%84%E5%BD%95-%E5%8E%82%E5%95%86%E5%8E%9F%E5%A7%8B%E8%B5%84%E6%96%99">出处 6</a></p>
+<h2 id="7-横向对比">7. 横向对比</h2>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>系统</th>
+<th>优先用它解决的问题</th>
+<th>相对 DME 的优点与代价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Everpure Pure1 + Fusion</td>
+<td>让不同 Agent 访问设备群资源和受控操作</td>
+<td>开源工具更容易做兼容和权限测试。阵列性能覆盖与直连配置有关，适用原厂设备</td>
+</tr>
+<tr>
+<td>NetApp Digital Advisor / DII</td>
+<td>做风险规划及异构采集覆盖检查</td>
+<td>采集状态、字段和查询限制明确。DII MCP 是只读 Preview，设备写入依赖另外的工具</td>
+</tr>
+<tr>
+<td>华为 DME</td>
+<td>看 OceanStor I/O 路径，结合故障树和工作台处理设备问题</td>
+<td>设备侧信号和原厂流程强。跨域证据和外部执行对账要按现场验证</td>
+</tr>
+<tr>
+<td>Dell AIOps / PowerStore</td>
+<td>复核历史区间偏离、共享资源争用与容量变化</td>
+<td>本地视图有 I/O 大小、灵敏度与时间。云端能力依赖连接和数据范围</td>
+</tr>
+<tr>
+<td>AWS DevOps Agent</td>
+<td>从应用变更和依赖追到基础设施，检验两次调查的差别</td>
+<td>可比较调查时间线、工具和评分。阵列内部信号须额外接入，回放查询在线数据</td>
+</tr>
+<tr>
+<td>Datadog Bits</td>
+<td>把应用侧调查、按资源授权、处置和复查接起来</td>
+<td>处置历史与恢复复查在同一流程。动作有 Preview 及资源限制，设备冗余仍由存储侧核对</td>
+</tr>
+</tbody>
+</table></div>
+<p>案例对照和现场验收条件见<a href="./%E4%B8%9A%E7%95%8CAI%E8%BF%90%E7%BB%B4%E4%BA%A7%E5%93%81%E4%B8%8E%E5%8D%8E%E4%B8%BADME%E5%AF%B9%E6%A0%87.html">业界 AI 运维产品与华为 DME 对标</a>。</p>
+<h2 id="8-2026-年值得跟进的工程变化">8. 2026 年值得跟进的工程变化</h2>
+<ol>
+<li><strong>存储工具进入 Agent 调查路径</strong>：Pure1/Fusion/DII 都在把查询工具化；可迁移的是“先验证采集健康，再窄范围查询”。</li>
+<li><strong>评测从答案延伸到轨迹</strong>：AIOpsLab/RCAEval/ORCA-bench 把检测、定位、诊断、缓解、证据纳入任务；但主要覆盖云/微服务，存储要自建 PG/磁盘/容量/协议/故障域案例。</li>
+<li><strong>预测仍要适配真实设备</strong>：FAST ’20/Backblaze 适合方法验证；迁移到 SSD/新固件/新维护策略要重新收集标签和校准。</li>
+</ol>
+<h2 id="附录-厂商原始资料">附录 厂商原始资料</h2>
+<ul>
+<li><strong>出处 1 · Everpure</strong>　<a href="https://blog.everpuredata.com/products/pure1-now-agentic/">Pure1 Agentic 说明</a> · <a href="https://www.everpuredata.com/au/video/webinars/ask-us-everything-about-pure1-ai-copilot-mcp-server-fusion/6405406488112.html">2026-09 演示</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a> · <a href="https://blog.everpuredata.com/purely-technical/mcp-across-everpure-nutanix-kubernetes/">跨栈 MCP 案例</a></li>
+<li><strong>出处 2 · NetApp Digital Advisor</strong>　<a href="https://docs.netapp.com/us-en/ontap/system-admin/autosupport-active-iq-digital-advisor-concept.html">AutoSupport / Digital Advisor 概念</a> · <a href="https://docs.netapp.com/us-en/active-iq/reference_new_activeiq.html">Active IQ 发布记录</a></li>
+<li><strong>出处 3 · NetApp DII</strong>　<a href="https://docs.netapp.com/us-en/data-infrastructure-insights/concept_whats_new.html">DII 发布记录</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">DII Monitor</a></li>
+<li><strong>出处 4 · 华为</strong>　<a href="https://e.huawei.com/cn/products/storage/data-management">DME 产品页</a> · <a href="https://e.huawei.com/cn/products/storage/data-management/eservice">DME IQ</a> · <a href="https://e.huawei.com/cn/documents/products/storage/113fc2f4d1f54670942dd224c8060d62">25.1.0 白皮书</a> · <a href="https://e.huawei.com/cn/blogs/2026/solutions/storage/agenticops">AgenticOps 博客</a></li>
+<li><strong>出处 5 · Dell</strong>　<a href="https://www.dell.com/en-us/infohub/articles/dell-aiops-assure-infrastructure-integrity-with-ease">Dell AIOps</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">PowerStore 可观测性</a></li>
+<li><strong>出处 6 · AWS</strong>　<a href="https://aws.amazon.com/blogs/mt/announcing-general-availability-of-aws-devops-agent/">GA 公告</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">服务卡</a> · <a href="https://docs.aws.amazon.com/devopsagent/latest/userguide/whats-new.html">更新记录</a></li>
+</ul>
+<h3 id="补充阅读顺序">补充阅读顺序</h3>
+<ol>
+<li>先读 Pure1 说明与 Fusion 用户指南的 Understand → Use → Act，记录每个工具能返回的实体、权限、数据缺口、动作前置条件。</li>
+<li>读 DII MCP 的 “What you can investigate” 和 “Choose an entry point”，从容量/性能/采集健康各挑一个问句，写出最小查询集合。</li>
+<li>读 AWS 服务卡的评估口径/角色，再看 AIOpsLab 的任务定义；为 Ceph 事故分别写定位、证据、处置验收标准。</li>
+<li>读 DME 白皮书的智能分析/智能体/预测章节，对照 DME 解剖的九个环节，列出“产品有/公开未说明/要自建”。</li>
+</ol>
+<p>所有链接背后的架构、流程图和例子，见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a>。</p>
+
+  </article>
+</main>
+<footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>
+</body>
+</html>

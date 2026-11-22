@@ -1,0 +1,1932 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>存储专家系统深入篇：从 I/O 语义到可验证自治</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ink:#152a22; --muted:#405950; --paper:#f2f6f1; --card:#fff;
+  --line:#d6e1d7; --accent:#08644a; --code:#edf4ee; --soft:#e6efe8;
+  --hero:#12352a; --hero-text:#f2fbf6; --hero-link:#d8eee3;
+}
+@media (prefers-color-scheme:dark) {
+  :root { --ink:#e7f0ea; --muted:#a9beb4; --paper:#0d1512; --card:#14201b;
+    --line:#2a3d35; --accent:#7cdcb6; --code:#0a120f; --soft:#18261f; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink);
+  font:16px/1.78 system-ui,"Microsoft YaHei","Noto Sans SC",sans-serif; }
+a { color:var(--accent); text-underline-offset:.2em; }
+a:focus-visible, summary:focus-visible, .table-wrap:focus-visible {
+  outline:2px solid var(--accent); outline-offset:4px; }
+.page-width { width:min(1180px,calc(100% - 40px)); margin-inline:auto; }
+.skip { position:absolute; left:.75rem; top:.75rem; z-index:2; padding:.4rem .7rem;
+  background:var(--card); transform:translateY(-180%); }
+.skip:focus { transform:translateY(0); }
+header { background:var(--hero); color:var(--hero-text); padding:22px 0 30px; }
+.primary { display:flex; flex-wrap:wrap; gap:5px 19px; margin:0 0 23px; }
+.primary a { color:var(--hero-link); font-size:.9rem; }
+.primary a[aria-current="page"] { color:var(--hero-text); font-weight:700; }
+.primary a:focus-visible { outline-color:var(--hero-text); }
+h1, h2, h3, h4, h5, h6 { line-height:1.36; overflow-wrap:anywhere; }
+h1 { font-size:clamp(1.75rem,4.6vw,3rem); letter-spacing:-.035em; margin:0; }
+h2 { font-size:clamp(1.3rem,3vw,1.7rem); margin:2.1rem 0 .7rem; }
+h3 { font-size:1.15rem; margin:1.7rem 0 .5rem; color:var(--accent); }
+h4, h5, h6 { margin:1.4rem 0 .5rem; }
+h2[id], h3[id], h4[id], h5[id], h6[id] { scroll-margin-top:1rem; }
+.layout { display:grid; grid-template-columns:245px minmax(0,1fr); gap:24px;
+  align-items:start; padding-block:24px 44px; }
+.toc { position:sticky; top:1rem; max-height:calc(100vh - 2rem); overflow:auto;
+  border:1px solid var(--line); background:var(--card); border-radius:12px; }
+.toc nav { padding:0 14px 14px; font-size:.86rem; line-height:1.5; }
+summary { cursor:pointer; font-weight:650; color:var(--accent); padding:11px 14px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc li { margin:.42em 0; }
+.toc a { display:block; overflow-wrap:anywhere; }
+.toc .sub { padding-left:.8em; }
+article { min-width:0; padding:clamp(16px,3.2vw,38px); background:var(--card);
+  border:1px solid var(--line); border-radius:12px; overflow-wrap:anywhere; }
+article > :first-child { margin-top:0; }
+article > :last-child { margin-bottom:0; }
+p { margin:0 0 1em; }
+li + li { margin-top:.25em; }
+ul, ol { padding-left:1.6em; }
+blockquote { margin:1em 0; padding:.5em 0 .5em 1em; border-left:3px solid var(--accent); color:var(--muted); }
+blockquote > :last-child { margin-bottom:0; }
+code { font: .89em ui-monospace,"Cascadia Code",Consolas,monospace;
+  background:var(--code); border-radius:4px; padding:.1em .25em; }
+pre { border:1px solid var(--line); border-radius:8px; overflow:auto;
+  padding:.85rem 1rem; background:var(--code); line-height:1.55; overflow-wrap:normal; }
+pre code { padding:0; font-size:.86rem; }
+.table-wrap { max-width:100%; overflow:auto; border:1px solid var(--line);
+  border-radius:8px; margin:1rem 0; }
+table { border-collapse:collapse; width:100%; min-width:32rem; font-size:.9rem; }
+th, td { text-align:left; padding:.52em .7em; border-bottom:1px solid var(--line); vertical-align:top; }
+th { background:var(--soft); }
+tbody tr:last-child td { border-bottom:0; }
+article details { border:1px solid var(--line); border-radius:8px; padding:0 .85rem; margin:1rem 0; }
+article details summary { padding-inline:0; }
+img { max-width:100%; height:auto; }
+hr { border:0; border-top:1px solid var(--line); margin:1.5rem 0; }
+footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
+@media (max-width:760px) {
+  .page-width { width:calc(100% - 26px); }
+  .layout { grid-template-columns:minmax(0,1fr); gap:15px; padding-top:15px; }
+  .toc { position:static; max-height:min(15rem,50vh); }
+  .primary { margin-bottom:.9rem; }
+}
+@media print {
+  header { padding:0 0 1rem; background:none; color:#000; }
+  .layout { display:block; }
+  .primary,.toc,footer,.skip { display:none; }
+  article { border:0; padding:0; background:none; }
+  table { min-width:0; }
+  pre { white-space:pre-wrap; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳转到正文</a>
+<header>
+  <div class="page-width">
+    <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
+<a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
+<a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
+<a href="./PB级存储运维实操.html">三站实操</a></nav>
+    <h1>存储专家系统深入篇：从 I/O 语义到可验证自治</h1>
+  </div>
+</header>
+<main id="main" class="page-width layout">
+  <details class="toc" open><summary>本页目录</summary><nav aria-label="本页目录"><ul><li><a href="#0-先建立坐标系专家系统的五个面与五级成熟度">0. 先建立坐标系：专家系统的五个面与五级成熟度</a></li>
+<li class="sub"><a href="#01-经典专家系统与现代-agent-的分工">0.1 经典专家系统与现代 Agent 的分工</a></li>
+<li><a href="#1-一条-io-的完整生命周期">1. 一条 I/O 的完整生命周期</a></li>
+<li class="sub"><a href="#11-块存储从-initiator-到介质">1.1 块存储：从 initiator 到介质</a></li>
+<li class="sub"><a href="#12-文件存储元数据路径与数据路径">1.2 文件存储：元数据路径与数据路径</a></li>
+<li class="sub"><a href="#13-对象存储网关索引与后端">1.3 对象存储：网关、索引与后端</a></li>
+<li class="sub"><a href="#14-分布式存储以-ceph-为例">1.4 分布式存储：以 Ceph 为例</a></li>
+<li class="sub"><a href="#15-尾延迟放大为什么平均值会骗人">1.5 尾延迟放大：为什么平均值会骗人</a></li>
+<li class="sub"><a href="#16-slo定义聚合与燃烧率">1.6 SLO：定义、聚合与燃烧率</a></li>
+<li class="sub"><a href="#17-失败模式与验收">1.7 失败模式与验收</a></li>
+<li><a href="#2-遥测数据模型采集与海量成本">2. 遥测：数据模型、采集与海量成本</a></li>
+<li class="sub"><a href="#21-信号分类">2.1 信号分类</a></li>
+<li class="sub"><a href="#22-指标模型与基数">2.2 指标模型与基数</a></li>
+<li class="sub"><a href="#23-容量与成本估算">2.3 容量与成本估算</a></li>
+<li class="sub"><a href="#24-时间语义事件时间观测时间知识时间">2.4 时间语义：事件时间、观测时间、知识时间</a></li>
+<li class="sub"><a href="#25-缺失机制与选择偏差">2.5 缺失机制与选择偏差</a></li>
+<li class="sub"><a href="#26-存储布局与查询预算">2.6 存储布局与查询预算</a></li>
+<li class="sub"><a href="#27-失败模式与验收">2.7 失败模式与验收</a></li>
+<li><a href="#3-资产身份与时态拓扑">3. 资产、身份与时态拓扑</a></li>
+<li class="sub"><a href="#31-身份比名称重要">3.1 身份比名称重要</a></li>
+<li class="sub"><a href="#32-双时态有效时间与知识时间">3.2 双时态：有效时间与知识时间</a></li>
+<li class="sub"><a href="#33-图模式">3.3 图模式</a></li>
+<li class="sub"><a href="#34-实现选择">3.4 实现选择</a></li>
+<li class="sub"><a href="#35-实体解析与证据置信">3.5 实体解析与证据置信</a></li>
+<li class="sub"><a href="#36-事发拓扑重建一个例子">3.6 事发拓扑重建：一个例子</a></li>
+<li class="sub"><a href="#37-知识图谱runbook-也是有时态的实体">3.7 知识图谱：Runbook 也是有时态的实体</a></li>
+<li class="sub"><a href="#38-失败模式">3.8 失败模式</a></li>
+<li><a href="#4-异常检测与告警工程">4. 异常检测与告警工程</a></li>
+<li class="sub"><a href="#41-先选信号再选算法">4.1 先选信号，再选算法</a></li>
+<li class="sub"><a href="#42-稳健基线中位数与-mad">4.2 稳健基线：中位数与 MAD</a></li>
+<li class="sub"><a href="#43-变化点与累积和">4.3 变化点与累积和</a></li>
+<li class="sub"><a href="#44-多重检验50000-条序列的假阳性">4.4 多重检验：50,000 条序列的假阳性</a></li>
+<li class="sub"><a href="#45-告警聚合与因果抑制">4.5 告警聚合与因果抑制</a></li>
+<li class="sub"><a href="#46-影响分级用-slo-而不是拍脑袋">4.6 影响分级：用 SLO 而不是拍脑袋</a></li>
+<li class="sub"><a href="#47-失败模式">4.7 失败模式</a></li>
+<li><a href="#5-预测容量性能与介质">5. 预测：容量、性能与介质</a></li>
+<li class="sub"><a href="#51-容量预测的账本">5.1 容量预测的账本</a></li>
+<li class="sub"><a href="#52-模型与回测">5.2 模型与回测</a></li>
+<li class="sub"><a href="#53-性能预测与动态阈值">5.3 性能预测与动态阈值</a></li>
+<li class="sub"><a href="#54-硬盘故障预测标签截尾与竞争风险">5.4 硬盘故障预测：标签、截尾与竞争风险</a></li>
+<li class="sub"><a href="#55-产品预测能力的读法">5.5 产品预测能力的读法</a></li>
+<li class="sub"><a href="#56-漂移与反馈回路">5.6 漂移与反馈回路</a></li>
+<li class="sub"><a href="#57-失败模式">5.7 失败模式</a></li>
+<li><a href="#6-根因证据与反证">6. 根因、证据与反证</a></li>
+<li class="sub"><a href="#61-相关干预与反事实">6.1 相关、干预与反事实</a></li>
+<li class="sub"><a href="#62-候选生成">6.2 候选生成</a></li>
+<li class="sub"><a href="#63-证据评分">6.3 证据评分</a></li>
+<li class="sub"><a href="#64-故障树因果图与-llm">6.4 故障树、因果图与 LLM</a></li>
+<li class="sub"><a href="#65-鉴别诊断模板">6.5 鉴别诊断模板</a></li>
+<li class="sub"><a href="#66-三个深度触发机制系统性">6.6 三个深度：触发、机制、系统性</a></li>
+<li class="sub"><a href="#67-评测">6.7 评测</a></li>
+<li class="sub"><a href="#68-失败模式">6.8 失败模式</a></li>
+<li><a href="#7-agent工具契约与-rag">7. Agent、工具契约与 RAG</a></li>
+<li class="sub"><a href="#71-有界状态机而不是自由聊天">7.1 有界状态机，而不是自由聊天</a></li>
+<li class="sub"><a href="#72-工具契约">7.2 工具契约</a></li>
+<li class="sub"><a href="#73-mcp把工具变成可组合的协议">7.3 MCP：把工具变成可组合的协议</a></li>
+<li class="sub"><a href="#74-rag检索的是适用知识不是相似文本">7.4 RAG：检索的是“适用知识”，不是“相似文本”</a></li>
+<li class="sub"><a href="#75-上下文与防幻觉">7.5 上下文与防幻觉</a></li>
+<li class="sub"><a href="#76-安全日志和文档也是不可信输入">7.6 安全：日志和文档也是不可信输入</a></li>
+<li class="sub"><a href="#77-评测-agent">7.7 评测 Agent</a></li>
+<li class="sub"><a href="#78-失败模式">7.8 失败模式</a></li>
+<li><a href="#8-处置验证与回放评测">8. 处置、验证与回放评测</a></li>
+<li class="sub"><a href="#81-动作分级与授权">8.1 动作分级与授权</a></li>
+<li class="sub"><a href="#82-变更契约">8.2 变更契约</a></li>
+<li class="sub"><a href="#83-存储特有的验证">8.3 存储特有的验证</a></li>
+<li class="sub"><a href="#84-从处置回到学习">8.4 从处置回到学习</a></li>
+<li class="sub"><a href="#85-评测集设计">8.5 评测集设计</a></li>
+<li class="sub"><a href="#86-指标与消融">8.6 指标与消融</a></li>
+<li class="sub"><a href="#87-公开基准与边界">8.7 公开基准与边界</a></li>
+<li class="sub"><a href="#88-多集群与数据主权">8.8 多集群与数据主权</a></li>
+<li class="sub"><a href="#89-落地路线">8.9 落地路线</a></li>
+<li class="sub"><a href="#810-失败模式">8.10 失败模式</a></li>
+<li><a href="#9-公式与速查">9. 公式与速查</a></li>
+<li><a href="#10-术语">10. 术语</a></li>
+<li><a href="#11-参考资料">11. 参考资料</a></li></ul></nav></details>
+  <article>
+<p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">华为 DME 全链路解剖</a> · <a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html">练习与考核答案</a> · <a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html">Ceph 回放实验</a></p>
+<p>资料核验日期：2026-11-18。本文是<a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a>的深入版，面向已经能读懂 PromQL、SLO 和基本 RCA 的读者。每一节按同一顺序组织：<strong>机制 → 建模 → 算法与查询 → 失败模式 → 验收 → 练习</strong>。文中的 <code>[原理]</code> 是可从公开论文、标准或开源文档推导的通用知识，<code>[产品]</code> 是厂商公开材料，<code>[建议]</code> 是课程设计，<code>[推断]</code> 明确标为推断。</p>
+<blockquote>
+<p>外部资料的架构、流程图和例子：见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a>。本文末尾的链接只作出处，正文不依赖链接论证。</p>
+</blockquote>
+<blockquote>
+<p>练习参考答案：学习导览九节点、三份正文的全部练习与 30 题自测的答案在<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html">练习与考核答案</a>。建议先闭卷做，再对照。</p>
+</blockquote>
+<blockquote>
+<p>一句话立场：存储专家系统的难点不在“让模型说得像专家”，而在<strong>让每句结论都能回到一个带时间、实体、单位和出处的证据，并且知道自己在什么条件下必须沉默</strong>。海量存储把这件事放大了：实体多、指标多、故障域深、处置代价不对称。</p>
+</blockquote>
+<h2 id="0-先建立坐标系专家系统的五个面与五级成熟度">0. 先建立坐标系：专家系统的五个面与五级成熟度</h2>
+<p>一个可运行的存储专家系统至少有五个面。少任何一面，系统都会退化成“会说话的看板”。</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>面</th>
+<th>回答的问题</th>
+<th>典型组件</th>
+<th>失败表现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>状态面</td>
+<td>现在和当时发生了什么？</td>
+<td>指标、日志、事件、变更、拓扑快照</td>
+<td>数据缺失被当成“变好了”</td>
+</tr>
+<tr>
+<td>知识面</td>
+<td>这类现象通常意味着什么？</td>
+<td>本体、故障模式、Runbook、版本约束</td>
+<td>检索到过期或不适用的手册</td>
+</tr>
+<tr>
+<td>推理面</td>
+<td>哪条因果链最可信？还缺什么证据？</td>
+<td>规则、统计、因果图、故障树、LLM 规划</td>
+<td>把相关当因果，或只给一个答案</td>
+</tr>
+<tr>
+<td>行动面</td>
+<td>能不能动、谁来批、怎么回滚？</td>
+<td>工单、审批、编排、幂等接口</td>
+<td>业务恢复了，冗余却还没恢复</td>
+</tr>
+<tr>
+<td>评测面</td>
+<td>这套系统到底比人强在哪？</td>
+<td>回放集、盲评、负对照、成本账</td>
+<td>只展示成功案例</td>
+</tr>
+</tbody>
+</table></div>
+<p>成熟度不要按“模型多聪明”划分，而要按<strong>证据强度和授权范围</strong>划分：</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>级别</th>
+<th>能力</th>
+<th>必要证据</th>
+<th>授权</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L0 可视</td>
+<td>看到资源、指标、拓扑</td>
+<td>实体 ID、单位、采集时间</td>
+<td>只读</td>
+</tr>
+<tr>
+<td>L1 检测</td>
+<td>发现异常并分级</td>
+<td>基线、样本量、覆盖率、误报预算</td>
+<td>只读 + 通知</td>
+</tr>
+<tr>
+<td>L2 诊断</td>
+<td>给出候选根因与反证</td>
+<td>时间 precedence、拓扑可达、对照、证据出处</td>
+<td>只读 + 建议</td>
+</tr>
+<tr>
+<td>L3 处置</td>
+<td>执行可逆变更并验证</td>
+<td>前置条件、幂等键、回滚、双验收</td>
+<td>人工审批 + 受监督执行</td>
+</tr>
+<tr>
+<td>L4 自治</td>
+<td>在限定域内闭环</td>
+<td>L3 的全部 + 长期回放 + 熔断与审计</td>
+<td>白名单 + 预算 + 熔断</td>
+</tr>
+</tbody>
+</table></div>
+<p>绝大多数团队应该先把 L1/L2 做扎实。<strong>没有 L2 的证据链，L3 只是把人工误操作换成了自动误操作。</strong></p>
+<p>存储还有四个硬约束，决定了它的推理和互联网微服务不一样：</p>
+<ol>
+<li><strong>耐久性优先于性能</strong>。延迟升高可以忍，数据丢了不能忍；任何“优化”都要先问副本、校验、快照和恢复窗口。</li>
+<li><strong>故障域是物理的</strong>。控制器、机框、机柜、站点、双活对、EC 条带，决定了“影响范围”不是一个逻辑标签，而是一组共享失效单元的集合。</li>
+<li><strong>后台任务会反噬前台</strong>。重建、backfill、scrub、GC、快照删除、克隆、迁移都会争用同一批 CPU、内存、网络和介质。</li>
+<li><strong>版本和配置是语义的一部分</strong>。同一个告警码在 V6 与 V7、不同补丁、不同 license 下可能含义不同；Runbook 不标版本就是隐患。</li>
+</ol>
+<h3 id="01-经典专家系统与现代-agent-的分工">0.1 经典专家系统与现代 Agent 的分工</h3>
+<p>“专家系统”这个词有两代含义，混用会导致架构错位。</p>
+<p><strong>经典专家系统</strong>（MYCIN 时代）由四部分组成：知识库（事实 + 规则）、工作记忆（当前事实）、推理机（前向/后向链）、解释器（为什么得出这个结论）。它的优点是确定性、可审计、可解释；缺点是知识获取瓶颈、规则脆弱、难处理非结构化输入和大规模不确定性。</p>
+<p><strong>现代 LLM Agent</strong> 由模型、工具、记忆、规划器、验证器组成。优点是能读日志/工单/手册、生成假设、用自然语言交互；缺点是幻觉、非确定、成本高、权限风险。</p>
+<p>存储场景的正确组合不是二选一，而是：</p>
+<pre><code class="language-text">确定性内核：规则、阈值、故障树、SLO、权限、动作契约、验证器
+概率性外壳：异常检测、预测、LLM 假设生成、RAG 检索、报告组织
+</code></pre>
+<p>具体分工：</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>职责</th>
+<th>交给谁</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>硬约束（副本数、SLO、权限、窗口）</td>
+<td>规则/策略引擎</td>
+<td>必须确定、可审计</td>
+</tr>
+<tr>
+<td>异常/预测</td>
+<td>统计/ML</td>
+<td>需要从数据学分布</td>
+</tr>
+<tr>
+<td>候选根因</td>
+<td>故障树 + 拓扑 + 因果图</td>
+<td>需要领域机制，不是语言模式</td>
+</tr>
+<tr>
+<td>假设生成/证据选择</td>
+<td>LLM</td>
+<td>擅长非结构化线索和下一步查询</td>
+</tr>
+<tr>
+<td>事实陈述</td>
+<td>工具/数据库</td>
+<td>模型不应“回忆”设备状态</td>
+</tr>
+<tr>
+<td>结论校验</td>
+<td>确定性验证器</td>
+<td>引用、单位、时间、权限、数值</td>
+</tr>
+<tr>
+<td>最终动作</td>
+<td>人或受监督工作流</td>
+<td>代价不对称</td>
+</tr>
+</tbody>
+</table></div>
+<p>一句话：<strong>LLM 不负责“知道”，负责“提问和解释”；系统负责“证明”。</strong> DME 的故障树/智能分析是确定性内核，运维助手/故障智能体是概率性外壳；它缺的正是两者之间的开放证据层和工具契约。</p>
+<h2 id="1-一条-io-的完整生命周期">1. 一条 I/O 的完整生命周期</h2>
+<h3 id="11-块存储从-initiator-到介质">1.1 块存储：从 initiator 到介质</h3>
+<p>一次块写请求的路径可以粗分为：</p>
+<pre><code class="language-text">应用 write()
+  → 文件系统 / 数据库页缓存
+  → 多路径（DM-Multipath）与 HBA 队列
+  → FC/iSCSI/NVMe-oF 织物
+  → 存储前端端口 → 控制器
+  → 写缓存（镜像 / NVRAM / 掉电保护）
+  → 后端总线 → 存储池 / extent
+  → SSD 或 HDD → 介质队列 → 完成
+</code></pre>
+<p>读路径在缓存命中时很短，未命中时要走后端；预取、读缓存和顺序性会显著改变尾延迟。写路径的关键是<strong>什么时候向主机确认</strong>：写回（write-back）在缓存镜像完成后就确认，写穿（write-through）要等介质。写回带来低延迟，也带来掉电保护和缓存降级的问题。</p>
+<p>把端到端延迟拆开，比只看一个 P99 有用得多：</p>
+<pre><code class="language-text">T_end2end = T_client_queue + T_fabric + T_frontend + T_cache_lookup
+          + T_backend_queue + T_media + T_retry + T_software_overhead
+</code></pre>
+<p>每一段都要有独立的测量点。缺少某一段时，结论必须降级为“在已观测段内，瓶颈位于 X 之前/之后”，而不是“根因是 X”。</p>
+<p>队列论给出一个非常有用的直觉。对 M/M/1 队列，利用率 ρ、服务时间 S：</p>
+<pre><code class="language-text">平均排队时间 W = ρS / (1 − ρ)
+平均响应时间 R = S / (1 − ρ)
+</code></pre>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>利用率 ρ</th>
+<th>响应时间是服务时间的倍数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>50%</td>
+<td>2×</td>
+</tr>
+<tr>
+<td>70%</td>
+<td>3.3×</td>
+</tr>
+<tr>
+<td>80%</td>
+<td>5×</td>
+</tr>
+<tr>
+<td>90%</td>
+<td>10×</td>
+</tr>
+<tr>
+<td>95%</td>
+<td>20×</td>
+</tr>
+</tbody>
+</table></div>
+<p>真实系统不是 M/M/1，SSD 有内部并行、控制器有多队列，不能用这个公式算绝对值；但它解释了为什么“利用率只涨了 10 个点，延迟翻倍”。也解释了为什么在 85% 利用率以上做容量规划很危险：余量不是线性的。</p>
+<p><strong>IOPS、带宽和块大小的关系</strong>必须写清楚：</p>
+<pre><code class="language-text">IOPS = 带宽 / 块大小
+</code></pre>
+<p>4 KiB 随机读 100 万 IOPS 约等于 3.8 GiB/s；1 MiB 顺序读 3.8 GiB/s 只有约 3,900 IOPS。把两者混在一个“性能”指标里，结论一定错。</p>
+<p>SSD 还有垃圾回收（GC）、写放大（WA）和预留空间（OP）。持续随机写会把可用块耗尽，GC 与前台写争用，尾延迟出现长尾；写放大让“业务写了 1 GiB”变成“介质写了 2–4 GiB”。这些都要在看 IOPS 的同时看介质写量、GC 次数、磨损和预留。</p>
+<h3 id="12-文件存储元数据路径与数据路径">1.2 文件存储：元数据路径与数据路径</h3>
+<p>文件存储至少有两条路径：</p>
+<pre><code class="language-text">客户端 → 元数据服务（MDS / 文件系统管理） → 目录、锁、权限、布局
+客户端 → 数据服务（DS / 存储节点）       → 实际读写
+</code></pre>
+<p>元数据操作（create、stat、readdir、rename、unlink）和数据操作的成本模型不同。小文件、深目录、大量并发 create、目录热点、锁竞争，都会让<strong>元数据路径</strong>先于数据路径成为瓶颈。NFS 的 delegation/lease、SMB 的 oplock、客户端的 attribute cache，会改变“看起来的延迟”。客户端重连、会话恢复、锁回收也会在故障后制造第二波压力。</p>
+<p>因此文件存储的 SLO 至少要拆成：元数据操作延迟、数据读写延迟、元数据 IOPS、数据带宽、错误码分布。只报一个“文件系统延迟”无法定位。</p>
+<h3 id="13-对象存储网关索引与后端">1.3 对象存储：网关、索引与后端</h3>
+<p>对象路径通常是：</p>
+<pre><code class="language-text">S3 客户端 → 网关 / 负载均衡 → 认证与桶索引 → 元数据服务
+          → 对象数据落到池 / 纠删码条带 → 后端节点
+</code></pre>
+<p>对象存储的尾延迟常来自：网关排队、桶索引热点、单对象过大、multipart 分片不均、LIST 操作扫描、慢节点拖尾、EC 重建。S3 的 5xx、SlowDown、连接复用和重试策略会把后端的一次抖动放大成客户端的长尾。对象存储的 SLO 要按操作类型和状态码拆分，不能把 GET 和 LIST 混在一起。</p>
+<h3 id="14-分布式存储以-ceph-为例">1.4 分布式存储：以 Ceph 为例</h3>
+<p>Ceph 的 RADOS 层：</p>
+<pre><code class="language-text">对象 → pool → PG（placement group）→ CRUSH 映射 → OSD 集合
+OSD → BlueStore → 块设备 → 介质
+</code></pre>
+<p>几个必须区分的状态：</p>
+<ul>
+<li><code>active</code>：PG 可以服务；<code>clean</code>：对象已达到配置的副本数。<code>active+clean</code> 是期望的 PG 状态，完整性仍要看 scrub 与其他健康项。</li>
+<li><code>up/down</code>：OSD 进程是否可用；<code>in/out</code>：是否参与数据放置。两组状态要同时保留。</li>
+<li><code>degraded</code>：部分对象未达到期望冗余；<code>undersized</code>：PG 的副本集合小于期望；<code>stale</code>：PG 映射变更后 Monitor 尚未收到其状态更新。</li>
+<li><code>recovering</code> / <code>backfilling</code>：恢复与回填；<code>scrubbing</code> / <code>deep-scrub</code>：校验。</li>
+</ul>
+<p>维护中 OSD 下线后仍可能为 <code>in</code>。若它被标记 <code>out</code> 且 PG 映射改变，可能触发 backfill，和前台写竞争网络、CPU 和介质资源。P99 与队列上升、提交 IOPS 接近基线，支持争用假设。仍应检查块大小、读写比例、请求并发和更细粒度的突发。 <a href="https://docs.ceph.com/en/tentacle/rados/operations/pg-states/">Ceph PG 状态</a> · <a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a></p>
+<p>Ceph Tentacle 的 mClock 对客户端、后台 recovery、后台 best-effort 三组分配保底、上限与权重。Backfill、scrub、快照裁剪和 PG 删除都归入 best-effort。调度变更应核对版本、当前 profile、参数是否生效与冗余状态。 <a href="https://docs.ceph.com/en/tentacle/rados/configuration/mclock-config-ref/">Ceph mClock</a></p>
+<h3 id="15-尾延迟放大为什么平均值会骗人">1.5 尾延迟放大：为什么平均值会骗人</h3>
+<p>一个请求要扇出到 k 个下游，每个下游独立地有 1% 的概率超过自己的 P99。整个请求至少命中一个慢下游的概率：</p>
+<pre><code class="language-text">P(至少一个慢) = 1 − (1 − 0.01)^k
+</code></pre>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>k</th>
+<th>概率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>9.6%</td>
+</tr>
+<tr>
+<td>100</td>
+<td>63.4%</td>
+</tr>
+<tr>
+<td>1,000</td>
+<td>99.996%</td>
+</tr>
+</tbody>
+</table></div>
+<p>所以“每个服务 P99 都达标”不等于“端到端 P99 达标”。如果每个下游是 P99.9，k=1000 时仍有 63.2% 的请求会碰到至少一个慢调用。存储侧的扇出（多副本、EC 条带、多路径、元数据与数据分离）也在制造同样的放大。</p>
+<p>还有两个常被忽略的效应：</p>
+<ul>
+<li><strong>协调遗漏（coordinated omission）</strong>：压测工具在目标延迟被突破后降低发送速率，会系统性低估尾延迟。记录“计划发送时间”和“实际发送时间”的差，才能得到真实的服务时间分布。</li>
+<li><strong>后台任务的长尾</strong>：GC、重建、快照、scrub 的延迟尖峰会污染 P99；如果采样窗口刚好覆盖，结论会随窗口漂移。</li>
+</ul>
+<h3 id="16-slo定义聚合与燃烧率">1.6 SLO：定义、聚合与燃烧率</h3>
+<p>SLO 的三要素：<strong>测量点、好事件、分母</strong>。以订单写请求为例：</p>
+<pre><code class="language-text">好请求 = 成功 且 端到端延迟 ≤ 20 ms 的写请求
+SLO = 好请求数 / 纳入统计的写请求数 ≥ 99.9% / 30 天
+</code></pre>
+<p>错误预算：</p>
+<pre><code class="language-text">预算 = (1 − SLO) × 总请求数
+请求量近似均匀时，99.9% / 30 天 ≈ 43 分 12 秒的完全不可用等价时间
+同一假设下，99.95% / 30 天 ≈ 21 分 36 秒
+</code></pre>
+<p>燃烧率（burn rate）：</p>
+<pre><code class="language-text">burn_rate = 观测窗口内的错误率 / (1 − SLO)
+</code></pre>
+<p>燃烧率为 1 且持续整个 SLO 周期时，刚好耗尽该周期预算。请求量近似均匀时，14.4 倍燃烧率持续 1 小时会用掉 30 天预算的 2%。流量不均时，用观测窗内坏请求数除以整个周期的预算请求数。多窗口规则可要求 1 小时和 5 分钟燃烧率都超过 14.4。 <a href="https://sre.google/workbook/alerting-on-slos/">Google SRE</a></p>
+<p><strong>分位数不能直接平均。</strong> 三个客户端各自 P99 = 10/20/30 ms，不代表全局 P99 是 20 ms；全局 P99 取决于各客户端的请求量分布和尾部形状。正确做法是保留相同桶边界的直方图，按桶求和后再算分位：</p>
+<pre><code class="language-promql">histogram_quantile(
+  0.99,
+  sum by (le) (rate(request_duration_seconds_bucket[5m]))
+)
+</code></pre>
+<p>如果没有桶，只有各客户端的预计算分位，就只能报“各客户端分位”，并明确不能合成全局分位。低流量窗口还要报样本量；100 个请求的 P99 只是一个请求的延迟，不应该触发事故级告警。</p>
+<h3 id="17-失败模式与验收">1.7 失败模式与验收</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>失败模式</th>
+<th>后果</th>
+<th>纠正</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>在阵列侧测延迟，却宣称应用 SLO</td>
+<td>漏掉客户端队列、网络、重试</td>
+<td>应用侧埋点 + 端到端分解</td>
+</tr>
+<tr>
+<td>对客户端 P99 取平均</td>
+<td>全局分位失真</td>
+<td>合并直方图桶</td>
+</tr>
+<tr>
+<td>分母只算成功请求</td>
+<td>错误被隐藏</td>
+<td>分母含错误和超时</td>
+</tr>
+<tr>
+<td>忽略低流量窗口</td>
+<td>1 个慢请求触发告警</td>
+<td>最小样本量 + 置信区间</td>
+</tr>
+<tr>
+<td>把 IOPS 当性能</td>
+<td>块大小变化时结论反转</td>
+<td>IOPS/带宽/块大小一起看</td>
+</tr>
+<tr>
+<td>只看前台，不看后台</td>
+<td>恢复任务被忽视</td>
+<td>恢复速率、队列、介质写量</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>练习</strong>（答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#1-%E6%B7%B1%E5%85%A5%E7%AF%87%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 1 部分</a>）：给一个 3 客户端、不同请求量的场景，手工合并直方图并计算全局 P99；再写出一次 Ceph 维护导致的延迟分解，标出哪一段有直接证据、哪一段只能推断。</p>
+<h2 id="2-遥测数据模型采集与海量成本">2. 遥测：数据模型、采集与海量成本</h2>
+<h3 id="21-信号分类">2.1 信号分类</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>信号</th>
+<th>适合回答</th>
+<th>典型来源</th>
+<th>注意</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>指标</td>
+<td>趋势、阈值、容量</td>
+<td>阵列 REST、SNMP、Prometheus</td>
+<td>基数、单位、聚合</td>
+</tr>
+<tr>
+<td>日志</td>
+<td>具体错误、协议细节</td>
+<td>syslog、设备日志、应用日志</td>
+<td>半结构化、量大、含敏感信息</td>
+</tr>
+<tr>
+<td>追踪</td>
+<td>一次请求跨组件耗时</td>
+<td>OpenTelemetry、eBPF</td>
+<td>采样、上下文传播</td>
+</tr>
+<tr>
+<td>事件</td>
+<td>变更、告警、工单</td>
+<td>ITSM、告警平台、审计</td>
+<td>事件时间与观测时间</td>
+</tr>
+<tr>
+<td>配置</td>
+<td>版本、拓扑、策略</td>
+<td>CMDB、设备配置、K8s API</td>
+<td>历史快照、漂移</td>
+</tr>
+<tr>
+<td>拓扑</td>
+<td>依赖与故障域</td>
+<td>交换机 WWN、HostLink、CSI</td>
+<td>时态、版本、可达性</td>
+</tr>
+</tbody>
+</table></div>
+<p>采集方式没有绝对优劣：拉取（pull）便于控制目标和去重，推送（push）便于跨网络和短生命周期实体；SNMP Trap 实时但不可靠，REST 轮询可靠但有延迟；eBPF/OTel 能看到客户端，但需要 agent 和权限。<strong>关键是记录采集状态</strong>：谁采的、什么时候采的、覆盖了多少期望实体、有没有丢包/积压。</p>
+<h3 id="22-指标模型与基数">2.2 指标模型与基数</h3>
+<p>一条时间序列由指标名和标签集唯一确定：</p>
+<pre><code class="language-text">storage_pool_used_bytes{site=&quot;sh&quot;, cluster=&quot;ceph-a&quot;, pool=&quot;hot&quot;, unit=&quot;byte&quot;}
+</code></pre>
+<p>标签设计的铁律：<strong>标签是维度，不是身份流水号</strong>。把 request_id、session_id、文件名、卷快照 ID 放进标签，会制造无限基数。实体身份用稳定的 <code>entity_id</code>，把可变的显示名、别名、序列号放在实体表里。</p>
+<p>基数估算：</p>
+<pre><code class="language-text">序列数 ≈ 实体数 × 每实体指标数 × 维度组合数
+</code></pre>
+<p>10,000 个 OSD × 100 个指标 = 100 万序列；15 秒采样就是每天 57.6 亿样本。即使压缩到 2 字节/样本，也是每天 11.5 GB（单副本），还没算索引和查询放大。海量存储的“海量”首先体现在这里。</p>
+<h3 id="23-容量与成本估算">2.3 容量与成本估算</h3>
+<p>以 50,000 条活跃序列、15 秒采样为例：</p>
+<pre><code class="language-text">每天样本数 = 50,000 × 86,400 / 15 = 288,000,000
+按 2 字节/样本压缩 ≈ 576 MB/天（单副本）
+按 8 字节/样本 ≈ 2.3 GB/天（单副本）
+三副本 ≈ 1.7–6.9 GB/天
+一年 ≈ 0.6–2.5 TB（三副本，未计索引）
+</code></pre>
+<p>看起来不大，但这是<strong>一个集群的原始指标</strong>。再乘上设备数、租户、日志、追踪、拓扑快照和查询副本，成本会迅速上升。分层的常见做法：</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>粒度</th>
+<th>保留</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>原始</td>
+<td>15s–1min</td>
+<td>7–30 天</td>
+<td>事故取证、短窗口</td>
+</tr>
+<tr>
+<td>聚合</td>
+<td>5–30min</td>
+<td>6–12 个月</td>
+<td>趋势、容量、周同比</td>
+</tr>
+<tr>
+<td>日级</td>
+<td>1 天</td>
+<td>2–5 年</td>
+<td>容量规划、审计</td>
+</tr>
+<tr>
+<td>事件/变更</td>
+<td>事件粒度</td>
+<td>多年</td>
+<td>根因、合规</td>
+</tr>
+<tr>
+<td>原始日志</td>
+<td>原始</td>
+<td>7–30 天，冷存更久</td>
+<td>深度取证</td>
+</tr>
+</tbody>
+</table></div>
+<p>DME 25.1.0 白皮书的实际保留策略可以作为产品参照：分钟级保存 7 天，30 分钟聚合保存 6 个月，天级聚合保存 2 年；5 秒历史性能数据不落 DME，而是按需从 Dorado V6+ 设备侧读取，最长一周。这个设计说明：<strong>秒级数据用于现场，不用于长期存储</strong>。详见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html#11-%E5%8D%8E%E4%B8%BA-dme%E8%AE%BE%E5%A4%87%E4%BE%A7%E7%AE%A1%E7%90%86%E9%9D%A2%E7%9A%84%E5%AE%8C%E6%95%B4%E6%95%B0%E6%8D%AE%E9%80%9A%E8%B7%AF">外部资料拆解 §11</a>。</p>
+<h3 id="24-时间语义事件时间观测时间知识时间">2.4 时间语义：事件时间、观测时间、知识时间</h3>
+<p>这是存储取证最容易错的地方。至少有三个时间：</p>
+<ul>
+<li><code>event_time</code>：事情实际发生的时间（设备时钟、日志时间）。</li>
+<li><code>observed_time</code>：采集/上报系统看到它的时间（可能晚于事件时间）。</li>
+<li><code>knowledge_time</code>：这条记录进入证据库、可被查询的时间。</li>
+</ul>
+<p>回放一个 02:16 的事故时，只能使用 <code>knowledge_time ≤ 02:16</code> 的数据。否则模型会“未卜先知”：用 02:18 才上报的应用日志解释 02:16 的告警。拓扑同理：要按事件时间选择当时有效的版本，而不是用当前拓扑。</p>
+<p>晚到数据、时钟漂移、补数、重复上报都要处理：</p>
+<ul>
+<li>用 <code>event_id</code> 做幂等，重复写入不产生双份。</li>
+<li>用水位（watermark）判断“这个窗口是否还可能来数据”。</li>
+<li>计数器重置时先识别重置点，再算速率；不要直接 <code>rate()</code> 跨重置。</li>
+<li>缺失不等于 0。缺失要进入“数据质量”维度，并影响结论强度。</li>
+</ul>
+<h3 id="25-缺失机制与选择偏差">2.5 缺失机制与选择偏差</h3>
+<p>缺失至少分三类：</p>
+<ul>
+<li><strong>完全随机缺失（MCAR）</strong>：丢包与值无关。</li>
+<li><strong>随机缺失（MAR）</strong>：缺失与已观测变量有关（例如高负载时采集器更容易丢）。</li>
+<li><strong>非随机缺失（MNAR）</strong>：缺失与未观测的值有关（例如设备快坏了，agent 先挂了）。</li>
+</ul>
+<p>存储里最常见的是 MAR/MNAR。一个典型陷阱：一半 OSD 停止上报，剩下健康 OSD 的平均延迟下降，dashboard 看起来“变好了”。正确做法是同时看<strong>采集覆盖率</strong>：</p>
+<pre><code class="language-text">coverage = 实际上报的期望实体数 / 期望实体总数
+</code></pre>
+<p>并把 coverage 作为一等指标告警。任何聚合都要带 coverage；覆盖率不足时，均值/分位只能作为“已观测子集”的描述，不能代表全局。</p>
+<h3 id="26-存储布局与查询预算">2.6 存储布局与查询预算</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>数据</th>
+<th>存储</th>
+<th>分区键</th>
+<th>查询模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>指标</td>
+<td>时序库（Prometheus/ClickHouse/专用 TSDB）</td>
+<td>租户、集群、时间</td>
+<td>范围扫描 + 聚合</td>
+</tr>
+<tr>
+<td>事件/告警</td>
+<td>事件库 / 日志库</td>
+<td>时间、集群、来源</td>
+<td>时间线、关联</td>
+</tr>
+<tr>
+<td>拓扑/资产</td>
+<td>关系库或图库</td>
+<td>实体、有效期</td>
+<td>as-of 查询、路径</td>
+</tr>
+<tr>
+<td>日志</td>
+<td>对象存储 + 列式格式</td>
+<td>日期、集群、来源</td>
+<td>关键词、字段过滤</td>
+</tr>
+<tr>
+<td>文档/Runbook</td>
+<td>文档索引 + 原文</td>
+<td>产品、版本、权限</td>
+<td>混合检索</td>
+</tr>
+<tr>
+<td>证据快照</td>
+<td>对象存储</td>
+<td>事故、时间</td>
+<td>不可变引用</td>
+</tr>
+</tbody>
+</table></div>
+<p>查询预算要显式化：时间范围、序列数、扫描样本数、返回行数、超时。多租户还要加租户级和集群级配额。海量环境下，<strong>先聚合后取明细</strong>：先看集群级趋势，再缩到池/OSD/变更窗口，最后才拉原始日志。</p>
+<h3 id="27-失败模式与验收">2.7 失败模式与验收</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>失败模式</th>
+<th>后果</th>
+<th>纠正</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>高基数标签</td>
+<td>内存/索引爆炸</td>
+<td>实体 ID + 维度白名单</td>
+</tr>
+<tr>
+<td>把缺失当 0</td>
+<td>平均值失真</td>
+<td>coverage + 缺失标记</td>
+</tr>
+<tr>
+<td>跨计数器重置求速率</td>
+<td>速率尖峰</td>
+<td>识别重置</td>
+</tr>
+<tr>
+<td>重复补数</td>
+<td>双倍计数</td>
+<td>event_id 幂等</td>
+</tr>
+<tr>
+<td>只存聚合，不存桶</td>
+<td>无法算全局分位</td>
+<td>保留直方图桶</td>
+</tr>
+<tr>
+<td>无查询预算</td>
+<td>一个查询拖垮平台</td>
+<td>限额 + 超时 + 降级</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>练习</strong>（答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#1-%E6%B7%B1%E5%85%A5%E7%AF%87%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 1 部分</a>）：给 10,000 OSD、每 OSD 80 个指标、15s 采样，估算日样本量、三副本年存储和查询 30 天全量所需的扫描量；设计一个“覆盖率 &lt; 80% 时禁止输出全局均值”的规则。</p>
+<h2 id="3-资产身份与时态拓扑">3. 资产、身份与时态拓扑</h2>
+<h3 id="31-身份比名称重要">3.1 身份比名称重要</h3>
+<p>存储实体的“名字”极不稳定：主机名会改，LUN ID 会重用，OSD 数字编号会在重建后复用，WWN 可能因为换卡改变，容器 Pod 名每次部署都不同。专家系统必须建立<strong>稳定身份 + 别名 + 生命周期</strong>：</p>
+<pre><code class="language-text">entity_id = tenant / cluster_fsid / entity_type / native_uuid
+alias     = 显示名、旧主机名、序列号、WWN、IP、K8s UID
+lifecycle = 上线、维护、下线、退役
+</code></pre>
+<p>如果只能拿到数字编号（例如 <code>osd.11</code>），必须同时保存 UUID 和“该编号在这一代生命周期内有效”的区间。否则历史事故会被错误地归到新设备上。</p>
+<h3 id="32-双时态有效时间与知识时间">3.2 双时态：有效时间与知识时间</h3>
+<p>每条拓扑边的修订记录应包含以下字段：</p>
+<pre><code class="language-text">edge: (src, dst, relation)
+valid_from, valid_to      # 这条关系在现实中何时有效
+observed_at               # 观测系统何时看到它
+known_from, known_to      # 该修订何时对调查者可见
+source, confidence        # 谁说的、有多确定
+</code></pre>
+<p>查询“02:16 时刻的拓扑”要用半开区间：</p>
+<pre><code class="language-sql">SELECT * FROM edge
+WHERE src_id = :workload
+  AND valid_from &lt;= :t AND (valid_to IS NULL OR :t &lt; valid_to)
+  AND known_from &lt;= :knowledge_cutoff
+  AND (known_to IS NULL OR :knowledge_cutoff &lt; known_to);
+</code></pre>
+<p>有效区间决定关系在哪个事发时点成立，知识区间决定调查当时能看到哪个修订。观测时间保留为来源证据。例如 02:20 才得知某边于 02:10 结束，关闭旧修订的知识区间并新增一条含正确结束时间的修订。旧修订保留原有效区间，所以 02:16 的调查仍可复现。实现见<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#71-%E6%9C%80%E5%B0%8F%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B">进阶篇 §7.1</a>。</p>
+<h3 id="33-图模式">3.3 图模式</h3>
+<p>存储依赖图至少有这些节点和边：</p>
+<pre><code class="language-text">Workload → Volume/LUN/FileSystem/Bucket
+Volume   → Pool → PG → OSD → Disk
+Host     → HBA/Port → Switch Port → Array Port → Controller
+Array    → Site/Rack/Power/FailureDomain
+Snapshot/Clone/Replication → Source/Target
+Change   → Target
+Incident → Symptom/Entity
+Runbook  → Product/Version/FaultCode/Symptom
+</code></pre>
+<p>边的语义要明确方向：<code>runs_on</code>、<code>maps_to</code>、<code>replicates_to</code>、<code>depends_on</code>、<code>hosted_by</code>、<code>protects</code>。不要把“网络可达”和“数据依赖”混成一种边；前者影响连通性，后者影响数据完整性。</p>
+<h3 id="34-实现选择">3.4 实现选择</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>适合</th>
+<th>局限</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>关系表 + 区间连接</td>
+<td>资产、CMDB、审计</td>
+<td>多跳查询笨重</td>
+</tr>
+<tr>
+<td>属性图（Neo4j 等）</td>
+<td>多跳、路径、影响范围</td>
+<td>时态要自己建模</td>
+</tr>
+<tr>
+<td>图 + 时序分离</td>
+<td>大规模生产常见</td>
+<td>两套一致性</td>
+</tr>
+<tr>
+<td>向量检索</td>
+<td>文档、工单语义</td>
+<td>不适合精确拓扑</td>
+</tr>
+<tr>
+<td>知识图谱/RDF</td>
+<td>本体、规则推理</td>
+<td>工程门槛高、性能要设计</td>
+</tr>
+</tbody>
+</table></div>
+<p>多数团队不需要一上来就上图数据库。<strong>先把关系表和区间查询做对，再用图库解决多跳和路径问题</strong>，比反过来更稳。</p>
+<h3 id="35-实体解析与证据置信">3.5 实体解析与证据置信</h3>
+<p>真实环境里同一个东西会有多个名字：多路径让一个 LUN 出现多个设备名；NPIV 让一个端口有多个 WWPN；容器里 PVC/PV/StorageClass 多层抽象；第三方阵列的序列号格式各不相同。实体解析要输出置信度，并把“无法解析/歧义/拓扑过期”作为有类型的结果返回，而不是静默丢弃。</p>
+<h3 id="36-事发拓扑重建一个例子">3.6 事发拓扑重建：一个例子</h3>
+<p>事故：02:10:30 维护 <code>osd.11</code> 所在主机，PG 重映射到 <code>osd.17/18</code>，02:14 起订单写 P99 升高。</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>时间</th>
+<th>拓扑版本</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>02:00–02:10:30</td>
+<td><code>orders → vol01 → hot → PG1 → osd.11/12/13</code></td>
+<td>解释维护前路径</td>
+</tr>
+<tr>
+<td>02:10:30 起</td>
+<td><code>orders → vol01 → hot → PG1 → osd.12/17/18</code></td>
+<td>解释 backfill 目标与前台争用</td>
+</tr>
+</tbody>
+</table></div>
+<p>如果 02:16 的报告使用第二版拓扑，它能解释“为什么是 osd.17/18 忙”；如果使用第一版，它会错误地怀疑 osd.11。两版都要保留，并标注有效期。PG 映射还要带 CRUSH map epoch 或快照 ID，否则无法证明“当时确实是这组 OSD”。</p>
+<h3 id="37-知识图谱runbook-也是有时态的实体">3.7 知识图谱：Runbook 也是有时态的实体</h3>
+<p>知识图谱不只是设备关系。Runbook、故障码、产品版本、症状、处置步骤、审批状态、适用机型，都是带版本的实体。一次检索要同时过滤：</p>
+<pre><code class="language-text">产品 = OceanStor Dorado
+版本 ∈ [V6.1.6, V7.0)
+故障码 = 0x...
+审批状态 = 已发布
+生效时间 ≤ 事发时间
+ACL 允许当前用户
+</code></pre>
+<p>冲突的 Runbook 不能“让模型选一个”，而要返回多个版本、适用范围、出处和冲突点。知识图谱的价值在于<strong>把“适用性”变成可查询的边</strong>，而不是把文档塞进向量库。</p>
+<h3 id="38-失败模式">3.8 失败模式</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>失败模式</th>
+<th>后果</th>
+<th>纠正</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>用当前拓扑解释过去</td>
+<td>根因指向错误设备</td>
+<td>双时态 + 快照</td>
+</tr>
+<tr>
+<td>实体 ID 重用</td>
+<td>历史归错</td>
+<td>UUID + 生命周期</td>
+</tr>
+<tr>
+<td>把“无数据”当“无依赖”</td>
+<td>漏掉共享故障域</td>
+<td>显式 <code>unknown</code> 边</td>
+</tr>
+<tr>
+<td>只存一跳关系</td>
+<td>影响范围算小</td>
+<td>多跳路径 + 故障域</td>
+</tr>
+<tr>
+<td>拓扑只来自一个来源</td>
+<td>厂商视角偏差</td>
+<td>多源交叉 + 置信度</td>
+</tr>
+<tr>
+<td>Runbook 不标版本</td>
+<td>用错步骤</td>
+<td>版本化 + 生效时间</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>练习</strong>（答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#1-%E6%B7%B1%E5%85%A5%E7%AF%87%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 1 部分</a>）：把实验室的 T01/T02 两条拓扑写成区间表；再写出查询“02:16 可见、02:10:30 有效”的 SQL，并解释为什么不能只用 <code>valid_from</code>。</p>
+<h2 id="4-异常检测与告警工程">4. 异常检测与告警工程</h2>
+<h3 id="41-先选信号再选算法">4.1 先选信号，再选算法</h3>
+<p>异常检测的第一问题不是“用什么模型”，而是“这个信号能不能支撑这个结论”。</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>信号</th>
+<th>适合的检测</th>
+<th>不适合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>低基数、平稳指标</td>
+<td>阈值、滚动基线、CUSUM</td>
+<td>深度模型（样本不够）</td>
+</tr>
+<tr>
+<td>强季节、日/周周期</td>
+<td>STL 分解、季节基线</td>
+<td>固定阈值</td>
+</tr>
+<tr>
+<td>多指标组合异常</td>
+<td>隔离森林、矩阵画像、AutoEncoder</td>
+<td>单指标阈值</td>
+</tr>
+<tr>
+<td>计数器/速率</td>
+<td>先做重置处理，再检测</td>
+<td>直接对原始计数器建模</td>
+</tr>
+<tr>
+<td>事件/日志</td>
+<td>模板、频次、序列模式</td>
+<td>只看单条日志</td>
+</tr>
+<tr>
+<td>高基数实体</td>
+<td>分组基线 + 分层模型</td>
+<td>全局一个阈值</td>
+</tr>
+</tbody>
+</table></div>
+<p>规则不是“低级”，而是<strong>可解释、可审计、可回归</strong>的基线。任何 ML 检测都应该先和规则并跑，证明它在同一事故集上更好，否则只会增加运维负担。</p>
+<h3 id="42-稳健基线中位数与-mad">4.2 稳健基线：中位数与 MAD</h3>
+<p>对一组基线样本 <code>x1..xn</code>：</p>
+<pre><code class="language-text">median = 中位数(x)
+MAD    = 中位数(|xi − median|)
+z      = 0.6745 × (x − median) / max(MAD, ε)
+</code></pre>
+<p>0.6745 让 MAD 在正态分布下与标准差可比。MAD 为 0 时（例如量化到 1 ms 的平稳序列），分母要用 ε 或退化为 IQR，否则一个 1 ms 的抖动会产生巨大的 z。</p>
+<p>用实验室数据验算：M01–M05 的 P99 为 5, 6, 5, 7, 6，中位数 6，绝对偏差 1, 0, 1, 1, 0，MAD = 1。M06 = 33 ms：</p>
+<pre><code class="language-text">z = 0.6745 × (33 − 6) / 1 = 18.21
+</code></pre>
+<p>M07 = 46 ms：</p>
+<pre><code class="language-text">z = 0.6745 × (46 − 6) / 1 = 26.98
+</code></pre>
+<p>数值上很显著，但要注意：<strong>z 大不等于影响大</strong>。如果基线是 0.1 ms、MAD 是 0.01 ms，涨到 0.2 ms 也会有巨大的 z，但业务可能无感。所以还要加<strong>效应量</strong>门槛（例如绝对增量 ≥ 5 ms 或相对倍数 ≥ 2）和<strong>持续窗口</strong>（连续 2 个采样点）。实验室里 M06 已超阈值，M07 再次超过，才构成“持续异常”。</p>
+<h3 id="43-变化点与累积和">4.3 变化点与累积和</h3>
+<p>CUSUM 适合检测“均值发生小幅持续偏移”：</p>
+<pre><code class="language-text">S_t = max(0, S_{t−1} + (x_t − μ0 − k))
+若 S_t &gt; h，报警
+</code></pre>
+<p><code>k</code> 是容忍偏移（通常取 0.5σ），<code>h</code> 是决策阈值（通常 4–5σ）。它对缓慢劣化（例如 SSD 磨损、端口误码、容量泄漏）比单点 z 更敏感。PELT/Bayesian change point 适合离线分段，用来回答“这次事故从哪一刻开始”。</p>
+<h3 id="44-多重检验50000-条序列的假阳性">4.4 多重检验：50,000 条序列的假阳性</h3>
+<p>如果 50,000 条序列相互独立、服从正态，使用双侧 3.5σ 阈值，单条序列单次误报概率约 0.000465。每采样一次，期望误报：</p>
+<pre><code class="language-text">50,000 × 0.000465 ≈ 23.3 条/次
+</code></pre>
+<p>15 秒采样对应每天约 13.4 万次单点超限。给定相同的边际误报概率，序列间相关性会改变超限聚集程度，期望次数仍可相加。持续窗口与告警聚合会改变实际通知量，连续采样相关时应通过正常窗口回放估计。</p>
+<p>常用控制手段：</p>
+<ul>
+<li>连续 N 个点超限才报（降低瞬时噪声）。</li>
+<li>要求效应量超过业务可感知阈值。</li>
+<li>按实体组做分层检验，再用 FDR/Bonferroni 控制组内误报。</li>
+<li>对同源序列做聚合，先在组级别检测，再下钻。</li>
+<li>维护“已知良性模式”白名单，但要有过期时间和审计。</li>
+</ul>
+<h3 id="45-告警聚合与因果抑制">4.5 告警聚合与因果抑制</h3>
+<p>聚合的目标不是“少报”，而是“一页纸说清一个事故”。可以按三个维度合并：</p>
+<ul>
+<li><strong>拓扑</strong>：同一故障域、同一共享依赖、同一路径。</li>
+<li><strong>时间</strong>：窗口重叠、传播延迟在合理范围内。</li>
+<li><strong>因果</strong>：父告警/子告警、上游/下游、根因/衍生。</li>
+</ul>
+<p>但聚合有风险：把两个独立根因合成一个，会掩盖第二个故障。因此要保留原始告警 ID、聚合规则版本和“为什么合并”的理由。DME 的告警规则里有屏蔽、闪断/振荡、汇聚、相关性、自动确认、重定义、远程通知等，这是很成熟的产品化做法；但相关性规则是用户定义的父子关系，不是自动学出来的因果图。详见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html#11-%E5%8D%8E%E4%B8%BA-dme%E8%AE%BE%E5%A4%87%E4%BE%A7%E7%AE%A1%E7%90%86%E9%9D%A2%E7%9A%84%E5%AE%8C%E6%95%B4%E6%95%B0%E6%8D%AE%E9%80%9A%E8%B7%AF">外部资料拆解 §11</a>。</p>
+<h3 id="46-影响分级用-slo-而不是拍脑袋">4.6 影响分级：用 SLO 而不是拍脑袋</h3>
+<p>告警级别应该由业务影响决定，而不是设备型号。最简单的做法是看 SLO 燃烧率：</p>
+<pre><code class="language-text">severity = P1  若 1h burn_rate ≥ 14.4 且 5m burn_rate ≥ 14.4
+         = P2  若 6h burn_rate ≥ 6
+         = P3  若 3d burn_rate ≥ 1
+</code></pre>
+<p>再叠加冗余状态：如果业务 SLO 还在，但冗余已经 degraded，应该是“高优先级修复、非事故”；如果业务 SLO 破了且冗余不足，才是“事故”。这比“硬盘告警 = P1”合理得多。</p>
+<h3 id="47-失败模式">4.7 失败模式</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>失败模式</th>
+<th>后果</th>
+<th>纠正</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>固定阈值跨工作负载</td>
+<td>误报/漏报</td>
+<td>同组基线 + 分层</td>
+</tr>
+<tr>
+<td>忽略低流量</td>
+<td>1 个请求触发 P1</td>
+<td>最小样本量</td>
+</tr>
+<tr>
+<td>单点 z 无持续性</td>
+<td>毛刺翻页</td>
+<td>连续窗口 + 效应量</td>
+</tr>
+<tr>
+<td>聚合过度</td>
+<td>多根因被合并</td>
+<td>保留原始 ID + 理由</td>
+</tr>
+<tr>
+<td>告警级别按设备</td>
+<td>优先级失真</td>
+<td>按 SLO/冗余分级</td>
+</tr>
+<tr>
+<td>只优化召回</td>
+<td>运维被淹没</td>
+<td>告警预算 + 精确率</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>练习</strong>（答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#1-%E6%B7%B1%E5%85%A5%E7%AF%87%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 1 部分</a>）：对实验室 M01–M08 计算 z、好请求比例和覆盖率；再假设 50,000 条序列，估算 3.5σ 单点阈值的日误报量，并设计一个把误报降到 100 条/天以内的规则组合。</p>
+<h2 id="5-预测容量性能与介质">5. 预测：容量、性能与介质</h2>
+<h3 id="51-容量预测的账本">5.1 容量预测的账本</h3>
+<p>容量预测最常见的错误不是模型，而是<strong>口径</strong>。至少分清：</p>
+<pre><code class="language-text">raw       = 裸容量
+usable    = raw × 冗余效率 × (1 − 预留)
+usable    = 副本：raw / 副本数
+          = EC k+m：raw × k / (k + m)
+effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全水位
+</code></pre>
+<p>例子：10 个节点 × 12 块 20 TB = 2,400 TB raw。EC 8+2 的效率是 80%，可用 1,920 TB；再留 5% 安全水位，有效 1,824 TB。若当前已用 1,500 TB、净增 6 TB/天：</p>
+<pre><code class="language-text">到 95% 水位的天数 = (1,824 × 0.95 − 1,500) / 6 ≈ 38.8 天
+</code></pre>
+<p>如果净增是 3 或 9 TB/天，分别是 77.6 天和 25.9 天。<strong>报区间，不报单点</strong>；并把“扩容/清理/生命周期变更”作为切换点，切换后重新拟合。</p>
+<h3 id="52-模型与回测">5.2 模型与回测</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>适合</th>
+<th>注意</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>稳健线性回归</td>
+<td>稳定增长</td>
+<td>对突变不敏感</td>
+</tr>
+<tr>
+<td>分位数回归</td>
+<td>要区间</td>
+<td>需要足够样本</td>
+</tr>
+<tr>
+<td>ARIMA/SARIMA</td>
+<td>自相关、季节</td>
+<td>参数敏感、解释弱</td>
+</tr>
+<tr>
+<td>季节分解 + 趋势</td>
+<td>日/周周期</td>
+<td>需要至少数周</td>
+</tr>
+<tr>
+<td>结构模型/Prophet 类</td>
+<td>节假日、变点</td>
+<td>不要盲信默认</td>
+</tr>
+<tr>
+<td>集成/融合</td>
+<td>多模式</td>
+<td>可解释性下降</td>
+</tr>
+</tbody>
+</table></div>
+<p>回测要用<strong>滚动原点</strong>（rolling origin）：在历史每个时点只用当时可见的数据训练，预测未来 H 天，再向前滚动。指标：</p>
+<pre><code class="language-text">MAE / MAPE / RMSE        # 点预测
+pinball loss             # 分位预测
+区间覆盖率               # 80%/95% 区间是否覆盖
+跨阈值时间误差           # 预测“何时到 90%”的误差天数
+</code></pre>
+<p>随机切分会让未来信息泄漏到训练集，指标虚高。</p>
+<h3 id="53-性能预测与动态阈值">5.3 性能预测与动态阈值</h3>
+<p>性能预测比容量难，因为负载会变、季节性强、故障会突变。常见做法是：</p>
+<ul>
+<li>用过去 1 个月预测未来 2 周（DME 白皮书披露的做法）。</li>
+<li>用过去 30 天预测未来 1 天，做“预测对比”健康扣分。</li>
+<li>用同工作负载、同时段的分位数作为动态阈值。</li>
+<li>对突变用变化点检测，而不是让模型硬拟合。</li>
+</ul>
+<p>预测的价值不是“精确到毫秒”，而是<strong>提前发现趋势性劣化</strong>：缓存命中率持续下降、端口误码上升、GC 时间变长、容量斜率变陡。这些都比单点延迟更有预警意义。</p>
+<h3 id="54-硬盘故障预测标签截尾与竞争风险">5.4 硬盘故障预测：标签、截尾与竞争风险</h3>
+<p>硬盘预测的第一个问题是标签：</p>
+<pre><code class="language-text">样本 = (disk_id, day t, 当时可见的特征)
+正例 = 该盘在 (t, t+H] 内发生“故障事件”
+负例 = 该盘在 (t, t+H] 内没有故障，且观测未截尾
+排除 = 主动退役、迁移、数据销毁、观测结束
+</code></pre>
+<p>如果“主动换盘”被当成故障，模型会学到运维策略；如果观测结束的盘被当成负例，会低估风险；如果同一块盘的相邻日期同时进入训练和测试，会泄漏。正确切分是<strong>按设备 + 按时间</strong>：训练集和测试集不能共享同一块盘的同一次故障。</p>
+<p>特征用当时可见的 SMART/NVMe 指标及其变化率：重分配扇区、待定扇区、不可纠正错误、命令超时、CRC 错误、磨损、通电小时、温度、型号、固件、批次。树模型（GBDT）通常比 Logistic 回归强，但可解释性和校准要单独做。</p>
+<p>评测不要只看 AUC。类别极不平衡时，看：</p>
+<pre><code class="language-text">PR-AUC
+召回率 @ 告警预算
+每千盘日误报数
+提前量分布（lead time）
+概率校准（Brier / 校准曲线）
+</code></pre>
+<p><strong>告警预算</strong>的算法：10,000 块盘，年故障率 2% → 每年 200 次故障，约 0.55 次/天。若召回 80%、精确率 20%：</p>
+<pre><code class="language-text">TP/天 = 0.55 × 0.8 = 0.44
+总告警/天 = 0.44 / 0.2 = 2.2
+误报/天 = 1.76
+</code></pre>
+<p>如果精确率只有 5%，总告警 8.8 条/天，运维就会开始忽略。<strong>先定运维能处理的告警量，再反推阈值</strong>，比追求高召回更现实。</p>
+<h3 id="55-产品预测能力的读法">5.5 产品预测能力的读法</h3>
+<p>DME 25.1.0 白皮书披露了几组不同口径的能力，读的时候不要混为一谈：</p>
+<ul>
+<li>容量：最多用过去 180 天，预测未来 1 年，日粒度；安装后需 14 天且至少 11 天有效数据；算法是 SVM（多核）、ARIMA、对数回归、线性回归的融合。</li>
+<li>性能：过去 1 个月预测未来 2 周；健康度里用过去 30 天预测未来 1 天做“预测对比”；算法是 Lasso、岭回归、随机森林的融合。</li>
+<li>硬盘健康度：每天凌晨预测未来 14 天健康度，低于 60 分判为风险盘；支持 SSD、NVMe SSD、SATA/SAS HDD、NL-SAS。</li>
+<li>硬盘故障：对希捷/日立 SAS HDD，基于 10 天 SMART 预测未来 30 天是否故障。</li>
+<li>DME IQ 页面：提前 14 天硬盘故障、提前 2 个月性能趋势、提前 365 天容量趋势。</li>
+</ul>
+<p>这些数字的<strong>定义、分母、故障类型、误报率、测试集</strong>都没有公开，不能直接当作采购验收值。尤其“健康度 60 分”是产品评分，不是校准后的故障概率；“14 天”和“30 天”是不同介质、不同模型、不同目标，不能相加或互换。详见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html#11-%E5%8D%8E%E4%B8%BA-dme%E8%AE%BE%E5%A4%87%E4%BE%A7%E7%AE%A1%E7%90%86%E9%9D%A2%E7%9A%84%E5%AE%8C%E6%95%B4%E6%95%B0%E6%8D%AE%E9%80%9A%E8%B7%AF">外部资料拆解 §11</a>。</p>
+<h3 id="56-漂移与反馈回路">5.6 漂移与反馈回路</h3>
+<p>模型上线后，数据分布会变：新固件、新批次、新 workload、新业务峰谷、运维策略变化。监控：</p>
+<ul>
+<li>特征分布漂移（PSI/KL/KS）。</li>
+<li>预测分布漂移。</li>
+<li>校准漂移（预测 20% 的盘实际故障率是多少）。</li>
+<li>告警处置结果（真故障/误报/主动更换）。</li>
+</ul>
+<p>反馈回路很危险：模型报警 → 运维换盘 → 该盘不再故障 → 标签变成“误报”。如果不记录“因告警而更换”，模型会被自己的行动误导。必须把“干预”作为单独标签。</p>
+<h3 id="57-失败模式">5.7 失败模式</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>失败模式</th>
+<th>后果</th>
+<th>纠正</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>容量口径混用</td>
+<td>提前/延后扩容</td>
+<td>raw/usable/effective 分开</td>
+</tr>
+<tr>
+<td>随机切分</td>
+<td>指标虚高</td>
+<td>按时间/设备切分</td>
+</tr>
+<tr>
+<td>主动换盘当故障</td>
+<td>学到运维策略</td>
+<td>单独标签/竞争风险</td>
+</tr>
+<tr>
+<td>只看 AUC</td>
+<td>高误报</td>
+<td>PR-AUC + 告警预算</td>
+</tr>
+<tr>
+<td>预测无区间</td>
+<td>决策过度自信</td>
+<td>分位预测 + 回测</td>
+</tr>
+<tr>
+<td>不监控漂移</td>
+<td>慢慢失效</td>
+<td>漂移 + 校准监控</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>练习</strong>（答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#1-%E6%B7%B1%E5%85%A5%E7%AF%87%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 1 部分</a>）：用 2,400 TB raw、EC 8+2、5% 水位、已用 1,500 TB、净增 6 TB/天，算三情景到 95% 水位的天数；再用 10,000 块盘、AFR 2%、召回 80%、精确率 20%，算每日告警量，并说明运维是否接得住。</p>
+<h2 id="6-根因证据与反证">6. 根因、证据与反证</h2>
+<h3 id="61-相关干预与反事实">6.1 相关、干预与反事实</h3>
+<p>存储运维没有随机对照试验，但有三层证据强度：</p>
+<ol>
+<li><strong>相关</strong>：A 和 B 同时异常。最弱，容易把共同原因当成因果。</li>
+<li><strong>干预</strong>：改变 A 后 B 按预期变化。强，但现场干预有风险，通常只在受控窗口做。</li>
+<li><strong>反事实</strong>：如果没做 A，B 会怎样。最强，但需要模型或对照，不能直接观测。</li>
+</ol>
+<p>因此根因报告不应该只给“最可能”，还要给“如果这个假设成立，应该还能看到什么；如果看到相反结果，假设就被推翻”。这就是可证伪性。</p>
+<h3 id="62-候选生成">6.2 候选生成</h3>
+<p>候选不是从所有实体里猜，而是从约束里收窄：</p>
+<pre><code class="language-text">候选 = 时间上先于症状的变更
+     ∪ 事发拓扑上可达的实体
+     ∪ 同故障域内共现异常的实体
+     ∪ 已知故障树/历史工单匹配的模式
+     ∪ 影响范围与对照不吻合的共享依赖
+</code></pre>
+<p>给传播留出合理的时间窗口。维护于 02:10:30 生效，02:11 开始 backfill，02:14 结束的窗口观测到尾延迟上升。02:18 收到晚到日志后，才可在复盘中补上 02:12:30 的应用积压时间。若可靠证据显示 02:09 已开始变慢，就要重新检查触发事件和时钟。</p>
+<h3 id="63-证据评分">6.3 证据评分</h3>
+<p>给每个候选打四项分，再保留原始证据：</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>问题</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>时间领先</td>
+<td>候选是否先于症状？</td>
+<td>02:16 可看到 02:14 窗口异常；02:18 后可补上 02:12:30 的积压日志</td>
+</tr>
+<tr>
+<td>路径可达</td>
+<td>沿拓扑能否传到受影响实体？</td>
+<td>PG 重映射到 osd.17/18</td>
+</tr>
+<tr>
+<td>剂量响应</td>
+<td>强度/范围是否与症状吻合？</td>
+<td>backfill 615 MiB/s 时 P99 46 ms</td>
+</tr>
+<tr>
+<td>特异性</td>
+<td>是否能解释“为什么是这些而不是那些”？</td>
+<td>只有 hot 池受影响，cold 池正常</td>
+</tr>
+<tr>
+<td>对照</td>
+<td>未受影响的对照是否符合预期？</td>
+<td>audit 走另一组 OSD，SLO 正常</td>
+</tr>
+<tr>
+<td>干预响应</td>
+<td>改变后是否按预期恢复？</td>
+<td>调度调整后 P99 下降、恢复继续</td>
+</tr>
+</tbody>
+</table></div>
+<p>评分可以是加权和，也可以是贝叶斯网络的似然；但<strong>不要把加权和直接叫“概率”</strong>，除非做过校准。权重应该从回放集里学，而不是拍脑袋。</p>
+<h3 id="64-故障树因果图与-llm">6.4 故障树、因果图与 LLM</h3>
+<p>三者不是替代关系：</p>
+<ul>
+<li><strong>故障树</strong>：专家把“现象 → 子现象 → 根因”写成树，适合已知、边界清晰的设备故障；可审计，但覆盖有限。</li>
+<li><strong>因果图</strong>：节点是变量/事件，边是假设的因果机制；适合表达共同原因、混杂和传播；需要领域知识维护。</li>
+<li><strong>LLM</strong>：适合从非结构化日志/工单里提取线索、生成假设、组织报告；不适合单独承担因果判断。</li>
+</ul>
+<p>DME 的“智能分析”把 I/O 全路径时延分解、资源瓶颈、故障分析、亚健康、配置分析、故障树结合起来，输出根因、传播和修复建议；这是典型的“规则/故障树 + 产品知识”路线，优势是可解释、可落地，边界是覆盖场景有限。详见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html#11-%E5%8D%8E%E4%B8%BA-dme%E8%AE%BE%E5%A4%87%E4%BE%A7%E7%AE%A1%E7%90%86%E9%9D%A2%E7%9A%84%E5%AE%8C%E6%95%B4%E6%95%B0%E6%8D%AE%E9%80%9A%E8%B7%AF">外部资料拆解 §11</a>。</p>
+<h3 id="65-鉴别诊断模板">6.5 鉴别诊断模板</h3>
+<p>每个假设都写成可检验的形式：</p>
+<pre><code class="language-text">假设 H1：维护导致的 backfill 与前台写争用
+机制：OSD 重映射 → backfill 读旧副本、写新副本 → 后端队列上升 → 前台 P99 上升
+预测：受影响 OSD 队列上升；backfill 速率与 P99 同向；停止/限速 backfill 后 P99 下降；其他池不受影响
+02:16 可见的支持证据：E01/E02、T02、M06/M07
+处置后补充检验：E05、M09–M11
+反证/竞争：备份流量（E03 在另一站点，T03 无共享路径）；网络（重传未升）
+鉴别检查：交换机端口丢包、其他客户端、设备服务耗时
+停止条件：若限速后 P99 不降，H1 降级
+</code></pre>
+<p>这比“根因是 backfill”有用得多，因为它告诉值班人员<strong>下一步查什么、什么结果会改变结论</strong>。</p>
+<h3 id="66-三个深度触发机制系统性">6.6 三个深度：触发、机制、系统性</h3>
+<p>同一个事故要分三层写，否则改进会停在“重启解决”：</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>问题</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>触发</td>
+<td>什么事件启动了链条？</td>
+<td>维护让 osd.11 下线</td>
+</tr>
+<tr>
+<td>机制</td>
+<td>为什么会导致症状？</td>
+<td>backfill 与前台写争用后端</td>
+</tr>
+<tr>
+<td>系统性</td>
+<td>为什么系统允许这件事发生？</td>
+<td>维护前没有恢复预算/SLO 检查</td>
+</tr>
+</tbody>
+</table></div>
+<p>每一层独立引用证据。系统性原因往往没有单一证据，需要流程/配置/历史事故的支持；不能把它写成“根因”却不给证据。</p>
+<h3 id="67-评测">6.7 评测</h3>
+<p>根因评测至少看：</p>
+<pre><code class="language-text">Top-1 / Top-3 根因实体与类型
+候选召回率（正确根因是否在候选里）
+证据精确率/召回率（引用的证据是否真的支持结论）
+首次定位时间（TTL）
+结论强度校准（说“高置信”的时候是否真的更准）
+</code></pre>
+<p>只评“答案对不对”会奖励猜中；要同时评“证据对不对”和“该沉默时是否沉默”。</p>
+<h3 id="68-失败模式">6.8 失败模式</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>失败模式</th>
+<th>后果</th>
+<th>纠正</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>把共现当因果</td>
+<td>根因错</td>
+<td>时间 + 路径 + 对照</td>
+</tr>
+<tr>
+<td>只找支持证据</td>
+<td>确认偏误</td>
+<td>强制写反证</td>
+</tr>
+<tr>
+<td>用事后数据</td>
+<td>不可复现</td>
+<td>知识时间截断</td>
+</tr>
+<tr>
+<td>症状当根因</td>
+<td>反复发生</td>
+<td>三层深度</td>
+</tr>
+<tr>
+<td>置信度无校准</td>
+<td>决策失真</td>
+<td>回放校准</td>
+</tr>
+<tr>
+<td>只给一个答案</td>
+<td>漏掉竞争假设</td>
+<td>鉴别诊断</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>练习</strong>（答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#1-%E6%B7%B1%E5%85%A5%E7%AF%87%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 1 部分</a>）：对实验室事故写 H1（backfill 争用）、H2（备份流量）、H3（网络）三个假设，各写两条支持、两条反证、一个鉴别检查和一个停止条件。</p>
+<h2 id="7-agent工具契约与-rag">7. Agent、工具契约与 RAG</h2>
+<h3 id="71-有界状态机而不是自由聊天">7.1 有界状态机，而不是自由聊天</h3>
+<p>把调查实现为有界状态机：</p>
+<pre><code class="language-text">初始化（症状、窗口、资产、权限）
+  → 查采集健康/覆盖率
+  → 查业务影响（SLO、错误、范围）
+  → 查拓扑（事发时刻）
+  → 查变更/事件
+  → 生成候选假设
+  → 对每个假设选择最有区分度的查询
+  → 证据足够/预算耗尽/需要人工 → 输出
+</code></pre>
+<p>每一步都要有预算：最大工具调用数、最大时间窗、最大返回行数、最大 token、最大并行度。没有预算的 Agent 会在大规模环境里把查询打爆。</p>
+<h3 id="72-工具契约">7.2 工具契约</h3>
+<p>一个好工具不是“能查指标”，而是“查询语义明确、结果可引用、失败可解释”。最少包含：</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;query_metric&quot;,
+  &quot;description&quot;: &quot;按实体、指标、时间窗查询聚合指标；返回样本、单位、缺失区间和查询 ID&quot;,
+  &quot;input&quot;: {
+    &quot;entity_id&quot;: &quot;string&quot;,
+    &quot;metric&quot;: &quot;enum&quot;,
+    &quot;start&quot;: &quot;RFC3339&quot;,
+    &quot;end&quot;: &quot;RFC3339&quot;,
+    &quot;step&quot;: &quot;duration&quot;,
+    &quot;aggregation&quot;: &quot;enum&quot;
+  },
+  &quot;output&quot;: {
+    &quot;unit&quot;: &quot;string&quot;,
+    &quot;samples&quot;: &quot;array&quot;,
+    &quot;missing_intervals&quot;: &quot;array&quot;,
+    &quot;coverage&quot;: &quot;number&quot;,
+    &quot;query_id&quot;: &quot;string&quot;,
+    &quot;source&quot;: &quot;string&quot;
+  },
+  &quot;constraints&quot;: {
+    &quot;max_range&quot;: &quot;7d&quot;,
+    &quot;max_samples&quot;: 10000,
+    &quot;read_only&quot;: true
+  }
+}
+</code></pre>
+<p>关键点：</p>
+<ul>
+<li>时间参数用绝对时间 + 时区，不用“最近一小时”这种相对语义。</li>
+<li>返回必须带单位、缺失区间、覆盖率和查询 ID；否则证据不可复核。</li>
+<li>枚举值要稳定；不要让模型自由拼指标名。</li>
+<li>错误要分类型：无权限、无数据、超时、参数错、后端错；不同错误触发不同下一步。</li>
+<li>写工具单独授权，默认不暴露。</li>
+</ul>
+<h3 id="73-mcp把工具变成可组合的协议">7.3 MCP：把工具变成可组合的协议</h3>
+<p>Model Context Protocol（MCP）用 JSON-RPC 连接模型客户端和工具服务端，通常暴露 tools、resources、prompts。它的价值不是“又一个 API”，而是<strong>工具的描述、调用和权限可以标准化</strong>，不同 Agent 可以复用同一套存储工具。</p>
+<p>截至本资料核验日，公开资料里的存储 MCP 状态：</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>系统</th>
+<th>公开状态</th>
+<th>范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pure1 Manage MCP</td>
+<td>已正式可用</td>
+<td>只读管理面查询</td>
+</tr>
+<tr>
+<td>Fusion MCP</td>
+<td>开源，文档公开</td>
+<td>阵列、卷、文件系统、工作负载、拓扑；部分性能查询依赖直连令牌</td>
+</tr>
+<tr>
+<td>NetApp DII MCP</td>
+<td>Preview（2026-09 文档）</td>
+<td>租户内只读：性能、容量、日志、告警、采集健康</td>
+</tr>
+<tr>
+<td>华为 DME</td>
+<td>公开材料未见 MCP 服务</td>
+<td>北向 RESTful/SNMP/Ansible/CSI；故障智能体可通过北向 API 接入跨域智能体</td>
+</tr>
+</tbody>
+</table></div>
+<p>DME 的北向开放是真实的，但它不是 MCP：没有公开的工具清单、JSON Schema、资源模型和 Agent 侧发现机制。要接入通用 Agent，通常需要自己写适配层。详见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html#11-%E5%8D%8E%E4%B8%BA-dme%E8%AE%BE%E5%A4%87%E4%BE%A7%E7%AE%A1%E7%90%86%E9%9D%A2%E7%9A%84%E5%AE%8C%E6%95%B4%E6%95%B0%E6%8D%AE%E9%80%9A%E8%B7%AF">外部资料拆解 §11</a>、§6、§8。</p>
+<h3 id="74-rag检索的是适用知识不是相似文本">7.4 RAG：检索的是“适用知识”，不是“相似文本”</h3>
+<p>RAG 的失败大多不是向量模型，而是<strong>过滤条件</strong>。一个存储 Runbook 的检索至少要过滤：</p>
+<pre><code class="language-text">租户/ACL → 产品 → 型号 → 版本区间 → 故障码/症状 → 审批状态 → 生效时间
+</code></pre>
+<p>然后再做关键词 + 向量混合召回，再重排。分块要保留章节标题、表格、图注和原文链接；故障码用精确匹配，工单/复盘用语义召回。冲突的文档要返回多个候选和冲突点，不要强行合并。</p>
+<p>GraphRAG 适合“实体关系 + 多跳”的问题（例如“这个型号的控制器在哪个版本修复了这个问题”），但不适合替代精确的配置查询。知识图谱和向量库是互补的，不是二选一。</p>
+<h3 id="75-上下文与防幻觉">7.5 上下文与防幻觉</h3>
+<p>把证据作为结构化对象传给模型，而不是一段散文：</p>
+<pre><code class="language-text">evidence_id, query_id, source, entity_id, window,
+observed_at, quality, payload_ref, summary
+</code></pre>
+<p>报告必须：</p>
+<ul>
+<li>每个事实引用 <code>evidence_id</code>。</li>
+<li>区分“观测到的事实”和“推断”。</li>
+<li>明确知识截止时间；不能引用晚于截止时间的数据。</li>
+<li>数据不足时输出“未决 + 下一步查询”，而不是编一个答案。</li>
+<li>数值做单位/量纲校验（ms vs s、MiB vs MB、IOPS vs 带宽）。</li>
+</ul>
+<p>验证层要做：引用存在性、引用与结论的一致性、时间边界、数值范围、权限范围、输出 schema。模型自评不能替代外部校验。</p>
+<h3 id="76-安全日志和文档也是不可信输入">7.6 安全：日志和文档也是不可信输入</h3>
+<p>Agent 读到的告警描述、日志、文件名、工单、Runbook 都可能包含提示注入。防护：</p>
+<ul>
+<li>工具输出标记为 <code>untrusted_data</code>，不进入系统指令。</li>
+<li>工具白名单 + 参数校验 + 只读默认。</li>
+<li>写操作走独立通道、人工审批、幂等键、回滚。</li>
+<li>沙箱/网络白名单；限制可访问的租户和实体。</li>
+<li>全链路审计：谁、什么时候、用什么工具、看了什么、改了什么。</li>
+</ul>
+<h3 id="77-评测-agent">7.7 评测 Agent</h3>
+<p>不能只看最终答案。至少记录：</p>
+<pre><code class="language-text">任务成功率 / 根因 Top-k
+证据引用正确率
+工具调用次数与成本
+调查时长（P50/P95）
+越权尝试拒绝率
+缺数据时正确暂缓率
+轨迹可复现性（同一快照重跑是否一致）
+</code></pre>
+<p>同一组快照，比较“规则”“规则 + 统计”“Agent + 工具”“Agent + 工具 + RAG + 拓扑”，做消融，才能知道增益来自哪里。</p>
+<h3 id="78-失败模式">7.8 失败模式</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>失败模式</th>
+<th>后果</th>
+<th>纠正</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工具语义模糊</td>
+<td>模型乱查</td>
+<td>严格 schema + 枚举</td>
+</tr>
+<tr>
+<td>无预算</td>
+<td>查询风暴</td>
+<td>步数/行数/超时</td>
+</tr>
+<tr>
+<td>RAG 不过滤版本</td>
+<td>用错手册</td>
+<td>版本/ACL/生效时间</td>
+</tr>
+<tr>
+<td>证据不落 ID</td>
+<td>无法复核</td>
+<td>证据对象 + 查询 ID</td>
+</tr>
+<tr>
+<td>提示注入</td>
+<td>越权/错误动作</td>
+<td>不可信标记 + 白名单</td>
+</tr>
+<tr>
+<td>只评答案</td>
+<td>奖励瞎猜</td>
+<td>轨迹 + 证据 + 沉默</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>练习</strong>（答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#1-%E6%B7%B1%E5%85%A5%E7%AF%87%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 1 部分</a>）：为 <code>get_collection_status</code>、<code>get_topology_at</code>、<code>query_metric</code>、<code>list_changes</code>、<code>search_runbooks</code> 写五份工具契约；再用同一份 02:16 快照，比较“直接问模型”和“工具约束 + 证据 ID”的回答差异。</p>
+<h2 id="8-处置验证与回放评测">8. 处置、验证与回放评测</h2>
+<h3 id="81-动作分级与授权">8.1 动作分级与授权</h3>
+<p>存储动作的代价不对称，必须分级：</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>级别</th>
+<th>例子</th>
+<th>默认授权</th>
+<th>必要控制</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A0 只读</td>
+<td>查指标、拓扑、日志</td>
+<td>Agent 自主</td>
+<td>租户/实体范围</td>
+</tr>
+<tr>
+<td>A1 建议</td>
+<td>生成变更方案</td>
+<td>Agent 自主</td>
+<td>证据、影响范围</td>
+</tr>
+<tr>
+<td>A2 可逆配置</td>
+<td>QoS 调整、分级策略、限速</td>
+<td>人工一键批准</td>
+<td>幂等、回滚、观察窗</td>
+</tr>
+<tr>
+<td>A3 状态变更</td>
+<td>主从切换、迁移、扩容</td>
+<td>双人审批 + 窗口</td>
+<td>预检、回滚、双验收</td>
+</tr>
+<tr>
+<td>A4 破坏性</td>
+<td>重启、隔离盘/端口、删除</td>
+<td>严格人工 + 厂商支持</td>
+<td>爆炸半径、熔断、审计</td>
+</tr>
+</tbody>
+</table></div>
+<p>Agent 默认只到 A0/A1；A2 以上必须是独立通道，不能和“聊天”共用一个工具权限。</p>
+<h3 id="82-变更契约">8.2 变更契约</h3>
+<p>每次处置请求至少包含：</p>
+<pre><code class="language-text">目标实体 + 当前版本/配置哈希
+变更前后预期（指标、状态、冗余）
+前置条件（健康、冗余、窗口、无冲突变更）
+幂等键
+回滚方案与回滚触发条件
+观察窗口与成功/失败判据
+审批人、执行人、审计 ID
+</code></pre>
+<p>执行前再次读取状态；如果拓扑、授权、冗余条件已变，重新评估。执行后先看业务 SLO，再看耐久性。</p>
+<h3 id="83-存储特有的验证">8.3 存储特有的验证</h3>
+<p>“P99 降了”不等于“修好了”。至少双验收：</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>指标</th>
+<th>失败例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>业务</td>
+<td>好请求比例、错误率、P99、吞吐</td>
+<td>降级 QoS 让延迟好看，但业务被限速</td>
+</tr>
+<tr>
+<td>冗余</td>
+<td>degraded PG、副本同步、重建速率、校验错误</td>
+<td>前台恢复，但副本还没同步</td>
+</tr>
+<tr>
+<td>数据</td>
+<td>快照年龄、复制 lag、备份成功、一致性</td>
+<td>主可用，备不可用</td>
+</tr>
+<tr>
+<td>容量</td>
+<td>水位、预留、增长斜率</td>
+<td>清理了日志，但快照仍在涨</td>
+</tr>
+<tr>
+<td>配置</td>
+<td>版本、参数、许可、拓扑</td>
+<td>改了调度，但重启后回退</td>
+</tr>
+</tbody>
+</table></div>
+<p>Ceph 场景：p99 恢复后继续看 <code>degraded_pgs</code>、恢复速率、scrub 错误、OSD 是否再次 down。DME/ Dorado 场景：看控制器 CPU、缓存命中、端口误码、复制/双活状态、硬盘健康。不同产品指标不同，但“业务 + 冗余”的双验收是通用的。</p>
+<h3 id="84-从处置回到学习">8.4 从处置回到学习</h3>
+<p>每次事故要写回事故库：</p>
+<pre><code class="language-text">症状、时间线、候选假设、证据、反证
+实际根因、人工裁定、处置、验证结果
+哪些证据缺失、哪些查询最有区分度
+模型/规则版本、工具版本、数据快照 ID
+</code></pre>
+<p>这些记录是下一轮评测集和规则迭代的原料。没有写回，系统不会变聪明，只会换一个模型继续犯同样的错。</p>
+<h3 id="85-评测集设计">8.5 评测集设计</h3>
+<p>一个像样的存储评测集至少包含：</p>
+<ul>
+<li><strong>真实事故回放</strong>：固定快照、隐藏答案、按知识时间截断。</li>
+<li><strong>合成故障</strong>：在实验环境注入磁盘慢、网络丢包、OSD down、元数据热点。</li>
+<li><strong>负对照</strong>：没有事故的窗口，检查误报。</li>
+<li><strong>缺数据变体</strong>：隐藏关键证据，检查是否降低结论强度。</li>
+<li><strong>晚到数据变体</strong>：事故结束后才到的日志，检查是否使用未来数据。</li>
+<li><strong>新版本/新型号</strong>：检查迁移能力。</li>
+<li><strong>跨租户/权限</strong>：检查越权。</li>
+</ul>
+<p>切分按事故、集群、时间、版本，不按行随机。答案和复盘原文要隔离，评分用独立裁定表。</p>
+<h3 id="86-指标与消融">8.6 指标与消融</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>指标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>检测</td>
+<td>事故级召回、误报/集群日、首次告警延迟</td>
+</tr>
+<tr>
+<td>定位</td>
+<td>根因 Top-1/Top-3、候选召回、TTL</td>
+</tr>
+<tr>
+<td>证据</td>
+<td>引用正确率、关键事实支持率、缺数据暂缓率</td>
+</tr>
+<tr>
+<td>处置</td>
+<td>建议可执行率、越权拒绝率、SLO 恢复时间、冗余恢复时间</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>工具调用数、P95 调查时长、每事故 token/查询成本、人工核实时间</td>
+</tr>
+</tbody>
+</table></div>
+<p>消融：规则 → 规则 + 统计 → + 工具 Agent → + 拓扑/RAG → + 因果/故障树。每一层都要在同一快照上比较，否则不知道增益来自哪里。</p>
+<h3 id="87-公开基准与边界">8.7 公开基准与边界</h3>
+<p>AIOpsLab、RCAEval、ORCA-bench 提供了任务框架、盲测和候选召回/重排分解，但它们主要覆盖云应用/微服务。存储的特殊性——物理故障域、后台恢复、介质退化、双验收——需要自建案例。Backblaze/FAST ’20 可以支撑硬盘预测支线，但不能替代存储 RCA 评测。</p>
+<h3 id="88-多集群与数据主权">8.8 多集群与数据主权</h3>
+<p>多集群架构的常见分层：</p>
+<pre><code class="language-text">站点边缘：就近采集、缓冲、脱敏、粗聚合
+区域中心：跨站资产目录、证据索引、查询路由
+全局：策略、模型、评测、审计
+</code></pre>
+<p>查询尽量下推，明细按需回查；站点断链时保留缓冲和水位，恢复后补数并标记“迟到”。租户隔离、数据驻留、跨境合规要在采集层就设计，不能等集中后再补。</p>
+<h3 id="89-落地路线">8.9 落地路线</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>交付</th>
+<th>验收</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–1 月</td>
+<td>实体表、SLO、采集覆盖率、事件时间语义</td>
+<td>能回答“当时是什么、缺了什么”</td>
+</tr>
+<tr>
+<td>1–3 月</td>
+<td>规则 + 稳健基线、告警聚合、事故时间线</td>
+<td>误报/集群日可接受，MTTD 下降</td>
+</tr>
+<tr>
+<td>3–6 月</td>
+<td>时态拓扑、变更关联、证据对象、RAG</td>
+<td>根因 Top-3 + 证据可复核</td>
+</tr>
+<tr>
+<td>6–12 月</td>
+<td>MCP/工具层、Agent 调查、回放评测</td>
+<td>同快照可复现，缺数据会暂缓</td>
+</tr>
+<tr>
+<td>12 月+</td>
+<td>受监督处置、双验收、有限自治</td>
+<td>越权为零，回滚可演练</td>
+</tr>
+</tbody>
+</table></div>
+<p>不要跳过“实体 + 时间 + 覆盖率”。这是所有上层能力的地基。</p>
+<h3 id="810-失败模式">8.10 失败模式</h3>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>失败模式</th>
+<th>后果</th>
+<th>纠正</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>只验业务，不验冗余</td>
+<td>数据风险累积</td>
+<td>双验收</td>
+</tr>
+<tr>
+<td>无幂等/回滚</td>
+<td>重试造成二次事故</td>
+<td>变更契约</td>
+</tr>
+<tr>
+<td>评测用未来数据</td>
+<td>指标虚高</td>
+<td>知识时间截断</td>
+</tr>
+<tr>
+<td>只有成功案例</td>
+<td>过度自信</td>
+<td>负对照 + 缺数据</td>
+</tr>
+<tr>
+<td>集中所有明细</td>
+<td>成本/合规爆炸</td>
+<td>边缘聚合 + 按需下钻</td>
+</tr>
+<tr>
+<td>直接跳到自治</td>
+<td>事故放大</td>
+<td>L1→L2→L3 逐级</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>练习</strong>（答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#1-%E6%B7%B1%E5%85%A5%E7%AF%87%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 1 部分</a>）：为一次“维护导致 backfill 争用”的处置写变更契约（目标、前置、幂等、回滚、观察窗、双验收）；再设计一个包含正常、缺数据、晚到数据、负对照的回放集。</p>
+<h2 id="9-公式与速查">9. 公式与速查</h2>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>主题</th>
+<th>公式</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Little 定律</td>
+<td><code>L = λW</code></td>
+<td>并发 = 吞吐 × 延迟；估算队列/在途</td>
+</tr>
+<tr>
+<td>M/M/1 响应</td>
+<td><code>R = S / (1 − ρ)</code></td>
+<td>利用率对延迟的非线性直觉</td>
+</tr>
+<tr>
+<td>尾延迟放大</td>
+<td><code>1 − (1 − p)^k</code></td>
+<td>扇出导致端到端尾延迟</td>
+</tr>
+<tr>
+<td>稳健 z</td>
+<td><code>0.6745 × (x − median) / MAD</code></td>
+<td>异常打分</td>
+</tr>
+<tr>
+<td>CUSUM</td>
+<td><code>S_t = max(0, S_{t−1} + x_t − μ0 − k)</code></td>
+<td>缓慢漂移</td>
+</tr>
+<tr>
+<td>燃烧率</td>
+<td><code>错误率 / (1 − SLO)</code></td>
+<td>SLO 告警分级</td>
+</tr>
+<tr>
+<td>副本可用容量</td>
+<td><code>raw / 副本数</code></td>
+<td>容量口径</td>
+</tr>
+<tr>
+<td>EC 可用容量</td>
+<td><code>raw × k / (k + m)</code></td>
+<td>容量口径</td>
+</tr>
+<tr>
+<td>到水位天数</td>
+<td><code>(limit − used) / slope</code></td>
+<td>容量预测基线</td>
+</tr>
+<tr>
+<td>告警预算</td>
+<td><code>TP / precision</code></td>
+<td>反推告警量</td>
+</tr>
+<tr>
+<td>直方图分位</td>
+<td>按 <code>le</code> 求和后插值</td>
+<td>全局分位</td>
+</tr>
+<tr>
+<td>采集覆盖率</td>
+<td><code>reporting / expected</code></td>
+<td>缺失偏差</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="10-术语">10. 术语</h2>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SLO / SLA / SLI</td>
+<td>目标 / 合同 / 指标；SLO 是内部目标，SLA 常带商务后果</td>
+</tr>
+<tr>
+<td>错误预算</td>
+<td><code>1 − SLO</code> 允许的失败量</td>
+</tr>
+<tr>
+<td>MTTD / MTTA / MTTR</td>
+<td>发现 / 响应 / 恢复的平均时间</td>
+</tr>
+<tr>
+<td>PG / OSD / CRUSH</td>
+<td>Ceph 的放置组 / 对象存储守护进程 / 数据放置算法</td>
+</tr>
+<tr>
+<td>backfill / recovery / scrub</td>
+<td>回填 / 恢复 / 校验</td>
+</tr>
+<tr>
+<td>EC</td>
+<td>纠删码，<code>k</code> 数据块 + <code>m</code> 校验块</td>
+</tr>
+<tr>
+<td>WA / GC / OP</td>
+<td>写放大 / 垃圾回收 / 预留空间</td>
+</tr>
+<tr>
+<td>MAD</td>
+<td>中位绝对偏差，稳健离散度</td>
+</tr>
+<tr>
+<td>FDR</td>
+<td>错误发现率，多重检验控制</td>
+</tr>
+<tr>
+<td>MCAR / MAR / MNAR</td>
+<td>缺失机制</td>
+</tr>
+<tr>
+<td>bitemporal</td>
+<td>有效时间 + 知识时间双时态</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>Model Context Protocol，工具/资源协议</td>
+</tr>
+<tr>
+<td>RAG</td>
+<td>检索增强生成</td>
+</tr>
+<tr>
+<td>RCA</td>
+<td>根因分析</td>
+</tr>
+<tr>
+<td>blast radius</td>
+<td>爆炸半径，一次变更的最大影响范围</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="11-参考资料">11. 参考资料</h2>
+<ol>
+<li>Ceph 文档：OSD/PG 监控、健康检查、mClock、Prometheus 模块。<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/</a></li>
+<li>Prometheus：直方图与分位数、原生直方图。<a href="https://prometheus.io/docs/practices/histograms/">https://prometheus.io/docs/practices/histograms/</a></li>
+<li>OpenTelemetry：日志数据模型、语义约定。<a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">https://opentelemetry.io/docs/specs/otel/logs/data-model/</a></li>
+<li>Google SRE Workbook：SLO、错误预算、多窗口燃烧率。</li>
+<li>Lu et al., &quot;Making Disk Failure Predictions SMARTer!&quot;, FAST ’20（380,000 块盘、64 个站点，10 天预测窗口）：<a href="https://www.usenix.org/conference/fast20/presentation/lu">https://www.usenix.org/conference/fast20/presentation/lu</a></li>
+<li>Backblaze Drive Stats：<a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data</a></li>
+<li>AIOpsLab：<a href="https://arxiv.org/abs/2501.06706">https://arxiv.org/abs/2501.06706</a></li>
+<li>RCAEval：<a href="https://github.com/phamquiluan/RCAEval">https://github.com/phamquiluan/RCAEval</a></li>
+<li>ORCA-bench：<a href="https://arxiv.org/abs/2607.28545">https://arxiv.org/abs/2607.28545</a></li>
+<li>MCP 规范：<a href="https://modelcontextprotocol.io/">https://modelcontextprotocol.io/</a></li>
+<li>华为 iMaster DME 25.1.0 技术白皮书（容器化）：<a href="https://e.huawei.com/cn/documents/products/storage/113fc2f4d1f54670942dd224c8060d62">https://e.huawei.com/cn/documents/products/storage/113fc2f4d1f54670942dd224c8060d62</a></li>
+<li>华为 iMaster DME 25.1.0 彩页：<a href="https://e.huawei.com/cn/documents/products/storage/69ddfac82b98443aa070ae54adda1edd">https://e.huawei.com/cn/documents/products/storage/69ddfac82b98443aa070ae54adda1edd</a></li>
+<li>华为 iMasterCloud DME IQ 彩页：<a href="https://e.huawei.com/cn/documents/products/storage/2dc27b1210404a5580f802575653910e">https://e.huawei.com/cn/documents/products/storage/2dc27b1210404a5580f802575653910e</a></li>
+<li>华为《迈向 AgenticOps，开启存储运维新范式》，2026-08-18：<a href="https://e.huawei.com/cn/blogs/2026/solutions/storage/agenticops">https://e.huawei.com/cn/blogs/2026/solutions/storage/agenticops</a></li>
+</ol>
+<blockquote>
+<p>说明：第 11–14 项是厂商公开材料，用于描述产品能力，不代表独立实测。产品功能、版本、许可和可用性以合同与现场版本为准。</p>
+</blockquote>
+
+  </article>
+</main>
+<footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>
+</body>
+</html>

@@ -1,0 +1,1496 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>海量存储专家系统：从 I/O 到可验证自治</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --ink:#10211c; --muted:#526a62; --paper:#f2f6f1; --card:#ffffff;
+  --line:#d6e1d7; --accent:#0d6b51; --accent2:#1b7f9e; --warn:#9a5b00;
+  --danger:#9e2b2b; --code:#edf4ee; --soft:#e6efe8; --shadow:0 14px 40px rgba(18,55,43,.08);
+  --radius:14px; --max:1080px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --ink:#e7f0ea; --muted:#9db2a8; --paper:#0d1512; --card:#14201b;
+    --line:#2a3d35; --accent:#6ad3ac; --accent2:#7fc8e6; --warn:#f0b45f;
+    --danger:#ff8e8e; --code:#0a120f; --soft:#18261f; --shadow:none; }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:16px/1.75 system-ui,"Microsoft YaHei","Noto Sans SC",sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:var(--accent2);text-underline-offset:.2em}
+a:hover{color:var(--accent)}
+h1,h2,h3,h4{line-height:1.3;margin:0 0 .55em;letter-spacing:-.015em}
+p{margin:0 0 1em}
+code,kbd{font-family:ui-monospace,"Cascadia Code","SFMono-Regular",Consolas,monospace;
+  font-size:.9em;background:var(--code);border:1px solid var(--line);border-radius:6px;padding:.1em .35em}
+pre{margin:1em 0;padding:15px 17px;background:var(--code);border:1px solid var(--line);
+  border-radius:10px;overflow:auto;font-size:.86rem;line-height:1.6}
+pre code{background:none;border:0;padding:0;font-size:inherit}
+.hero{position:relative;overflow:hidden;background:
+  radial-gradient(900px 360px at 15% -10%,rgba(64,180,140,.28),transparent 60%),
+  radial-gradient(700px 300px at 90% 0%,rgba(65,150,200,.20),transparent 60%),
+  #0d2a22;color:#f1faf5;padding:64px 0 54px}
+.hero:after{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:44px 44px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.7),transparent 85%)}
+.hero .wrap{position:relative;z-index:1;width:min(var(--max),calc(100% - 40px));margin:0 auto}
+.eyebrow{font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;color:#9fe0c4;margin-bottom:14px}
+.hero h1{font-size:clamp(2rem,5.4vw,4.1rem);max-width:900px;letter-spacing:-.05em}
+.hero p.lead{color:#d2eadf;max-width:780px;font-size:1.06rem}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.stat{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);
+  border-radius:10px;padding:9px 14px;font-size:.86rem;color:#e9f7f0}
+.stat b{color:#fff}
+.layout{display:grid;grid-template-columns:286px minmax(0,1fr);gap:42px;
+  width:min(1380px,calc(100% - 40px));margin:0 auto;align-items:start}
+.sidebar{position:sticky;top:0;max-height:100vh;overflow:auto;padding:30px 0 40px;font-size:.9rem}
+.sidebar .toc-title{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 10px 12px}
+.sidebar a{display:block;padding:7px 12px;border-radius:8px;color:var(--muted);
+  text-decoration:none;border-left:2px solid transparent}
+.sidebar a:hover{background:var(--soft);color:var(--ink)}
+.sidebar a.active{background:var(--soft);color:var(--accent);border-left-color:var(--accent);font-weight:650}
+main{padding:42px 0 90px;min-width:0}
+.module{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:clamp(22px,3.4vw,44px);margin:0 0 30px;box-shadow:var(--shadow)}
+.module>h2{font-size:clamp(1.5rem,3.2vw,2.25rem);display:flex;gap:.55em;align-items:baseline}
+.module>h2 .num{font:700 .62em/1 ui-monospace,monospace;color:var(--accent);
+  background:var(--soft);border:1px solid var(--line);padding:.42em .55em;border-radius:8px}
+.lead{font-size:1.08rem;color:var(--muted);border-left:3px solid var(--accent);
+  padding-left:14px;margin:0 0 1.4em}
+h3{font-size:1.2rem;margin-top:1.7em;color:var(--accent)}
+h4{font-size:1rem;margin-top:1.3em}
+.diagram{margin:20px 0;border:1px solid var(--line);border-radius:12px;
+  background:linear-gradient(180deg,var(--soft),var(--card));padding:14px}
+.diagram svg{width:100%;height:auto;display:block}
+.diagram figcaption{font-size:.82rem;color:var(--muted);margin-top:8px;text-align:center}
+.example{border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:16px 18px;margin:18px 0}
+.example .tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.08em;
+  color:var(--accent);background:var(--card);border:1px solid var(--line);
+  border-radius:99px;padding:2px 9px;margin-bottom:8px}
+.warn{border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 8%,var(--card))}
+.danger{border-left:4px solid var(--danger);background:color-mix(in srgb,var(--danger) 8%,var(--card))}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:560px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--soft);font-size:.8rem;letter-spacing:.02em;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+details.quiz{border:1px solid var(--line);border-radius:10px;padding:0;margin:14px 0;background:var(--card)}
+details.quiz summary{cursor:pointer;padding:13px 16px;font-weight:650;color:var(--accent)}
+details.quiz[open] summary{border-bottom:1px solid var(--line)}
+details.quiz .answer{padding:14px 16px 6px;color:var(--ink)}
+.source{font-size:.82rem;color:var(--muted);border-top:1px dashed var(--line);
+  margin-top:24px;padding-top:12px}
+.source a{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:12px;padding:15px 17px;background:var(--card)}
+.card h4{margin-top:0;color:var(--accent)}
+footer{border-top:1px solid var(--line);padding:26px 0 50px;color:var(--muted);font-size:.86rem}
+footer .wrap{width:min(var(--max),calc(100% - 40px));margin:0 auto}
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr;gap:0;width:min(100% - 24px,var(--max))}
+  .sidebar{position:static;max-height:none;display:block;padding:18px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  .sidebar .toc-title{margin-left:0}
+  .sidebar nav{display:flex;gap:6px;overflow:auto;padding-bottom:10px}
+  .sidebar a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent;padding:6px 10px}
+  .sidebar a.active{border-left:0;border-bottom-color:var(--accent)}
+  main{padding:20px 0 60px}
+  .module{padding:20px 16px}
+  table{min-width:520px}
+}
+@media (max-width:760px){
+  .diagram{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .diagram svg{width:760px;min-width:760px;max-width:none}
+  .diagram figcaption{min-width:760px}
+}
+@media print{
+  .sidebar,.hero:after{display:none}
+  .layout{display:block;width:100%}
+  .module{box-shadow:none;break-inside:avoid;border-color:#bbb}
+  .hero{background:#0d2a22 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Storage AIOps · 2026-11-18</p>
+    <h1>海量存储专家系统<br>从 I/O 到可验证自治</h1>
+    <p class="lead">不是产品名词汇编，也不是链接索引。每个知识点都按“机制 → 架构图 → 算例 → 失败模式 → 自测 → 原始资料”展开。读完你应该能自己画出请求路径、算出容量与误报、写出工具契约，并知道什么时候必须沉默。</p>
+    <div class="stats">
+      <span class="stat"><b>14</b> 个章节</span>
+      <span class="stat"><b>12</b> 张架构/流程图</span>
+      <span class="stat"><b>20+</b> 个算例</span>
+      <span class="stat"><b>90</b> 道练习答案</span>
+      <span class="stat"><b>DME</b> 逐环节对照</span>
+    </div>
+  </div>
+</header>
+<div class="layout">
+<aside class="sidebar" aria-label="目录">
+  <p class="toc-title">目录</p>
+  <nav>
+    <a href="./index.html">完整资料目录</a>
+    <a href="./业界AI运维产品与华为DME对标.html">业界 AI 运维与 DME 对标</a>
+    <a href="#m0">0 · 导读：五个面与五级成熟度</a>
+    <a href="#m1">1 · 请求路径与 SLO</a>
+    <a href="#m2">2 · 遥测、时间与海量成本</a>
+    <a href="#m3">3 · 身份与时态拓扑</a>
+    <a href="#m4">4 · 异常检测与告警工程</a>
+    <a href="#m5">5 · 容量与硬盘风险预测</a>
+    <a href="#m6">6 · 根因、证据与反证</a>
+    <a href="#m7">7 · Agent、RAG 与工具契约</a>
+    <a href="#m8">8 · 处置与双验收</a>
+    <a href="#m9">9 · 评测与多集群</a>
+    <a href="#m10">10 · 华为 DME 全链路</a>
+    <a href="#m11">11 · 自测与答案</a>
+    <a href="#m12">12 · 原始资料索引</a>
+    <a href="#m13">13 · PB 级建设与实操</a>
+  </nav>
+</aside>
+<main>
+<section class="module" id="m0">
+  <h2><span class="num">00</span> 导读：先把坐标系画出来</h2>
+  <p class="lead">为什么很多“存储 AIOps”最后变成大屏和聊天机器人？因为它们只做了“看见”和“说话”，没有把状态、知识、推理、行动、评测连成一个可验证的闭环。</p>
+
+  <h3>0.1 专家系统的五个面</h3>
+  <p>一个能用的存储专家系统，至少有五个面。少任何一面，系统都会退化成“会说话的看板”。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>面</th><th>回答的问题</th><th>典型组件</th><th>失败表现</th></tr></thead>
+    <tbody>
+      <tr><td><b>状态面</b></td><td>现在和当时发生了什么？</td><td>指标、日志、事件、变更、拓扑快照</td><td>数据缺失被当成“变好了”</td></tr>
+      <tr><td><b>知识面</b></td><td>这类现象通常意味着什么？</td><td>本体、故障模式、Runbook、版本约束</td><td>检索到过期或不适用的手册</td></tr>
+      <tr><td><b>推理面</b></td><td>哪条因果链最可信？还缺什么？</td><td>规则、统计、因果图、故障树、LLM 规划</td><td>把相关当因果，或只给一个答案</td></tr>
+      <tr><td><b>行动面</b></td><td>能不能动、谁批、怎么回滚？</td><td>工单、审批、编排、幂等接口</td><td>业务恢复了，冗余却没恢复</td></tr>
+      <tr><td><b>评测面</b></td><td>它到底比人强在哪？</td><td>回放集、盲评、负对照、成本账</td><td>只展示成功案例</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="grid2">
+    <div class="card"><h4>确定性内核</h4><p>规则、阈值、SLO、权限、动作契约、验证器。它们必须可审计、可回归，不能由模型“自由发挥”。</p></div>
+    <div class="card"><h4>概率性外壳</h4><p>异常检测、预测、LLM 假设生成、RAG 检索、报告组织。它们负责“提问和解释”，不负责“知道设备当前状态”。</p></div>
+  </div>
+
+  <h3>0.2 五级成熟度：按证据和授权划分，不按模型聪明程度</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>级别</th><th>能力</th><th>必要证据</th><th>授权</th></tr></thead>
+    <tbody>
+      <tr><td>L0 可视</td><td>看到资源、指标、拓扑</td><td>实体 ID、单位、采集时间</td><td>只读</td></tr>
+      <tr><td>L1 检测</td><td>发现异常并分级</td><td>基线、样本量、覆盖率、误报预算</td><td>只读 + 通知</td></tr>
+      <tr><td>L2 诊断</td><td>给出候选根因与反证</td><td>时间领先、拓扑可达、对照、证据出处</td><td>只读 + 建议</td></tr>
+      <tr><td>L3 处置</td><td>执行可逆变更并验证</td><td>前置条件、幂等键、回滚、双验收</td><td>人工审批 + 受监督执行</td></tr>
+      <tr><td>L4 自治</td><td>在限定域内闭环</td><td>L3 全部 + 长期回放 + 熔断与审计</td><td>白名单 + 预算 + 熔断</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>没有 L2 的证据链，L3 只是把人工误操作换成了自动误操作。</b>绝大多数团队应该先把 L1/L2 做扎实，再谈处置。</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 380" role="img" aria-labelledby="flowTitle flowDesc">
+      <title id="flowTitle">存储专家系统的三条数据流</title>
+      <desc id="flowDesc">业务 I/O 流、遥测与知识流、调查与处置流，在实体与时间窗上对齐。</desc>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+        <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent2)"/></marker>
+      </defs>
+      <style>
+        .bx{fill:var(--card);stroke:var(--line);stroke-width:1.4;rx:10}
+        .t{fill:var(--ink);font:13px system-ui,"Microsoft YaHei",sans-serif}
+        .m{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .lbl{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+        .ln{stroke:var(--accent);stroke-width:1.6;fill:none;marker-end:url(#arrow)}
+        .ln2{stroke:var(--accent2);stroke-width:1.6;fill:none;marker-end:url(#arrow2)}
+      </style>
+      <rect rx="10" class="bx" x="20" y="30" width="150" height="44"/><text class="t" x="35" y="57">应用/客户端</text>
+      <rect rx="10" class="bx" x="230" y="30" width="150" height="44"/><text class="t" x="245" y="57">存储池/PG</text>
+      <rect rx="10" class="bx" x="440" y="30" width="170" height="44"/><text class="t" x="455" y="57">OSD/控制器/介质</text>
+      <text class="lbl" x="20" y="20">① 业务 I/O</text>
+      <path class="ln" d="M170 52 H225"/><path class="ln" d="M380 52 H435"/>
+
+      <rect rx="10" class="bx" x="20" y="130" width="150" height="44"/><text class="t" x="35" y="157">指标/日志/事件</text>
+      <rect rx="10" class="bx" x="230" y="130" width="150" height="44"/><text class="t" x="245" y="157">采集/对齐</text>
+      <rect rx="10" class="bx" x="440" y="130" width="170" height="44"/><text class="t" x="455" y="157">时序/事件/拓扑</text>
+      <rect rx="10" class="bx" x="670" y="130" width="220" height="44"/><text class="t" x="685" y="157">异常/预测/证据</text>
+      <text class="lbl" x="20" y="120">② 遥测与知识</text>
+      <path class="ln2" d="M170 152 H225"/><path class="ln2" d="M380 152 H435"/><path class="ln2" d="M610 152 H665"/>
+
+      <rect rx="10" class="bx" x="20" y="230" width="150" height="44"/><text class="t" x="35" y="257">投诉/告警</text>
+      <rect rx="10" class="bx" x="230" y="230" width="150" height="44"/><text class="t" x="245" y="257">工具+文档</text>
+      <rect rx="10" class="bx" x="440" y="230" width="170" height="44"/><text class="t" x="455" y="257">假设/反证/范围</text>
+      <rect rx="10" class="bx" x="670" y="230" width="220" height="44"/><text class="t" x="685" y="257">受监督处置/验收</text>
+      <text class="lbl" x="20" y="220">③ 调查与处置</text>
+      <path class="ln" d="M170 252 H225"/><path class="ln" d="M380 252 H435"/><path class="ln" d="M610 252 H665"/>
+
+      <path class="ln2" d="M755 174 V225" stroke-dasharray="4 4"/>
+      <path class="ln" d="M690 274 V320 H120 V78" stroke-dasharray="4 4"/>
+      <text class="m" x="700" y="338">回放/学习：把处置结果写回证据库</text>
+      <text class="m" x="20" y="365">三条流必须在同一个 entity_id + 时间窗上对齐；否则“相关”只是巧合。</text>
+    </svg>
+    <figcaption>图 0-1　三条流：业务 I/O、遥测与知识、调查与处置。专家系统的核心工作是把它们对齐到同一实体和时间窗。</figcaption>
+  </figure>
+
+  <h3>0.3 怎么读这份教材</h3>
+  <p>第一遍读模块 1、4、6、7，建立“路径—检测—根因—工具”的主线；第二遍读 2、3、5、8、9，把数据、拓扑、预测、处置、评测补齐；第三遍读 10，把华为 DME 放到同一张坐标系里，看它有什么、缺什么。每个模块末尾有自测，答案就在折叠块里；更多题在<a href="./练习与考核答案.html">答案册</a>。</p>
+  <div class="example"><span class="tag">先记住一句话</span><p>存储专家系统的难点不在“让模型说得像专家”，而在<b>让每句结论都能回到一个带时间、实体、单位和出处的证据，并且知道自己在什么条件下必须沉默</b>。</p></div>
+</section>
+<section class="module" id="m1">
+  <h2><span class="num">01</span> 请求路径与 SLO：先知道你在测什么</h2>
+  <p class="lead">“存储慢”不是一个可诊断的问题。慢在哪一段、对谁慢、分母是什么、尾部的形状是什么——这四个问题不回答，后面的告警和根因都会错。</p>
+
+  <h3>1.1 四条路径，不是一条线</h3>
+  <p>块、文件、对象、分布式存储的请求路径不同，瓶颈位置也不同。把它们画在同一张图上，先建立“路径感”。</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 920 470" role="img" aria-labelledby="pathTitle pathDesc">
+      <title id="pathTitle">块、文件、对象与 Ceph 的请求路径</title>
+      <desc id="pathDesc">四条路径分别展示客户端、协议、控制器/元数据、存储池与介质。</desc>
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent2)"/></marker></defs>
+      <style>
+        .b{fill:var(--card);stroke:var(--line);stroke-width:1.3;rx:8}
+        .tt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .mm{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .ll{stroke:var(--accent2);stroke-width:1.5;fill:none;marker-end:url(#a1)}
+        .lane{fill:var(--soft);stroke:none;rx:8}
+        .lnm{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <rect class="lane" x="10" y="10" width="900" height="104"/><text class="lnm" x="22" y="30">块</text>
+      <rect rx="8" class="b" x="70" y="40" width="120" height="40"/><text class="tt" x="86" y="65">应用/文件系统</text>
+      <rect rx="8" class="b" x="220" y="40" width="120" height="40"/><text class="tt" x="236" y="65">客户端队列/MPIO</text>
+      <rect rx="8" class="b" x="370" y="40" width="130" height="40"/><text class="tt" x="386" y="65">FC/iSCSI/NVMe-oF</text>
+      <rect rx="8" class="b" x="530" y="40" width="130" height="40"/><text class="tt" x="546" y="65">控制器/缓存</text>
+      <rect rx="8" class="b" x="690" y="40" width="190" height="40"/><text class="tt" x="706" y="65">池/extent → SSD/HDD</text>
+      <path class="ll" d="M190 60 H215"/><path class="ll" d="M340 60 H365"/><path class="ll" d="M500 60 H525"/><path class="ll" d="M660 60 H685"/>
+
+      <rect class="lane" x="10" y="122" width="900" height="104"/><text class="lnm" x="22" y="142">文件</text>
+      <rect rx="8" class="b" x="70" y="152" width="120" height="40"/><text class="tt" x="86" y="177">NFS/SMB 客户端</text>
+      <rect rx="8" class="b" x="220" y="152" width="130" height="40"/><text class="tt" x="236" y="177">元数据服务/MDS</text>
+      <rect rx="8" class="b" x="380" y="152" width="130" height="40"/><text class="tt" x="396" y="177">锁/目录/权限</text>
+      <rect rx="8" class="b" x="540" y="152" width="130" height="40"/><text class="tt" x="556" y="177">数据服务</text>
+      <rect rx="8" class="b" x="700" y="152" width="180" height="40"/><text class="tt" x="716" y="177">数据池 → 介质</text>
+      <path class="ll" d="M190 172 H215"/><path class="ll" d="M350 172 H375"/><path class="ll" d="M510 172 H535"/><path class="ll" d="M670 172 H695"/>
+      <text class="mm" x="220" y="213">元数据路径与数据路径分开计 SLO</text>
+
+      <rect class="lane" x="10" y="234" width="900" height="104"/><text class="lnm" x="22" y="254">对象</text>
+      <rect rx="8" class="b" x="70" y="264" width="120" height="40"/><text class="tt" x="86" y="289">S3 客户端</text>
+      <rect rx="8" class="b" x="220" y="264" width="130" height="40"/><text class="tt" x="236" y="289">网关/认证</text>
+      <rect rx="8" class="b" x="380" y="264" width="130" height="40"/><text class="tt" x="396" y="289">桶索引/元数据</text>
+      <rect rx="8" class="b" x="540" y="264" width="130" height="40"/><text class="tt" x="556" y="289">对象数据/EC</text>
+      <rect rx="8" class="b" x="700" y="264" width="180" height="40"/><text class="tt" x="716" y="289">后端池 → 介质</text>
+      <path class="ll" d="M190 284 H215"/><path class="ll" d="M350 284 H375"/><path class="ll" d="M510 284 H535"/><path class="ll" d="M670 284 H695"/>
+      <text class="mm" x="220" y="325">GET/PUT/LIST 分开；LIST 和 multipart 是常见尾延迟源</text>
+
+      <rect class="lane" x="10" y="346" width="900" height="110"/><text class="lnm" x="22" y="366">Ceph</text>
+      <rect rx="8" class="b" x="70" y="376" width="110" height="40"/><text class="tt" x="86" y="401">对象</text>
+      <rect rx="8" class="b" x="205" y="376" width="100" height="40"/><text class="tt" x="221" y="401">PG</text>
+      <rect rx="8" class="b" x="330" y="376" width="150" height="40"/><text class="tt" x="346" y="401">CRUSH → OSD 集合</text>
+      <rect rx="8" class="b" x="505" y="376" width="140" height="40"/><text class="tt" x="521" y="401">BlueStore</text>
+      <rect rx="8" class="b" x="670" y="376" width="210" height="40"/><text class="tt" x="686" y="401">块设备 → HDD/SSD</text>
+      <path class="ll" d="M180 396 H200"/><path class="ll" d="M305 396 H325"/><path class="ll" d="M480 396 H500"/><path class="ll" d="M645 396 H665"/>
+      <text class="mm" x="205" y="440">PG: active/clean/degraded/undersized/peering；OSD: up/down × in/out</text>
+    </svg>
+    <figcaption>图 1-1　四条路径。块看队列和缓存，文件看元数据与数据分离，对象看网关/索引/分片，Ceph 看 PG/OSD 与恢复。</figcaption>
+  </figure>
+
+  <h3>1.2 一条 I/O 的延迟由什么组成</h3>
+  <p>把端到端延迟拆成可测量的段：</p>
+  <pre><code>T = T_client_queue + T_fabric + T_frontend + T_cache
+  + T_backend_queue + T_media + T_retry + T_software</code></pre>
+  <p>每一段都要有独立测量点。缺少某一段时，结论只能写成“在已观测段内，瓶颈位于 X 之前/之后”，不能写成“根因是 X”。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>段</th><th>典型证据</th><th>常见误判</th></tr></thead>
+    <tbody>
+      <tr><td>客户端队列</td><td>应用埋点、HBA/MPIO 队列、iostat await</td><td>只看阵列延迟，漏掉客户端排队/重试</td></tr>
+      <tr><td>网络</td><td>端口利用率、CRC/丢包、重传、PFC/ECN</td><td>重传正常就断定网络无关（交换机端口丢包未必可见）</td></tr>
+      <tr><td>前端/控制器</td><td>端口 IOPS、控制器 CPU、缓存命中/脏页</td><td>CPU 高就是“负载大”，忽略压缩/快照/EC 开销</td></tr>
+      <tr><td>后端/介质</td><td>池/OSD 队列、介质利用率、GC/重建</td><td>磁盘利用率低就排除后端（队列/后台任务可能仍高）</td></tr>
+    </tbody>
+  </table></div>
+  <h3>1.3 队列论：为什么利用率只涨一点，延迟翻倍</h3>
+  <p>对 M/M/1 队列，服务时间 S、利用率 ρ：</p>
+  <pre><code>排队时间 W = ρS / (1 − ρ)
+响应时间 R = S / (1 − ρ)</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ρ</th><th>50%</th><th>70%</th><th>80%</th><th>90%</th><th>95%</th></tr></thead>
+    <tbody><tr><td>R / S</td><td>2×</td><td>3.3×</td><td>5×</td><td>10×</td><td>20×</td></tr></tbody>
+  </table></div>
+  <p>真实系统不是 M/M/1，SSD 有内部并行、控制器有多队列，不能用它算绝对值；但它解释了“利用率从 70% 到 85%，延迟翻几倍”的非线性，也解释了为什么 85% 以上做容量规划很危险。</p>
+
+  <h3>1.4 尾延迟放大：平均值会骗人</h3>
+  <p>一个请求扇出到 k 个下游。如果各下游延迟相互独立，且每个下游超过所选延迟阈值的概率均为 p：</p>
+  <pre><code>P(至少一个慢) = 1 − (1 − p)^k</code></pre>
+  <div class="example"><span class="tag">算例</span><p>每个下游 P99 超标概率 1%：k=10 → 9.6%；k=100 → 63.4%；k=1000 → 99.996%。如果每个下游是 P99.9，k=1000 仍有 63.2% 的请求会碰到至少一个慢调用。存储的多副本、EC 条带、多路径、元数据/数据分离都在制造这种扇出。</p></div>
+
+  <h3>1.5 SLO 的数学：好请求、错误预算、燃烧率</h3>
+  <p>SLO 的三要素是<b>测量点、好事件、分母</b>。例子：</p>
+  <pre><code>好请求 = 成功 且 端到端延迟 ≤20ms 的写请求
+SLO = 好请求数 / 纳入统计的写请求数 ≥99.9% / 30 天
+错误预算 = (1 − SLO) × 总请求数
+请求量近似均匀时，99.9%/30 天 ≈ 43 分 12 秒的完全不可用等价时间
+燃烧率 = 观测窗口错误率 / (1 − SLO)</code></pre>
+  <p>燃烧率为 1 且持续整个 SLO 周期时，刚好耗尽该周期预算。请求量近似均匀时，14.4 倍燃烧率持续 1 小时会用掉 30 天预算的 2%。流量不均时，用观测窗内坏请求数除以全周期预算请求数。多窗口规则可要求 1 小时和 5 分钟燃烧率都超过 14.4。</p>
+
+  <h3>1.6 分位数不能平均：一个必须会算的例子</h3>
+  <p>三个客户端共 100 万请求。合并累计桶后，≤10 ms 有 890,000，≤20 ms 有 984,000，≤50 ms 有 996,900，≤100 ms 有 1,000,000。P99 的秩是 990,000，落在 (20,50] ms 桶。</p>
+  <pre><code>P99 ≈ 20 + (990,000 − 984,000) / (996,900 − 984,000) × 30
+    = 20 + 6,000/12,900 × 30 ≈ 33.95 ms</code></pre>
+  <p>三个客户端的 P99 分别约 14.44 ms、35 ms、75 ms，算术平均约 41.48 ms。全局分位数应按相同桶边界求和，再在目标桶内插值。<a href="./练习与考核答案.html#11-第-1-节直方图合并与延迟分解">原始桶计数</a></p>
+
+  <h3>1.7 失败模式</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
+    <tbody>
+      <tr><td>在阵列侧测延迟，却宣称应用 SLO</td><td>漏掉客户端队列、网络、重试</td><td>应用侧埋点 + 端到端分解</td></tr>
+      <tr><td>对客户端 P99 取平均</td><td>全局分位失真</td><td>合并直方图桶</td></tr>
+      <tr><td>分母只算成功请求</td><td>错误被隐藏</td><td>分母含错误和超时</td></tr>
+      <tr><td>忽略低流量窗口</td><td>1 个慢请求触发告警</td><td>最小样本量 + 置信区间</td></tr>
+      <tr><td>把 IOPS 当性能</td><td>块大小变化时结论反转</td><td>IOPS/带宽/块大小一起看</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>1.8 放到 DME 里看</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>拓扑</td><td>SAN 用 FC 交换机 WWN + HostLink；NAS 用 IO trace；容器用 CSI</td><td>没有公开的 as-of 拓扑/映射 epoch</td></tr>
+      <tr><td>性能分析</td><td>I/O 路径时延、首错模块、故障树、5 秒视图</td><td>没有业务 SLO/错误预算；没有应用侧 OTel</td></tr>
+      <tr><td>结论口径</td><td>1 分钟识别、3 分钟定界、5 分钟辅助定位</td><td>没有公开测试集/误报率，不能直接当验收值</td></tr>
+    </tbody>
+  </table></div>
+
+  <details class="quiz"><summary>自测：IOPS 基本不变，但 P99 从 6ms 升到 46ms，最可能是什么？为什么先扩容可能无效？</summary><div class="answer"><p>最可能是<b>同样负载下服务时间变长</b>：后端争用（如维护触发 backfill）、SSD GC、缓存降级、锁/元数据热点、网络重传。IOPS 不变说明不是流量洪峰；扩容增加的是并行能力/容量，不一定缩短已有请求的排队时间，甚至会因为重建/再平衡加剧争用。应先查队列、backfill/GC、缓存、错误与重传，再决定是否扩容。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.ceph.com/en/latest/rados/operations/health-checks/">Ceph 健康检查</a> · <a href="https://prometheus.io/docs/practices/histograms/">Prometheus 直方图</a> · <a href="https://e.huawei.com/cn/documents/products/storage/113fc2f4d1f54670942dd224c8060d62">DME 25.1.0 白皮书</a></p>
+</section>
+<section class="module" id="m2">
+  <h2><span class="num">02</span> 遥测、时间与海量成本：数据多不等于证据多</h2>
+  <p class="lead">海量存储的“海量”先体现在遥测上：实体多、标签多、采样密。没有基数控制和覆盖率，系统会把“采集失败”误判成“系统变好”。</p>
+
+  <h3>2.1 从设备到证据的流水线</h3>
+  <p>遥测不是“把指标存起来”。它是一条有缓冲、有丢包、有水位、有对齐的流水线。</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 920 330" role="img" aria-labelledby="telTitle telDesc">
+      <title id="telTitle">遥测采集、存储与查询流水线</title>
+      <desc id="telDesc">设备经拉取或推送进入缓冲，分到时序库、事件库、对象存储和文档索引，再被查询与证据化。</desc>
+      <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .tb{fill:var(--card);stroke:var(--line);stroke-width:1.3;rx:8}
+        .tt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .tm{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .tl{stroke:var(--accent);stroke-width:1.5;fill:none;marker-end:url(#a2)}
+        .zone{fill:var(--soft);stroke:none;rx:10}
+        .zh{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <rect class="zone" x="10" y="20" width="180" height="280"/><text class="zh" x="24" y="44">来源</text>
+      <rect rx="8" class="tb" x="26" y="60" width="148" height="36"/><text class="tt" x="40" y="83">存储设备 REST</text>
+      <rect rx="8" class="tb" x="26" y="108" width="148" height="36"/><text class="tt" x="40" y="131">SNMP / SSH</text>
+      <rect rx="8" class="tb" x="26" y="156" width="148" height="36"/><text class="tt" x="40" y="179">OTel / eBPF</text>
+      <rect rx="8" class="tb" x="26" y="204" width="148" height="36"/><text class="tt" x="40" y="227">syslog / 工单</text>
+      <rect rx="8" class="tb" x="26" y="252" width="148" height="36"/><text class="tt" x="40" y="275">CMDB / 变更</text>
+
+      <rect class="zone" x="210" y="20" width="170" height="280"/><text class="zh" x="224" y="44">采集与缓冲</text>
+      <rect rx="8" class="tb" x="226" y="80" width="138" height="44"/><text class="tt" x="240" y="106">拉取/推送</text>
+      <rect rx="8" class="tb" x="226" y="140" width="138" height="44"/><text class="tt" x="240" y="166">去重/水位/背压</text>
+      <rect rx="8" class="tb" x="226" y="200" width="138" height="44"/><text class="tt" x="240" y="226">实体对齐</text>
+      <rect rx="8" class="tb" x="226" y="260" width="138" height="40"/><text class="tt" x="240" y="285">覆盖率计算</text>
+
+      <rect class="zone" x="400" y="20" width="240" height="280"/><text class="zh" x="414" y="44">存储层</text>
+      <rect rx="8" class="tb" x="416" y="62" width="208" height="40"/><text class="tt" x="430" y="87">时序库：指标/直方图</text>
+      <rect rx="8" class="tb" x="416" y="114" width="208" height="40"/><text class="tt" x="430" y="139">事件库：告警/变更</text>
+      <rect rx="8" class="tb" x="416" y="166" width="208" height="40"/><text class="tt" x="430" y="191">对象存储：日志/证据</text>
+      <rect rx="8" class="tb" x="416" y="218" width="208" height="40"/><text class="tt" x="430" y="243">文档索引：Runbook</text>
+      <rect rx="8" class="tb" x="416" y="270" width="208" height="24"/><text class="tm" x="430" y="287">保留：7d / 6mo / 2y</text>
+
+      <rect class="zone" x="660" y="20" width="240" height="280"/><text class="zh" x="674" y="44">查询与证据</text>
+      <rect rx="8" class="tb" x="676" y="62" width="208" height="40"/><text class="tt" x="690" y="87">聚合/下钻/下推</text>
+      <rect rx="8" class="tb" x="676" y="114" width="208" height="40"/><text class="tt" x="690" y="139">异常/预测</text>
+      <rect rx="8" class="tb" x="676" y="166" width="208" height="40"/><text class="tt" x="690" y="191">证据对象 + query_id</text>
+      <rect rx="8" class="tb" x="676" y="218" width="208" height="40"/><text class="tt" x="690" y="243">报告/未决/下一步</text>
+      <rect rx="8" class="tb" x="676" y="270" width="208" height="24"/><text class="tm" x="690" y="287">覆盖率/样本量随结果返回</text>
+
+      <path class="tl" d="M174 150 H220"/><path class="tl" d="M364 150 H410"/><path class="tl" d="M624 150 H670"/>
+      <path class="tl" d="M760 286 V305 H100 V300" stroke-dasharray="4 4"/>
+      <text class="tm" x="120" y="322">回放/审计：用同一 snapshot_id 复现当时可见的数据</text>
+    </svg>
+    <figcaption>图 2-1　遥测流水线。采集、存储、查询每一层都可能引入偏差；覆盖率与时间语义要随证据一起返回。</figcaption>
+  </figure>
+
+  <h3>2.2 基数与成本：先算清楚再存</h3>
+  <p>一条时间序列由指标名和标签集唯一确定。标签是维度，不是身份流水号；把 request_id、文件名、快照 ID 放进标签，会制造无限基数。</p>
+  <pre><code>序列数 ≈ 实体数 × 每实体指标数 × 维度组合数
+10,000 OSD × 80 指标 = 800,000 序列
+每天样本 = 800,000 × 86,400/15 = 4.608B
+2 字节/样本 ≈ 9.2 GB/天（单副本）
+3 副本 ≈ 27.7 GB/天；一年 ≈ 10.1 TB</code></pre>
+  <p>这只是一个集群的原始指标。再乘设备数、租户、日志、追踪、拓扑快照和查询副本，成本会迅速上升。分层是必须的：</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>层</th><th>粒度</th><th>保留</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td>原始</td><td>15s–1min</td><td>7–30 天</td><td>事故取证、短窗口</td></tr>
+      <tr><td>聚合</td><td>5–30min</td><td>6–12 个月</td><td>趋势、容量、周同比</td></tr>
+      <tr><td>日级</td><td>1 天</td><td>2–5 年</td><td>容量规划、审计</td></tr>
+      <tr><td>事件/变更</td><td>事件粒度</td><td>多年</td><td>根因、合规</td></tr>
+      <tr><td>日志/证据</td><td>原始</td><td>7–30 天，冷存更久</td><td>深度取证</td></tr>
+    </tbody>
+  </table></div>
+  <h3>2.3 三个时间：事件时间、观测时间、知识时间</h3>
+  <p>这是存储取证最容易错的地方。至少有三个时间：</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>时间</th><th>含义</th><th>防什么错</th></tr></thead>
+    <tbody>
+      <tr><td><code>event_time</code></td><td>事情实际发生的时间（设备时钟/日志时间）</td><td>防止把传播延迟当成因果</td></tr>
+      <tr><td><code>observed_time</code></td><td>采集/上报系统看到它的时间</td><td>防止用事故后才到达的数据</td></tr>
+      <tr><td><code>knowledge_time</code></td><td>进入证据库、可被查询的时间</td><td>防止回放时“未卜先知”</td></tr>
+    </tbody>
+  </table></div>
+  <p>回放 02:16 的事故时，只能使用 <code>knowledge_time ≤ 02:16</code> 的数据。否则模型会用 02:18 才上报的日志解释 02:16 的告警。拓扑同理：按事件时间选当时有效的版本，而不是当前拓扑。</p>
+
+  <h3>2.4 缺失不是零：覆盖率是一等指标</h3>
+  <p>缺失至少分三类：完全随机（MCAR）、与已观测变量有关（MAR）、与未观测值有关（MNAR）。存储里最常见的是 MAR/MNAR。典型陷阱：</p>
+  <div class="example danger"><span class="tag">陷阱</span><p>一半 OSD 停止上报，剩下健康 OSD 的平均延迟下降，看板显示“变好了”。正确做法是同时看覆盖率：<code>coverage = reporting / expected</code>。覆盖率不足时，均值/分位只能代表“已观测子集”，不能代表全局。</p></div>
+  <p>缺失要进入数据质量维度，并影响结论强度：覆盖率 &lt;80% 时禁止输出全局平均；5 分钟内覆盖率下降 &gt;10% 立即告警；任何根因结论都要标“缺失字段/缺失实体”。</p>
+
+  <h3>2.5 失败模式</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
+    <tbody>
+      <tr><td>高基数标签</td><td>内存/索引爆炸</td><td>实体 ID + 维度白名单</td></tr>
+      <tr><td>把缺失当 0</td><td>平均值失真</td><td>coverage + 缺失标记</td></tr>
+      <tr><td>跨计数器重置求速率</td><td>速率尖峰</td><td>识别重置点</td></tr>
+      <tr><td>重复补数</td><td>双倍计数</td><td>event_id 幂等</td></tr>
+      <tr><td>只存聚合，不存桶</td><td>无法算全局分位</td><td>保留直方图桶</td></tr>
+      <tr><td>无查询预算</td><td>一个查询拖垮平台</td><td>限额 + 超时 + 降级</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>2.6 放到 DME 里看</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>采集粒度</td><td>闪存 1 分钟、分布式 1/5 分钟、FC 1 分钟；实时 5 秒</td><td>5 秒历史不落 DME，按需从 Dorado V6+ 读，最长一周</td></tr>
+      <tr><td>保留</td><td>分钟级 7 天、30 分钟 6 个月、天级 2 年</td><td>保留策略固定，客户不能自定义长周期原始数据</td></tr>
+      <tr><td>搜索</td><td>OpenSearch 支撑全局搜索，20 万资源一键检索</td><td>没有公开的原始遥测导出/查询 ID/覆盖 API</td></tr>
+    </tbody>
+  </table></div>
+
+  <details class="quiz"><summary>自测：为什么“一半 OSD 停报，平均延迟下降”比“平均延迟上升”更危险？</summary><div class="answer"><p>因为延迟上升至少会触发告警；延迟下降会让看板看起来更健康。停报的 OSD 可能正是负载最高/最不健康的那些，剩余样本是选择性偏差。必须用 expected/reporting 计算覆盖率，并把缺失实体列入证据；否则会把“采集失败”误判为“性能改善”。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">OpenTelemetry 日志模型</a> · <a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://prometheus.io/docs/specs/native_histograms/">Prometheus 原生直方图</a></p>
+</section>
+<section class="module" id="m3">
+  <h2><span class="num">03</span> 身份与时态拓扑：别用今天的图解释昨天</h2>
+  <p class="lead">存储实体一直在变：主机改名、HBA 换卡、OSD 编号重用、Pod 重建、卷迁移。如果实体身份或拓扑版本错了，根因会精确地指向错误的设备。</p>
+
+  <h3>3.1 身份比名称重要</h3>
+  <p>实体的“名字”极不稳定：主机名会改，LUN ID 会重用，OSD 数字编号会在重建后复用，WWN 可能因为换卡改变，容器 Pod 名每次部署都不同。专家系统必须建立<b>稳定身份 + 别名 + 生命周期</b>：</p>
+  <pre><code>entity_id = tenant / cluster_fsid / entity_type / native_uuid
+alias     = 显示名、旧主机名、序列号、WWN、IP、K8s UID
+lifecycle = 上线、维护、下线、退役</code></pre>
+  <p>如果只能拿到数字编号（例如 <code>osd.11</code>），必须同时保存 UUID 和“该编号在这一代生命周期内有效”的区间。否则历史事故会被错误地归到新设备上。</p>
+
+  <h3>3.2 双时态：有效时间与知识时间</h3>
+  <p>拓扑边的每次修订都保留以下信息。</p>
+  <pre><code>edge: (src, dst, relation)
+valid_from, valid_to      # 这条关系在现实中何时有效
+observed_at               # 观测系统何时看到它
+known_from, known_to      # 该修订何时对调查者可见
+source, confidence        # 谁说的、有多确定</code></pre>
+  <p>查询“02:16 时刻的拓扑”要用半开区间：</p>
+  <pre><code>SELECT * FROM edge
+WHERE src_id = :workload
+  AND valid_from &lt;= :t AND (valid_to IS NULL OR :t &lt; valid_to)
+  AND known_from &lt;= :knowledge_cutoff
+  AND (known_to IS NULL OR :knowledge_cutoff &lt; known_to);</code></pre>
+  <p>有效区间匹配事发时点，知识区间匹配调查截止。例如 02:20 才发现某条边已于 02:10 结束，应保留旧修订的有效区间，关闭旧知识区间并新增修订。这样仍能复现 02:16 的调查。</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 300" role="img" aria-labelledby="timeTitle timeDesc">
+      <title id="timeTitle">维护前后的两版拓扑与知识截止</title>
+      <desc id="timeDesc">02:10:30 前 PG 映射到 osd.11/12/13，之后映射到 osd.12/17/18；02:16 的回放只能使用当时可见的数据。</desc>
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .axis{stroke:var(--line);stroke-width:2}
+        .tk{stroke:var(--line);stroke-width:1}
+        .tx{fill:var(--muted);font:11px ui-monospace,monospace}
+        .tt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .box1{fill:var(--card);stroke:var(--accent);stroke-width:1.4;rx:8}
+        .box2{fill:var(--card);stroke:var(--accent2);stroke-width:1.4;rx:8}
+        .cut{stroke:var(--danger);stroke-width:1.6;stroke-dasharray:5 5}
+        .lab{fill:var(--danger);font:700 11px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <line class="axis" x1="60" y1="150" x2="870" y2="150"/>
+      <line class="tk" x1="140" y1="140" x2="140" y2="160"/><text class="tx" x="108" y="180">02:00</text>
+      <line class="tk" x1="330" y1="140" x2="330" y2="160"/><text class="tx" x="286" y="180">02:10:30</text>
+      <line class="tk" x1="560" y1="140" x2="560" y2="160"/><text class="tx" x="522" y="180">02:16</text>
+      <line class="tk" x1="760" y1="140" x2="760" y2="160"/><text class="tx" x="726" y="180">02:20</text>
+
+      <rect rx="8" class="box1" x="90" y="42" width="250" height="52"/><text class="tt" x="104" y="63">T01：orders→vol01→hot→PG1</text><text class="tt" x="104" y="83">→ osd.11 / 12 / 13</text>
+      <rect rx="8" class="box2" x="300" y="204" width="270" height="52"/><text class="tt" x="314" y="225">T02：orders→vol01→hot→PG1</text><text class="tt" x="314" y="245">→ osd.12 / 17 / 18</text>
+      <path d="M215 94 V145" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#a3)"/>
+      <path d="M435 204 V158" stroke="var(--accent2)" stroke-width="1.4" marker-end="url(#a3)"/>
+
+      <line class="cut" x1="560" y1="30" x2="560" y2="270"/>
+      <text class="lab" x="568" y="42">知识截止 02:16</text>
+      <text class="tx" x="568" y="62">报告只用 02:16 已可见的修订与事件</text>
+      <text class="tx" x="568" y="80">E04（02:18 才可见）不能引用</text>
+      <text class="tx" x="90" y="132">维护前有效</text>
+      <text class="tx" x="300" y="196">维护后有效</text>
+      <text class="tx" x="60" y="285">两版都保留；用 T01 解释维护前路径，用 T02 解释 backfill 目标。</text>
+    </svg>
+    <figcaption>图 3-1　有效区间决定事发时哪条关系成立，知识区间决定调查当时能看到哪个修订。</figcaption>
+  </figure>
+  <h3>3.3 图模型：节点和边的语义要明确</h3>
+  <pre><code>Workload → Volume/LUN/FileSystem/Bucket
+Volume   → Pool → PG → OSD → Disk
+Host     → HBA/Port → Switch Port → Array Port → Controller
+Array    → Site/Rack/Power/FailureDomain
+Change   → Target
+Incident → Symptom/Entity
+Runbook  → Product/Version/FaultCode/Symptom</code></pre>
+  <p>边的语义要明确方向：<code>runs_on</code>、<code>maps_to</code>、<code>replicates_to</code>、<code>depends_on</code>、<code>hosted_by</code>、<code>protects</code>。不要把“网络可达”和“数据依赖”混成一种边；前者影响连通性，后者影响数据完整性。</p>
+
+  <h3>3.4 事发拓扑重建：一个完整的例子</h3>
+  <p>02:10:30 计划下线并显式标记 <code>osd.11</code> 为 <code>out</code>，PG 的新放置目标包含 <code>osd.17/18</code>。02:14 结束的窗口观测到订单写 P99 升高。02:16 的调查可以用下面两版映射解释放置变化，实际 I/O 路径还需核对 <code>acting</code> 与 OSD 遥测。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>时间</th><th>拓扑版本</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td>02:00–02:10:30</td><td><code>orders → vol01 → hot → PG1 → osd.11/12/13</code></td><td>解释维护前路径</td></tr>
+      <tr><td>02:10:30 起</td><td><code>orders → vol01 → hot → PG1 → osd.12/17/18</code></td><td>解释 backfill 目标与前台争用</td></tr>
+    </tbody>
+  </table></div>
+  <p>如果 02:16 的报告使用第二版拓扑，它能解释“为什么是 osd.17/18 忙”；如果使用第一版，它会错误地怀疑 osd.11。两版都要保留，并标注有效期。PG 映射还要带 CRUSH map epoch 或快照 ID，否则无法证明“当时确实是这组 OSD”。</p>
+
+  <h3>3.5 失败模式</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
+    <tbody>
+      <tr><td>用当前拓扑解释过去</td><td>根因指向错误设备</td><td>双时态 + 快照</td></tr>
+      <tr><td>实体 ID 重用</td><td>历史归错</td><td>UUID + 生命周期</td></tr>
+      <tr><td>把“无数据”当“无依赖”</td><td>漏掉共享故障域</td><td>显式 unknown 边</td></tr>
+      <tr><td>只存一跳关系</td><td>影响范围算小</td><td>多跳路径 + 故障域</td></tr>
+      <tr><td>拓扑只来自一个来源</td><td>厂商视角偏差</td><td>多源交叉 + 置信度</td></tr>
+      <tr><td>Runbook 不标版本</td><td>用错步骤</td><td>版本化 + 生效时间</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>3.6 放到 DME 里看</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>拓扑来源</td><td>SAN：FC 交换机 WWN + HostLink；NAS：IO trace；容器：CSI</td><td>第三方设备/主机/交换机深度关系有限</td></tr>
+      <tr><td>同步</td><td>资源纳管每 6 小时同步一次，可手动触发</td><td>分钟级取证可能滞后</td></tr>
+      <tr><td>时态</td><td>没有公开的 as-of 拓扑/历史快照 API</td><td>需要外部快照 + 变更事件补偿</td></tr>
+    </tbody>
+  </table></div>
+
+  <details class="quiz"><summary>自测：02:16 的报告应该用 T01 还是 T02？为什么不能只用一个？</summary><div class="answer"><p>解释“当前谁在承载、backfill 目标是谁”用 T02；解释“维护前路径、为什么 osd.11 不再是承载者”用 T01。只用 T02 会丢失维护前后的对比，可能把 osd.11 误判为当前故障源；只用 T01 会把 backfill 目标指错。两版都要保留，并按 <code>valid_from/valid_to</code> 与 <code>observed_at</code> 选择。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS DevOps Agent 服务卡</a></p>
+</section>
+<section class="module" id="m4">
+  <h2><span class="num">04</span> 异常检测与告警工程：把噪声变成可处理的信号</h2>
+  <p class="lead">5 万条序列、3.5σ 阈值、15 秒采样——如果单点报警，每天会有十几万条误报。检测的目标不是“发现更多”，而是“用可接受的误报量换可接受的首响时间”。</p>
+
+  <h3>4.1 先选信号，再选算法</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>信号</th><th>适合的检测</th><th>不适合</th></tr></thead>
+    <tbody>
+      <tr><td>低基数、平稳指标</td><td>阈值、滚动基线、CUSUM</td><td>深度模型（样本不够）</td></tr>
+      <tr><td>强季节、日/周周期</td><td>STL 分解、季节基线</td><td>固定阈值</td></tr>
+      <tr><td>多指标组合异常</td><td>隔离森林、矩阵画像、AutoEncoder</td><td>单指标阈值</td></tr>
+      <tr><td>计数器/速率</td><td>先做重置处理，再检测</td><td>直接对原始计数器建模</td></tr>
+      <tr><td>事件/日志</td><td>模板、频次、序列模式</td><td>只看单条日志</td></tr>
+      <tr><td>高基数实体</td><td>分组基线 + 分层模型</td><td>全局一个阈值</td></tr>
+    </tbody>
+  </table></div>
+  <p>规则不是“低级”，而是可解释、可审计、可回归的基线。任何 ML 检测都应该先和规则并跑，证明它在同一事故集上更好，否则只会增加运维负担。</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 300" role="img" aria-labelledby="detTitle detDesc">
+      <title id="detTitle">异常检测与告警聚合流水线</title>
+      <desc id="detDesc">指标先经规则、稳健基线、变化点和多指标模型，再过持续性/效应量门槛，最后按拓扑与 SLO 聚合。</desc>
+      <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .db{fill:var(--card);stroke:var(--line);stroke-width:1.3;rx:8}
+        .dt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .dm{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .dl{stroke:var(--accent);stroke-width:1.5;fill:none;marker-end:url(#a4)}
+        .dz{fill:var(--soft);stroke:none;rx:10}
+        .dh{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <rect class="dz" x="10" y="30" width="150" height="230"/><text class="dh" x="24" y="54">检测</text>
+      <rect rx="8" class="db" x="24" y="68" width="122" height="38"/><text class="dt" x="38" y="92">规则/阈值</text>
+      <rect rx="8" class="db" x="24" y="116" width="122" height="38"/><text class="dt" x="38" y="140">稳健基线</text>
+      <rect rx="8" class="db" x="24" y="164" width="122" height="38"/><text class="dt" x="38" y="188">变化点</text>
+      <rect rx="8" class="db" x="24" y="212" width="122" height="38"/><text class="dt" x="38" y="236">多指标模型</text>
+
+      <rect class="dz" x="190" y="30" width="180" height="230"/><text class="dh" x="204" y="54">质量门槛</text>
+      <rect rx="8" class="db" x="204" y="72" width="152" height="38"/><text class="dt" x="218" y="96">持续性/连续 N 点</text>
+      <rect rx="8" class="db" x="204" y="120" width="152" height="38"/><text class="dt" x="218" y="144">效应量/最小增量</text>
+      <rect rx="8" class="db" x="204" y="168" width="152" height="38"/><text class="dt" x="218" y="192">最小样本量</text>
+      <rect rx="8" class="db" x="204" y="216" width="152" height="38"/><text class="dt" x="218" y="240">覆盖率/缺失</text>
+
+      <rect class="dz" x="400" y="30" width="230" height="230"/><text class="dh" x="414" y="54">聚合</text>
+      <rect rx="8" class="db" x="414" y="72" width="202" height="38"/><text class="dt" x="428" y="96">故障域/拓扑</text>
+      <rect rx="8" class="db" x="414" y="120" width="202" height="38"/><text class="dt" x="428" y="144">时间邻近/传播</text>
+      <rect rx="8" class="db" x="414" y="168" width="202" height="38"/><text class="dt" x="428" y="192">父子/相关性</text>
+      <rect rx="8" class="db" x="414" y="216" width="202" height="38"/><text class="dt" x="428" y="240">保留原始 ID/理由</text>
+
+      <rect class="dz" x="660" y="30" width="240" height="230"/><text class="dh" x="674" y="54">分级</text>
+      <rect rx="8" class="db" x="674" y="72" width="212" height="38"/><text class="dt" x="688" y="96">业务 SLO/燃烧率</text>
+      <rect rx="8" class="db" x="674" y="120" width="212" height="38"/><text class="dt" x="688" y="144">冗余/耐久性状态</text>
+      <rect rx="8" class="db" x="674" y="168" width="212" height="38"/><text class="dt" x="688" y="192">影响范围/租户</text>
+      <rect rx="8" class="db" x="674" y="216" width="212" height="38"/><text class="dt" x="688" y="240">工单/通知</text>
+      <path class="dl" d="M160 150 H185"/><path class="dl" d="M370 150 H395"/><path class="dl" d="M630 150 H655"/>
+      <text class="dm" x="24" y="286">误报预算：每集群每天可接受的无效告警数，先定预算再调阈值。</text>
+    </svg>
+    <figcaption>图 4-1　检测不是终点。没有质量门槛和聚合，检测越灵敏，运维越忙。</figcaption>
+  </figure>
+
+  <h3>4.2 稳健基线：中位数与 MAD</h3>
+  <pre><code>median = 中位数(x)
+MAD    = 中位数(|xi − median|)
+z      = 0.6745 × (x − median) / max(MAD, ε)</code></pre>
+  <p>用实验室数据验算：M01–M05 的 P99 为 5, 6, 5, 7, 6，中位数 6，绝对偏差 1, 0, 1, 1, 0，MAD = 1。M06 = 33ms：<code>z = 0.6745 × 27 / 1 = 18.21</code>；M07 = 46ms：<code>z = 26.98</code>。</p>
+  <p>但 z 大不等于影响大。如果基线是 0.1ms、MAD 0.01ms，涨到 0.2ms 也会有巨大 z，但业务可能无感。要加<b>效应量</b>（绝对增量 ≥5ms 或相对倍数 ≥2）和<b>持续窗口</b>（连续 2 个采样点）。实验室里 M06 超限、M07 再次超限，才构成持续异常。</p>
+  <h3>4.3 多重检验：5 万条序列的假阳性</h3>
+  <p>如果 50,000 条序列相互独立、服从正态，使用双侧 3.5σ 阈值，单条序列单次误报概率约 0.000465：</p>
+  <pre><code>50,000 × 0.000465 ≈ 23.3 条/次
+15 秒采样 → 每天约 134,000 条误报</code></pre>
+  <p>在同样的边际误报概率下，相关性会改变单点超限的聚集程度。实际通知量还取决于连续窗口、效应量门槛、分组检测与聚合规则，可用正常窗口回放估计。</p>
+
+  <h3>4.4 告警聚合与 SLO 分级</h3>
+  <p>聚合的目标不是“少报”，而是“一页纸说清一个事故”。按三个维度合并：拓扑（同故障域/共享依赖）、时间（窗口重叠/传播延迟）、因果（父告警/子告警）。但聚合有风险：把两个独立根因合成一个，会掩盖第二个故障。因此要保留原始告警 ID、聚合规则版本和“为什么合并”的理由。</p>
+  <p>告警级别应该由业务影响决定，而不是设备型号。最简单的做法是看 SLO 燃烧率：</p>
+  <pre><code>P1：1h burn ≥14.4 且 5m burn ≥14.4
+P2：6h burn ≥6
+P3：3d burn ≥1</code></pre>
+  <p>再叠加冗余状态：业务 SLO 还在但冗余 degraded，是“高优先级修复、非事故”；业务 SLO 破了且冗余不足，才是“事故”。</p>
+
+  <h3>4.5 失败模式</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
+    <tbody>
+      <tr><td>固定阈值跨工作负载</td><td>误报/漏报</td><td>同组基线 + 分层</td></tr>
+      <tr><td>忽略低流量</td><td>1 个请求触发 P1</td><td>最小样本量</td></tr>
+      <tr><td>单点 z 无持续性</td><td>毛刺翻页</td><td>连续窗口 + 效应量</td></tr>
+      <tr><td>聚合过度</td><td>多根因被合并</td><td>保留原始 ID + 理由</td></tr>
+      <tr><td>告警级别按设备</td><td>优先级失真</td><td>按 SLO/冗余分级</td></tr>
+      <tr><td>只优化召回</td><td>运维被淹没</td><td>告警预算 + 精确率</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>4.6 放到 DME 里看</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>告警规则</td><td>屏蔽、闪断/振荡、汇聚、相关性、自动确认、重定义、远程通知</td><td>相关性是用户定义父子关系，不是自动因果图</td></tr>
+      <tr><td>健康评分</td><td>告警/性能异常/预测/容量扣分，80+ 专家检查项</td><td>评分是启发式，不是校准概率；跨型号可比性未公开</td></tr>
+      <tr><td>质量指标</td><td>没有公开的误报/召回/MTTD</td><td>不能直接当验收值</td></tr>
+    </tbody>
+  </table></div>
+
+  <details class="quiz"><summary>自测：M06 的 z=18.21 已经很大，为什么不能只凭它报警？</summary><div class="answer"><p>z 只说明相对基线偏离，不说明业务影响或持续性。还要看：效应量（33−6=27ms）、是否连续（M07 再次超限）、业务 SLO（M07 好请求 93.27%）、覆盖率（3/3）、是否有反证（IOPS 不变、重传平）。单点 z 只是候选，不是结论。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">NetApp DII Monitor</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">Dell PowerStore 可观测性</a></p>
+</section>
+<section class="module" id="m5">
+  <h2><span class="num">05</span> 容量与硬盘风险预测：把“提前”变成可验收的数字</h2>
+  <p class="lead">“提前 14 天/30 天/1 年”不是模型能力，而是口径、标签、误报和运维预算的组合。不看这些，预测数字只是营销。</p>
+
+  <h3>5.1 容量账本：raw、usable、effective</h3>
+  <pre><code>raw       = 裸容量
+usable    = 副本：raw / 副本数
+          = EC k+m：raw × k / (k + m)
+effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全水位</code></pre>
+  <p>例子：10 个节点 × 12 块 20 TB = 2,400 TB raw。EC 8+2 的效率是 80%，可用 1,920 TB；再留 5% 安全水位，有效 1,824 TB。若已用 1,500 TB、净增 6 TB/天：</p>
+  <pre><code>到 95% 水位 = (1,824 × 0.95 − 1,500) / 6 ≈ 38.8 天
+3 TB/天 → 77.6 天；9 TB/天 → 25.9 天</code></pre>
+  <p>报区间，不报单点；把“扩容/清理/生命周期变更”作为切换点，切换后重新拟合。</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 360" role="img" aria-labelledby="capTitle capDesc">
+      <title id="capTitle">容量三情景与硬盘预测窗口</title>
+      <desc id="capDesc">左图展示不同增长率到 95% 水位的天数，右图展示硬盘未来故障窗口与告警预算。</desc>
+      <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .ax{stroke:var(--line);stroke-width:1.5}
+        .gr{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 4}
+        .tx{fill:var(--muted);font:11px ui-monospace,monospace}
+        .tt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .th{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+        .l1{stroke:#2f8f6b;stroke-width:2.4;fill:none}
+        .l2{stroke:#c58a1c;stroke-width:2.4;fill:none}
+        .l3{stroke:#a03d3d;stroke-width:2.4;fill:none}
+      </style>
+      <text class="th" x="30" y="28">容量：三情景到 95% 水位</text>
+      <line class="ax" x1="50" y1="290" x2="430" y2="290"/>
+      <line class="ax" x1="50" y1="50" x2="50" y2="290"/>
+      <text class="tx" x="18" y="56">100%</text><text class="tx" x="24" y="290">0</text>
+      <text class="tx" x="380" y="312">天</text><text class="tx" x="8" y="175">水位</text>
+      <line class="gr" x1="50" y1="80" x2="430" y2="80"/><text class="tx" x="366" y="74">95%</text>
+      <path class="l1" d="M50 290 L120 245 L190 200 L260 155 L330 110 L400 80"/>
+      <path class="l2" d="M50 290 L130 230 L210 170 L290 110 L370 80"/>
+      <path class="l3" d="M50 290 L100 240 L150 190 L200 140 L250 90 L300 80"/>
+      <text class="tx" x="405" y="100" fill="#2f8f6b">3 TB/d</text>
+      <text class="tx" x="375" y="128" fill="#c58a1c">6 TB/d</text>
+      <text class="tx" x="305" y="76" fill="#a03d3d">9 TB/d</text>
+      <text class="tx" x="50" y="336">预测要带区间和假设；扩容/清理后重新拟合。</text>
+
+      <text class="th" x="500" y="28">硬盘：标签窗口与告警预算</text>
+      <line class="ax" x1="520" y1="240" x2="880" y2="240"/>
+      <line class="ax" x1="520" y1="60" x2="520" y2="240"/>
+      <text class="tx" x="520" y="258">t−10d</text><text class="tx" x="630" y="258">t</text><text class="tx" x="760" y="258">t+30d</text>
+      <rect x="600" y="80" width="180" height="120" fill="var(--soft)" stroke="var(--line)"/>
+      <text class="tt" x="616" y="104">预测窗口 H</text>
+      <text class="tx" x="616" y="126">未来 14/30 天故障</text>
+      <line x1="630" y1="60" x2="630" y2="240" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="4 4"/>
+      <text class="tx" x="636" y="76" fill="var(--danger)">样本日</text>
+      <text class="tx" x="520" y="292">特征：当时可见的 SMART/变化率/型号/固件/年龄</text>
+      <text class="tx" x="520" y="312">标签：真实故障 vs 主动更换 vs 迁移 vs 观测结束（删失）</text>
+      <text class="tx" x="520" y="332">预算：告警/天 = (N × AFR / 365 × recall) / precision</text>
+    </svg>
+    <figcaption>图 5-1　左：容量三情景；右：硬盘样本日、预测窗口与告警预算。预测的“提前量”必须和标签、误报一起定义。</figcaption>
+  </figure>
+
+  <h3>5.2 容量模型与回测</h3>
+  <p>容量预测的难点不是模型，而是口径和切换点。常用方法：稳健线性回归、分位数回归、ARIMA/SARIMA、季节分解、结构模型/集成。回测要用<b>滚动原点</b>：在历史每个时点只用当时可见的数据训练，预测未来 H 天，再向前滚动。指标包括 MAE/MAPE、pinball loss、区间覆盖率、跨阈值时间误差。随机切分会让未来信息泄漏到训练集，指标虚高。</p>
+  <h3>5.3 硬盘故障预测：标签比模型重要</h3>
+  <p>硬盘预测的第一个问题是标签，不是算法：</p>
+  <pre><code>样本 = (disk_id, day t, 当时可见的特征)
+正例 = 该盘在 (t, t+H] 内发生“真实故障”
+负例 = 该盘在 (t, t+H] 内没有故障，且观测未截尾
+排除 = 主动退役、迁移、数据销毁、观测结束</code></pre>
+  <p>如果“主动换盘”被当成故障，模型会学到运维策略；如果观测结束的盘被当成负例，会低估风险；如果同一块盘的相邻日期同时进入训练和测试，会泄漏。正确切分是<b>按设备 + 按时间</b>：训练集和测试集不能共享同一块盘的同一次故障。</p>
+  <p>特征用当时可见的 SMART/NVMe 指标及其变化率：重分配扇区、待定扇区、不可纠正错误、命令超时、CRC 错误、磨损、通电小时、温度、型号、固件、批次。树模型通常比 Logistic 回归强，但可解释性和校准要单独做。</p>
+
+  <h3>5.4 告警预算：先定运维能处理多少</h3>
+  <p>10,000 块盘，年故障率 2% → 每年 200 次故障，约 0.55 次/天。若召回 80%、精确率 20%：</p>
+  <pre><code>TP/天 = 0.55 × 0.8 = 0.44
+总告警/天 = 0.44 / 0.2 = 2.2
+误报/天 = 1.76</code></pre>
+  <p>如果精确率只有 5%，总告警 8.8 条/天，运维就会开始忽略。<b>先定运维能处理的告警量，再反推阈值</b>，比追求高召回更现实。评测要看 PR-AUC、召回@告警预算、每千盘日误报、提前量分布、概率校准（Brier/校准曲线）。</p>
+
+  <h3>5.5 失败模式</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
+    <tbody>
+      <tr><td>容量口径混用</td><td>提前/延后扩容</td><td>raw/usable/effective 分开</td></tr>
+      <tr><td>随机切分</td><td>指标虚高</td><td>按时间/设备切分</td></tr>
+      <tr><td>主动换盘当故障</td><td>学到运维策略</td><td>单独标签/竞争风险</td></tr>
+      <tr><td>只看 AUC</td><td>高误报</td><td>PR-AUC + 告警预算</td></tr>
+      <tr><td>预测无区间</td><td>决策过度自信</td><td>分位预测 + 回测</td></tr>
+      <tr><td>不监控漂移</td><td>慢慢失效</td><td>漂移 + 校准监控</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>5.6 放到 DME 里看</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>DME 公开口径</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>容量</td><td>最多 180 天历史，预测 1 年，日粒度；SVM/ARIMA/对数/线性融合</td><td>没有公开区间覆盖率/回测</td></tr>
+      <tr><td>性能</td><td>过去 1 个月预测未来 2 周；Lasso/岭回归/随机森林</td><td>没有公开 MAE/提前量/误报</td></tr>
+      <tr><td>硬盘</td><td>14 天健康度 &lt;60 分判为风险盘；30 天故障预测适用于白皮书列出的希捷和日立 SAS HDD 类型；另有 SSD 寿命预测</td><td>健康度为产品评分。具体盘型、校准与客户侧再训练能力需确认</td></tr>
+    </tbody>
+  </table></div>
+
+  <details class="quiz"><summary>自测：为什么硬盘预测随机切分会把指标“做高”？</summary><div class="answer"><p>同一块盘的多天样本高度相关，故障前几天的样本会同时出现在训练和测试；模型可能记住这块盘的“故障前模式”，而不是学到可迁移的特征。应按时间切分（训练过去、测试未来）并隔离同一块盘的同一次故障；另外留出新型号/新固件做迁移测试。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://www.usenix.org/conference/fast20/presentation/lu">FAST ’20 硬盘预测</a> · <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a></p>
+</section>
+<section class="module" id="m6">
+  <h2><span class="num">06</span> 根因、证据与反证：从“最可能”到“可证伪”</h2>
+  <p class="lead">根因报告最危险的一句话是“最可能是 X”。如果没有说明“什么证据会推翻 X”，它就不是诊断，而是猜测。</p>
+
+  <h3>6.1 相关、干预与反事实</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>证据强度</th><th>含义</th><th>存储例子</th></tr></thead>
+    <tbody>
+      <tr><td>相关</td><td>A 和 B 同时异常</td><td>backfill 高时延迟高；但可能都是共同原因</td></tr>
+      <tr><td>干预</td><td>改变 A 后 B 按预期变化</td><td>限速 backfill 后 P99 下降</td></tr>
+      <tr><td>反事实</td><td>如果没做 A，B 会怎样</td><td>需要模型/对照，不能直接观测</td></tr>
+    </tbody>
+  </table></div>
+  <p>存储运维没有随机对照试验，但有自然实验：维护窗口、限速/调度调整、分批升级、同集群不同池/租户的对照、变更前后的中断时间序列。因果图（DAG）要先画清楚共同原因、对撞和中介，再决定控制哪些变量。</p>
+
+  <h3>6.2 候选从哪里来</h3>
+  <pre><code>候选 = 时间上先于症状的变更
+     ∪ 事发拓扑上可达的实体
+     ∪ 同故障域内共现异常的实体
+     ∪ 已知故障树/历史工单匹配的模式
+     ∪ 影响范围与对照不吻合的共享依赖</code></pre>
+  <p>要给传播留出合理的时间窗口。维护于 02:10:30 生效，02:11 开始 backfill，02:14 结束的窗口观测到尾延迟上升。02:18 收到晚到日志后，复盘才可补上 02:12:30 的积压时间。</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 380" role="img" aria-labelledby="rcaTitle rcaDesc">
+      <title id="rcaTitle">根因候选与证据图</title>
+      <desc id="rcaDesc">维护触发 backfill，与前台写争用后端，导致订单 P99 升高；备份和网络作为竞争假设，用对照和指标排除。</desc>
+      <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .n{fill:var(--card);stroke:var(--line);stroke-width:1.4;rx:9}
+        .nt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .nm{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .e{stroke:var(--accent);stroke-width:1.8;fill:none;marker-end:url(#a6)}
+        .e2{stroke:var(--muted);stroke-width:1.4;fill:none;stroke-dasharray:5 4;marker-end:url(#a6)}
+        .bad{stroke:var(--danger);stroke-width:1.4;fill:none;stroke-dasharray:4 4}
+        .h{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <rect rx="8" class="n" x="30" y="50" width="150" height="52"/><text class="nt" x="44" y="72">维护 CHG-18</text><text class="nm" x="44" y="92">osd.11 下线</text>
+      <rect rx="8" class="n" x="230" y="50" width="150" height="52"/><text class="nt" x="244" y="72">PG 重映射</text><text class="nm" x="244" y="92">osd.12/17/18</text>
+      <rect rx="8" class="n" x="430" y="50" width="160" height="52"/><text class="nt" x="444" y="72">backfill</text><text class="nm" x="444" y="92">读旧副本/写新副本</text>
+      <rect rx="8" class="n" x="640" y="50" width="170" height="52"/><text class="nt" x="654" y="72">后端队列升高</text><text class="nm" x="654" y="92">设备队列 34</text>
+      <rect rx="8" class="n" x="640" y="160" width="170" height="52"/><text class="nt" x="654" y="182">订单 P99 46ms</text><text class="nm" x="654" y="202">好请求 93.27%</text>
+      <path class="e" d="M180 76 H225"/><path class="e" d="M380 76 H425"/><path class="e" d="M590 76 H635"/><path class="e" d="M725 102 V155"/>
+
+      <rect rx="8" class="n" x="230" y="230" width="170" height="52"/><text class="nt" x="244" y="252">备份作业</text><text class="nm" x="244" y="272">另一站点/无共享路径</text>
+      <rect rx="8" class="n" x="430" y="230" width="170" height="52"/><text class="nt" x="444" y="252">网络/交换机</text><text class="nm" x="444" y="272">重传持平，端口未观测</text>
+      <rect rx="8" class="n" x="30" y="230" width="170" height="52"/><text class="nt" x="44" y="252">业务负载增加</text><text class="nm" x="44" y="272">IOPS 990≈基线</text>
+      <path class="bad" d="M315 230 V180"/><path class="bad" d="M515 230 V180"/><path class="bad" d="M115 230 V180"/>
+      <text class="nm" x="322" y="216">E03/T03/M08 降级</text>
+      <text class="nm" x="522" y="216">需端口丢包证据</text>
+      <text class="nm" x="122" y="216">IOPS 不支持</text>
+      <text class="h" x="30" y="330">证据评分：时间领先 + 路径可达 + 剂量响应 + 特异性 + 对照 + 干预响应</text>
+      <text class="nm" x="30" y="352">每个假设都要写“支持/反证/鉴别查询/停止条件”，否则只是故事。</text>
+    </svg>
+    <figcaption>图 6-1　根因不是一张“最可能”的标签，而是一组假设、证据、反证和鉴别查询。</figcaption>
+  </figure>
+  <h3>6.3 证据评分：六个维度</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>维度</th><th>问题</th><th>例子</th></tr></thead>
+    <tbody>
+      <tr><td>时间领先</td><td>候选是否先于症状？</td><td>02:16 可看到 02:14 窗口异常；02:18 后可补上积压日志</td></tr>
+      <tr><td>路径可达</td><td>沿拓扑能否传到受影响实体？</td><td>PG 重映射到 osd.17/18</td></tr>
+      <tr><td>剂量响应</td><td>强度/范围是否与症状吻合？</td><td>backfill 615 MiB/s 时 P99 46ms</td></tr>
+      <tr><td>特异性</td><td>能否解释“为什么是这些而不是那些”？</td><td>只有 hot 池受影响，cold 正常</td></tr>
+      <tr><td>对照</td><td>未受影响对照是否符合预期？</td><td>audit 走另一组 OSD，SLO 正常</td></tr>
+      <tr><td>干预响应</td><td>改变后是否按预期恢复？</td><td>调度调整后 P99 下降、恢复继续</td></tr>
+    </tbody>
+  </table></div>
+  <p>评分可以是加权和，也可以是贝叶斯似然；但<b>不要把加权和直接叫“概率”</b>，除非做过校准。权重应该从回放集里学，而不是拍脑袋。</p>
+
+  <h3>6.4 鉴别诊断模板</h3>
+  <pre><code>假设 H1：维护导致的 backfill 与前台写争用
+机制：OSD 重映射 → backfill 读旧副本/写新副本
+      → 后端队列上升 → 前台 P99 上升
+预测：受影响 OSD 队列上升；backfill 与 P99 同向；
+      限速 backfill 后 P99 下降；其他池不受影响
+02:16 可用的支持证据：E01/E02、T02、M06/M07
+处置后补充检验：E05、M09–M11
+反证/竞争：备份（E03 另一站点/T03 无共享）、网络（重传平）
+鉴别检查：交换机端口丢包、其他客户端、设备服务耗时
+停止条件：限速后 P99 不降 → H1 降级</code></pre>
+  <p>这比“根因是 backfill”有用得多，因为它告诉值班人员<b>下一步查什么、什么结果会改变结论</b>。</p>
+
+  <h3>6.5 三个深度：触发、机制、系统性</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>层</th><th>问题</th><th>例子</th></tr></thead>
+    <tbody>
+      <tr><td>触发</td><td>什么事件启动了链条？</td><td>维护让 osd.11 下线</td></tr>
+      <tr><td>机制</td><td>为什么会导致症状？</td><td>backfill 与前台写争用后端</td></tr>
+      <tr><td>系统性</td><td>为什么系统允许这件事发生？</td><td>维护前没有恢复预算/SLO 检查</td></tr>
+    </tbody>
+  </table></div>
+  <p>每一层独立引用证据。系统性原因往往没有单一证据，需要流程/配置/历史事故支持；不能把它写成“根因”却不给证据。</p>
+
+  <h3>6.6 失败模式</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
+    <tbody>
+      <tr><td>把共现当因果</td><td>根因错</td><td>时间 + 路径 + 对照</td></tr>
+      <tr><td>只找支持证据</td><td>确认偏误</td><td>强制写反证</td></tr>
+      <tr><td>用事后数据</td><td>不可复现</td><td>知识时间截断</td></tr>
+      <tr><td>症状当根因</td><td>反复发生</td><td>三层深度</td></tr>
+      <tr><td>置信度无校准</td><td>决策失真</td><td>回放校准</td></tr>
+      <tr><td>只给一个答案</td><td>漏掉竞争假设</td><td>鉴别诊断</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>6.7 放到 DME 里看</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>智能分析</td><td>I/O 全路径时延、首错模块、故障树、修复建议</td><td>没有公开证据对象/反证/置信度校准</td></tr>
+      <tr><td>故障智能体</td><td>场景匹配 + 思维链 + 健康/告警/性能/故障树工具；闪存覆盖 64%</td><td>排除对象/迁移/容灾/备份/AI 全局/主机/交换机侧</td></tr>
+      <tr><td>评测</td><td>1/3/5 分钟口径</td><td>没有公开测试集/误报率/盲评</td></tr>
+    </tbody>
+  </table></div>
+
+  <details class="quiz"><summary>自测：什么证据会推翻“backfill 争用”这个假设？</summary><div class="answer"><p>限速/暂停 backfill 后 P99 不降、受影响 OSD 队列不降；或受影响业务并不经过这些 OSD；或对照业务也同等恶化；或发现更早的、可解释的触发（如网络端口丢包、控制器 CPU 饱和）且 backfill 只是伴随现象。反证要写进报告，而不是只写支持证据。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://github.com/phamquiluan/RCAEval">RCAEval</a></p>
+</section>
+<section class="module" id="m7">
+  <h2><span class="num">07</span> Agent、RAG 与工具契约：让模型“查得到”，而不是“猜得对”</h2>
+  <p class="lead">会聊天不等于会调查。调查需要边界、工具、证据、验证和停止条件；没有这些，模型越流畅，越危险。</p>
+
+  <h3>7.1 有界状态机，而不是自由聊天</h3>
+  <pre><code>初始化（症状、窗口、资产、权限）
+  → 查采集健康/覆盖率
+  → 查业务影响（SLO、错误、范围）
+  → 查拓扑（事发时刻）
+  → 查变更/事件
+  → 生成候选假设
+  → 对每个假设选择最有区分度的查询
+  → 证据足够/预算耗尽/需要人工 → 输出</code></pre>
+  <p>每一步都要有预算：最大工具调用数、最大时间窗、最大返回行数、最大 token、最大并行度。没有预算的 Agent 会在大规模环境里把查询打爆。</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 380" role="img" aria-labelledby="agentTitle agentDesc">
+      <title id="agentTitle">Agent 调查循环与 MCP 工具层</title>
+      <desc id="agentDesc">规划器选择工具，经权限与 schema 校验后调用存储/MCP 服务，观察结果形成证据，验证器检查引用与时间边界。</desc>
+      <defs><marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .n{fill:var(--card);stroke:var(--line);stroke-width:1.4;rx:9}
+        .nt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .nm{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .e{stroke:var(--accent);stroke-width:1.7;fill:none;marker-end:url(#a7)}
+        .e2{stroke:var(--accent2);stroke-width:1.4;fill:none;stroke-dasharray:5 4;marker-end:url(#a7)}
+        .h{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <rect rx="8" class="n" x="30" y="40" width="160" height="52"/><text class="nt" x="44" y="62">症状/窗口/权限</text><text class="nm" x="44" y="82">初始化状态</text>
+      <rect rx="8" class="n" x="240" y="40" width="160" height="52"/><text class="nt" x="254" y="62">LLM 规划器</text><text class="nm" x="254" y="82">选下一个区分性查询</text>
+      <rect rx="8" class="n" x="450" y="40" width="160" height="52"/><text class="nt" x="464" y="62">Schema/权限校验</text><text class="nm" x="464" y="82">拒绝越权/坏参数</text>
+      <rect rx="8" class="n" x="660" y="40" width="220" height="52"/><text class="nt" x="674" y="62">工具/MCP 服务</text><text class="nm" x="674" y="82">DME/OTel/CMDB/日志</text>
+      <rect rx="8" class="n" x="660" y="150" width="220" height="52"/><text class="nt" x="674" y="172">观察结果</text><text class="nm" x="674" y="192">样本/单位/覆盖率/query_id</text>
+      <rect rx="8" class="n" x="450" y="150" width="160" height="52"/><text class="nt" x="464" y="172">证据对象</text><text class="nm" x="464" y="192">时间/实体/出处</text>
+      <rect rx="8" class="n" x="240" y="150" width="160" height="52"/><text class="nt" x="254" y="172">验证器</text><text class="nm" x="254" y="192">引用/单位/截止/权限</text>
+      <rect rx="8" class="n" x="30" y="150" width="160" height="52"/><text class="nt" x="44" y="172">报告/未决</text><text class="nm" x="44" y="192">事实/推断/下一步</text>
+      <path class="e" d="M190 66 H235"/><path class="e" d="M400 66 H445"/><path class="e" d="M610 66 H655"/>
+      <path class="e" d="M770 92 V145"/><path class="e2" d="M660 176 H615"/><path class="e2" d="M450 176 H405"/><path class="e2" d="M240 176 H195"/>
+      <path class="e2" d="M110 150 V100 H240" stroke-dasharray="4 4"/>
+      <text class="nm" x="120" y="118">证据不足：继续查</text>
+      <text class="h" x="30" y="260">停止条件：证据足够 / 预算耗尽 / 无区分性查询 / 需人工</text>
+      <text class="nm" x="30" y="286">写工具默认关闭；读工具也要租户/实体范围；每次调用返回 query_id。</text>
+      <text class="nm" x="30" y="312">MCP：JSON-RPC 暴露 tools/resources/prompts；协议不等于业务语义。</text>
+      <text class="nm" x="30" y="338">验证器是最后一道闸：引用存在、时间截止、单位一致、数值在证据范围内。</text>
+    </svg>
+    <figcaption>图 7-1　Agent 调查循环。模型负责规划，工具负责事实，验证器负责拒绝。</figcaption>
+  </figure>
+
+  <h3>7.2 工具契约：比 prompt 重要</h3>
+  <p>一个好工具不是“能查指标”，而是“查询语义明确、结果可引用、失败可解释”。最少包含：</p>
+  <pre><code>{
+  "name": "query_metric",
+  "description": "按实体、指标、时间窗查询聚合指标；返回样本、单位、缺失区间和查询 ID",
+  "input": { "entity_id": "...", "metric": "enum", "start": "...", "end": "...", "step": "..." },
+  "output": { "unit": "ms", "samples": [], "missing_intervals": [], "coverage": 0.98, "query_id": "..." },
+  "constraints": { "max_range": "7d", "max_samples": 10000, "read_only": true }
+}</code></pre>
+  <p>关键点：时间参数用绝对时间 + 时区；返回必须带单位、缺失区间、覆盖率和查询 ID；枚举值要稳定；错误要分类型（无权限/无数据/超时/参数错/后端错）；写工具单独授权，默认不暴露。</p>
+
+  <h3>7.3 MCP：把工具变成可组合的协议</h3>
+  <p>MCP 用 JSON-RPC 连接模型客户端和工具服务端，通常暴露 tools、resources、prompts。它的价值不是“又一个 API”，而是<b>工具的描述、调用和权限可以标准化</b>，不同 Agent 可以复用同一套存储工具。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>系统</th><th>公开状态</th><th>范围</th></tr></thead>
+    <tbody>
+      <tr><td>Pure1 Manage MCP</td><td>已正式可用</td><td>只读管理面查询</td></tr>
+      <tr><td>Fusion MCP</td><td>开源，文档公开</td><td>阵列/卷/文件系统/工作负载/拓扑；部分性能查询依赖直连令牌</td></tr>
+      <tr><td>NetApp DII MCP</td><td>Preview（2026-09 文档）</td><td>租户内只读：性能/容量/日志/告警/采集健康</td></tr>
+      <tr><td>华为 DME</td><td>公开材料未见 MCP 服务</td><td>北向 RESTful/SNMP/Ansible/CSI；故障智能体可通过北向 API 接入跨域智能体</td></tr>
+    </tbody>
+  </table></div>
+  <h3>7.4 RAG：检索的是“适用知识”，不是“相似文本”</h3>
+  <p>RAG 的失败大多不是向量模型，而是过滤条件。一个存储 Runbook 的检索至少要过滤：</p>
+  <pre><code>租户/ACL → 产品 → 型号 → 版本区间 → 故障码/症状
+→ 审批状态 → 生效时间 → 关键词+向量混合召回 → 重排</code></pre>
+  <p>分块要保留章节标题、表格、图注和原文链接；故障码用精确匹配，工单/复盘用语义召回。冲突的文档要返回多个候选和冲突点，不要强行合并。GraphRAG 适合“实体关系 + 多跳”的问题，但不适合替代精确的配置查询。</p>
+
+  <h3>7.5 证据对象与防幻觉</h3>
+  <p>把证据作为结构化对象传给模型，而不是一段散文：</p>
+  <pre><code>evidence_id, query_id, source, entity_id, window,
+observed_at, quality, payload_ref, summary</code></pre>
+  <p>报告必须：每个事实引用 <code>evidence_id</code>；区分“观测到的事实”和“推断”；明确知识截止时间；数据不足时输出“未决 + 下一步查询”；数值做单位/量纲校验（ms vs s、MiB vs MB、IOPS vs 带宽）。验证层要做引用存在性、引用与结论一致性、时间边界、数值范围、权限范围、输出 schema。模型自评不能替代外部校验。</p>
+
+  <h3>7.6 安全：日志和文档也是不可信输入</h3>
+  <p>Agent 读到的告警描述、日志、文件名、工单、Runbook 都可能包含提示注入。防护：工具输出标记为 <code>untrusted_data</code>，不进入系统指令；工具白名单 + 参数校验 + 只读默认；写操作走独立通道、人工审批、幂等键、回滚；沙箱/网络白名单；限制可访问的租户和实体；全链路审计。</p>
+
+  <h3>7.7 失败模式</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
+    <tbody>
+      <tr><td>工具语义模糊</td><td>模型乱查</td><td>严格 schema + 枚举</td></tr>
+      <tr><td>无预算</td><td>查询风暴</td><td>步数/行数/超时</td></tr>
+      <tr><td>RAG 不过滤版本</td><td>用错手册</td><td>版本/ACL/生效时间</td></tr>
+      <tr><td>证据不落 ID</td><td>无法复核</td><td>证据对象 + 查询 ID</td></tr>
+      <tr><td>提示注入</td><td>越权/错误动作</td><td>不可信标记 + 白名单</td></tr>
+      <tr><td>只评答案</td><td>奖励瞎猜</td><td>轨迹 + 证据 + 沉默</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>7.8 放到 DME 里看</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>运维助手</td><td>意图库 + 多轮追问 + 任务拆解 + 系统 API 调用 + 结果摘要</td><td>没有公开的意图库/工具清单/调用契约</td></tr>
+      <tr><td>故障智能体</td><td>场景匹配 + 排查思维链 + 健康/告警/性能/故障树工具</td><td>没有公开的轨迹/证据引用/越权审计</td></tr>
+      <tr><td>开放接口</td><td>北向 REST/SNMP/Ansible/CSI；可接入跨域智能体</td><td>没有公开 MCP/Schema/Agent 发现机制</td></tr>
+    </tbody>
+  </table></div>
+
+  <details class="quiz"><summary>自测：为什么覆盖率低时必须禁止高置信结论？</summary><div class="answer"><p>覆盖率低意味着证据只来自部分实体，缺失可能是非随机的（高负载/故障设备更容易停报）。此时全局指标和根因排序都可能被幸存者偏差扭曲。正确做法是输出“已观测子集 + 缺失实体 + 未决 + 下一步查询”，而不是把局部观察包装成全局结论。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS 服务卡</a> · <a href="https://modelcontextprotocol.io/">MCP 规范</a></p>
+</section>
+<section class="module" id="m8">
+  <h2><span class="num">08</span> 处置与双验收：P99 降了，为什么还不能结案</h2>
+  <p class="lead">存储的代价不对称：延迟可以忍，数据丢了不能忍；业务恢复了，冗余可能还没恢复。处置必须同时验证业务指标和耐久性指标。</p>
+
+  <h3>8.1 动作分级：不是所有“修复”都一样</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>级别</th><th>例子</th><th>默认授权</th><th>必要控制</th></tr></thead>
+    <tbody>
+      <tr><td>A0 只读</td><td>查指标、拓扑、日志</td><td>Agent 自主</td><td>租户/实体范围</td></tr>
+      <tr><td>A1 建议</td><td>生成变更方案</td><td>Agent 自主</td><td>证据、影响范围</td></tr>
+      <tr><td>A2 可逆配置</td><td>QoS 调整、分级策略、限速</td><td>人工一键批准</td><td>幂等、回滚、观察窗</td></tr>
+      <tr><td>A3 状态变更</td><td>主从切换、迁移、扩容</td><td>双人审批 + 窗口</td><td>预检、回滚、双验收</td></tr>
+      <tr><td>A4 破坏性</td><td>重启、隔离盘/端口、删除</td><td>严格人工 + 厂商支持</td><td>爆炸半径、熔断、审计</td></tr>
+    </tbody>
+  </table></div>
+  <p>Agent 默认只到 A0/A1；A2 以上必须是独立通道，不能和“聊天”共用一个工具权限。</p>
+
+  <h3>8.2 变更契约：把“动手”变成可审计的对象</h3>
+  <pre><code>目标实体 + 当前版本/配置哈希
+变更前后预期（指标、状态、冗余）
+前置条件（健康、冗余、窗口、无冲突变更）
+幂等键
+回滚方案与回滚触发条件
+观察窗口与成功/失败判据
+审批人、执行人、审计 ID</code></pre>
+  <p>执行前再次读取状态；如果拓扑、授权、冗余条件已变，重新评估。执行后先看业务 SLO，再看耐久性。</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 330" role="img" aria-labelledby="actTitle actDesc">
+      <title id="actTitle">处置与双验收闭环</title>
+      <desc id="actDesc">调查结论进入变更请求，经审批和执行，分别做业务验收和冗余验收，结果写回事故库。</desc>
+      <defs><marker id="a8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .n{fill:var(--card);stroke:var(--line);stroke-width:1.4;rx:9}
+        .nt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .nm{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .e{stroke:var(--accent);stroke-width:1.7;fill:none;marker-end:url(#a8)}
+        .h{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <rect rx="8" class="n" x="20" y="50" width="150" height="52"/><text class="nt" x="34" y="72">调查结论</text><text class="nm" x="34" y="92">根因/影响/证据</text>
+      <rect rx="8" class="n" x="210" y="50" width="170" height="52"/><text class="nt" x="224" y="72">变更请求</text><text class="nm" x="224" y="92">前置/幂等/回滚</text>
+      <rect rx="8" class="n" x="420" y="50" width="150" height="52"/><text class="nt" x="434" y="72">审批/预检</text><text class="nm" x="434" y="92">再读状态</text>
+      <rect rx="8" class="n" x="610" y="50" width="140" height="52"/><text class="nt" x="624" y="72">执行</text><text class="nm" x="624" y="92">A2/A3/A4</text>
+      <rect rx="8" class="n" x="610" y="170" width="140" height="52"/><text class="nt" x="624" y="192">业务验收</text><text class="nm" x="624" y="212">SLO/错误/延迟</text>
+      <rect rx="8" class="n" x="420" y="170" width="150" height="52"/><text class="nt" x="434" y="192">冗余验收</text><text class="nm" x="434" y="212">副本/复制/备份</text>
+      <rect rx="8" class="n" x="210" y="170" width="170" height="52"/><text class="nt" x="224" y="192">写回事故库</text><text class="nm" x="224" y="212">证据/裁定/结果</text>
+      <path class="e" d="M170 76 H205"/><path class="e" d="M380 76 H415"/><path class="e" d="M570 76 H605"/>
+      <path class="e" d="M680 102 V165"/><path class="e" d="M610 196 H575"/><path class="e" d="M420 196 H385"/>
+      <path class="e" d="M295 170 V105" stroke-dasharray="4 4"/>
+      <text class="nm" x="302" y="146">失败/回滚</text>
+      <text class="h" x="20" y="280">双验收：业务恢复 ≠ 冗余恢复；P99 降了还要看 degraded PG、复制 lag、快照/备份。</text>
+      <text class="nm" x="20" y="306">状态机：已缓解（mitigated）≠ 已恢复（resolved）≠ 已结案（closed）。</text>
+    </svg>
+    <figcaption>图 8-1　处置闭环。任何动作都要有前置、回滚、观察窗和双验收；结果写回事故库，进入下一轮评测。</figcaption>
+  </figure>
+  <h3>8.3 双验收：业务 + 冗余/耐久性</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>维度</th><th>指标</th><th>失败例子</th></tr></thead>
+    <tbody>
+      <tr><td>业务</td><td>好请求比例、错误率、P99、吞吐</td><td>降级 QoS 让延迟好看，但业务被限速</td></tr>
+      <tr><td>冗余</td><td>degraded PG、副本同步、重建速率、校验错误</td><td>前台恢复，但副本还没同步</td></tr>
+      <tr><td>数据</td><td>快照年龄、复制 lag、备份成功、一致性</td><td>主可用，备不可用</td></tr>
+      <tr><td>容量</td><td>水位、预留、增长斜率</td><td>清理了日志，但快照仍在涨</td></tr>
+      <tr><td>配置</td><td>版本、参数、许可、拓扑</td><td>改了调度，但重启后回退</td></tr>
+    </tbody>
+  </table></div>
+  <p>Ceph 场景：p99 恢复后继续看 <code>degraded_pgs</code>、恢复速率、scrub 错误、OSD 是否再次 down。Dorado/DME 场景：看控制器 CPU、缓存命中、端口误码、复制/双活状态、硬盘健康。不同产品指标不同，但“业务 + 冗余”的双验收是通用的。</p>
+
+  <h3>8.4 一个完整的处置例子</h3>
+  <div class="example"><span class="tag">算例</span><p>Ceph 回放中，维护触发的 backfill 与写入争用。02:19 在沙箱模拟调整恢复调度。02:25 的窗口写 P99 降至 14 ms，好请求比例约 99.95%，仍有 11 个退化 PG。此时要继续观察恢复进度、PG 状态、scrub 错误和故障域压力。<a href="./Ceph事故回放实验.html#参考结果与验收">实验数据与验收</a></p></div>
+
+  <h3>8.5 失败模式</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
+    <tbody>
+      <tr><td>只验业务，不验冗余</td><td>数据风险累积</td><td>双验收</td></tr>
+      <tr><td>无幂等/回滚</td><td>重试造成二次事故</td><td>变更契约</td></tr>
+      <tr><td>动作无爆炸半径</td><td>批量误操作</td><td>分批/熔断/白名单</td></tr>
+      <tr><td>观察窗太短</td><td>问题复发</td><td>覆盖业务峰值</td></tr>
+      <tr><td>不写回结果</td><td>无法学习</td><td>事故库/评测集</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>8.6 放到 DME 里看</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>自动化</td><td>资源发放、待办任务、业务编排（Ansible/API Explorer）、参数预检查、低权限规划/高权限审核</td><td>没有公开的接口级幂等/回滚/dry-run 契约</td></tr>
+      <tr><td>工作台</td><td>诊断/巡检/信息收集/自定义动作（隔离盘/端口、批量命令、重启节点/进程）</td><td>自定义动作多由华为服务人员定义/执行</td></tr>
+      <tr><td>安全</td><td>防勒索、安全快照、网存联动、AirGap</td><td>Agent 动作授权/爆炸半径/审计字段未公开</td></tr>
+    </tbody>
+  </table></div>
+
+  <details class="quiz"><summary>自测：P99 恢复到 SLO 以内，还需要检查什么才能结案？</summary><div class="answer"><p>至少检查：degraded/undersized PG 是否归零、副本/EC 是否同步、重建速率与 scrub 错误、复制/双活 lag、快照/备份是否正常、容量水位是否继续增长、配置是否在重启后保持。业务 SLO 只是“已缓解”，冗余/耐久性恢复才是“已恢复”。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://docs.ceph.com/en/tentacle/rados/configuration/mclock-config-ref/">Ceph mClock</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a></p>
+</section>
+<section class="module" id="m9">
+  <h2><span class="num">09</span> 评测与多集群：怎么证明它真的有用</h2>
+  <p class="lead">厂商说“故障处理周期缩短 90%”，你的系统说“根因准确率 85%”。如果没有同一故障集、同一快照、同一评分表，这两个数字不能比较，也不能验收。</p>
+
+  <h3>9.1 回放集：固定现场，隐藏答案</h3>
+  <p>一个像样的存储评测集至少包含：</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>类型</th><th>作用</th><th>例子</th></tr></thead>
+    <tbody>
+      <tr><td>真实事故回放</td><td>固定快照、隐藏答案、按知识时间截断</td><td>Ceph 维护导致 backfill 争用</td></tr>
+      <tr><td>合成故障</td><td>注入磁盘慢、网络丢包、OSD down、元数据热点</td><td>实验室可控复现</td></tr>
+      <tr><td>负对照</td><td>没有事故的窗口，检查误报</td><td>正常业务高峰</td></tr>
+      <tr><td>缺数据变体</td><td>隐藏关键证据，检查是否降低结论强度</td><td>隐藏 backfill/队列</td></tr>
+      <tr><td>晚到数据变体</td><td>事故结束后才到的日志，检查是否使用未来数据</td><td>02:18 的日志</td></tr>
+      <tr><td>新版本/新型号</td><td>检查迁移能力</td><td>新固件/新阵列</td></tr>
+    </tbody>
+  </table></div>
+  <p>切分按事故、集群、时间、版本，不按行随机。答案和复盘原文要隔离，评分用独立裁定表。</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 360" role="img" aria-labelledby="evalTitle evalDesc">
+      <title id="evalTitle">回放评测与多集群分层</title>
+      <desc id="evalDesc">左侧是回放集与评分环，右侧是边缘采集、区域目录、全局评测的分层。</desc>
+      <defs><marker id="a9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .n{fill:var(--card);stroke:var(--line);stroke-width:1.4;rx:9}
+        .nt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .nm{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .e{stroke:var(--accent);stroke-width:1.6;fill:none;marker-end:url(#a9)}
+        .h{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <text class="h" x="30" y="28">回放环</text>
+      <rect rx="8" class="n" x="30" y="48" width="160" height="48"/><text class="nt" x="44" y="70">固定快照</text><text class="nm" x="44" y="88">实体/指标/事件/拓扑</text>
+      <rect rx="8" class="n" x="220" y="48" width="150" height="48"/><text class="nt" x="234" y="70">隐藏答案</text><text class="nm" x="234" y="88">根因/证据/时间</text>
+      <rect rx="8" class="n" x="400" y="48" width="150" height="48"/><text class="nt" x="414" y="70">跑系统</text><text class="nm" x="414" y="88">规则/Agent/不同版本</text>
+      <rect rx="8" class="n" x="580" y="48" width="150" height="48"/><text class="nt" x="594" y="70">独立裁定</text><text class="nm" x="594" y="88">Top-k/证据/沉默</text>
+      <rect rx="8" class="n" x="760" y="48" width="140" height="48"/><text class="nt" x="774" y="70">写回迭代</text><text class="nm" x="774" y="88">规则/模型/工具</text>
+      <path class="e" d="M190 72 H215"/><path class="e" d="M370 72 H395"/><path class="e" d="M550 72 H575"/><path class="e" d="M730 72 H755"/>
+      <path class="e" d="M830 96 V130 H110 V96" stroke-dasharray="4 4"/>
+
+      <text class="h" x="30" y="176">多集群分层</text>
+      <rect rx="8" class="n" x="30" y="196" width="250" height="90"/><text class="nt" x="44" y="218">站点边缘</text><text class="nm" x="44" y="238">就近采集/缓冲/脱敏</text><text class="nm" x="44" y="256">粗聚合/断链续传</text><text class="nm" x="44" y="274">保留本地明细</text>
+      <rect rx="8" class="n" x="330" y="196" width="250" height="90"/><text class="nt" x="344" y="218">区域中心</text><text class="nm" x="344" y="238">跨站资产目录/拓扑快照</text><text class="nm" x="344" y="256">证据索引/查询路由</text><text class="nm" x="344" y="274">按需回查明细</text>
+      <rect rx="8" class="n" x="630" y="196" width="260" height="90"/><text class="nt" x="644" y="218">全局</text><text class="nm" x="644" y="238">策略/模型/评测/审计</text><text class="nm" x="644" y="256">不存明细；数据驻留策略</text><text class="nm" x="644" y="274">跨域证据只带引用</text>
+      <path class="e" d="M280 241 H325"/><path class="e" d="M580 241 H625"/>
+      <text class="nm" x="30" y="326">查询尽量下推；断链保留水位，恢复后补数并标记“迟到”。</text>
+      <text class="nm" x="30" y="348">多集群不是“把所有明细集中”，而是“目录集中、证据按需”。</text>
+    </svg>
+    <figcaption>图 9-1　左：回放评测环；右：边缘-区域-全局分层。评测和多集群都要处理数据缺口与时间语义。</figcaption>
+  </figure>
+  <h3>9.2 指标：不要只评“答案对不对”</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>维度</th><th>指标</th></tr></thead>
+    <tbody>
+      <tr><td>检测</td><td>事故级召回、误报/集群日、首次告警延迟</td></tr>
+      <tr><td>定位</td><td>根因 Top-1/Top-3、候选召回、TTL</td></tr>
+      <tr><td>证据</td><td>引用正确率、关键事实支持率、缺数据暂缓率</td></tr>
+      <tr><td>处置</td><td>建议可执行率、越权拒绝率、SLO 恢复时间、冗余恢复时间</td></tr>
+      <tr><td>成本</td><td>工具调用数、P95 调查时长、每事故 token/查询成本、人工核实时间</td></tr>
+    </tbody>
+  </table></div>
+  <p>消融：规则 → 规则+统计 → + 工具 Agent → + 拓扑/RAG → + 因果/故障树。每一层都在同一快照上比较，否则不知道增益来自哪里。</p>
+
+  <h3>9.3 公开基准与边界</h3>
+  <p>AIOpsLab、RCAEval、ORCA-bench 提供任务框架、盲测和候选召回/重排分解，但它们主要覆盖云应用/微服务。存储的特殊性——物理故障域、后台恢复、介质退化、双验收——需要自建案例。Backblaze/FAST ’20 可以支撑硬盘预测支线，但不能替代存储 RCA 评测。</p>
+
+  <h3>9.4 多集群：目录集中，证据按需</h3>
+  <p>站点边缘就近采集、缓冲、脱敏、粗聚合；区域中心维护跨站资产目录、拓扑快照、证据索引和查询路由；全局只放策略、模型、评测和审计，不存明细。查询尽量下推，明细按需回查；断链时保留水位，恢复后补数并标记“迟到”；租户隔离/数据驻留要在采集层设计。</p>
+
+  <h3>9.5 落地里程碑</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>阶段</th><th>交付</th><th>验收</th></tr></thead>
+    <tbody>
+      <tr><td>0–1 月</td><td>实体表、SLO、覆盖率、事件时间</td><td>能回答“当时是什么、缺了什么”</td></tr>
+      <tr><td>1–3 月</td><td>规则+稳健基线、告警聚合、时间线</td><td>误报/集群日可接受，MTTD 下降</td></tr>
+      <tr><td>3–6 月</td><td>时态拓扑、变更关联、证据对象、RAG</td><td>根因 Top-3 + 证据可复核</td></tr>
+      <tr><td>6–12 月</td><td>工具层/MCP、Agent 调查、回放评测</td><td>同快照可复现，缺数据会暂缓</td></tr>
+      <tr><td>12 月+</td><td>受监督处置、双验收、有限自治</td><td>越权为零，回滚可演练</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>9.6 失败模式</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
+    <tbody>
+      <tr><td>评测用未来数据</td><td>指标虚高</td><td>知识时间截断</td></tr>
+      <tr><td>只有成功案例</td><td>过度自信</td><td>负对照 + 缺数据</td></tr>
+      <tr><td>按行随机切分</td><td>同事故泄漏</td><td>按事故/时间/集群切分</td></tr>
+      <tr><td>集中所有明细</td><td>成本/合规爆炸</td><td>边缘聚合 + 按需下钻</td></tr>
+      <tr><td>直接跳到自治</td><td>事故放大</td><td>L1→L2→L3 逐级</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>9.7 放到 DME 里看</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>多集群</td><td>多数据中心管理；跨 DC 时延 &lt;50ms、丢包 &lt;0.1%、带宽 ≥100Mbit/s；单套最大 175 套存储</td><td>没有公开的跨套全局图/查询</td></tr>
+      <tr><td>云端</td><td>DME IQ：移动 APP、Call Home 10 分钟感知、工单、7×24、在线客服</td><td>数据驻留/跨境边界需确认</td></tr>
+      <tr><td>评测</td><td>案例 + 厂商指标（80%/5 倍/90%/1-3-5 分钟）</td><td>没有公开回放集/负对照/盲评</td></tr>
+    </tbody>
+  </table></div>
+
+  <details class="quiz"><summary>自测：为什么“按行随机切分”会高估根因模型？</summary><div class="answer"><p>同一次事故的多条指标/日志/证据会同时进入训练和测试，模型可能记住事故的“指纹”而不是学到可迁移的机制；同一实体/时间窗的泄漏也会让 Top-k 虚高。应按事故、集群、时间、版本切分，并保留新集群/新版本/缺数据场景。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://arxiv.org/abs/2501.06706">AIOpsLab</a> · <a href="https://github.com/phamquiluan/RCAEval">RCAEval</a> · <a href="https://arxiv.org/abs/2607.28545">ORCA-bench</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS 服务卡</a></p>
+</section>
+<section class="module" id="m10">
+  <h2><span class="num">10</span> 华为 DME 全链路：设备侧事实源，还是完整专家系统？</h2>
+  <p class="lead">DME 是华为存储的管理面操作系统：强在设备覆盖、拓扑、故障树、预测和自动化；弱在开放工具契约、可核验评测、时态证据、业务 SLO 和处置治理。把它放回九个环节，才能看清边界。</p>
+
+  <h3>10.1 产品地图：DME、DME IQ、DataMaster</h3>
+  <div class="grid2">
+    <div class="card"><h4>iMaster DME</h4><p>数据中心内部署（物理机/虚拟机/容器化/一体机），统一纳管华为/三方存储、FC/IP 交换机、服务器、虚拟化、容器、备份与安全设备；提供资源、监控、诊断、自动化、数据目录、防勒索。</p></div>
+    <div class="card"><h4>iMasterCloud DME IQ</h4><p>华为另行说明的云端智能运维平台，提供移动 APP、预测和健康检查、Call Home、工单与在线客服，具体支持能力依服务条件。</p></div>
+    <div class="card"><h4>DataMaster</h4><p>DME 产品页确认对话式运维、故障 Agent，以及内置或客户提供的第三方模型。优化 Agent 与 MaaS 周级迭代见 AgenticOps 博客，25.1.0 交付范围待核实。</p></div>
+    <div class="card"><h4>Omni-Dataverse / Catalog</h4><p>跨域非结构化数据目录：千亿文件、15 种检索条件、标量+向量、数据血缘、冷热分级；管文件元数据，不是设备语义图谱。</p></div>
+  </div>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 430" role="img" aria-labelledby="dmeTitle dmeDesc">
+      <title id="dmeTitle">iMaster DME 的逻辑架构</title>
+      <desc id="dmeDesc">设备经南向接口进入 DME 平台，平台提供配置、历史、搜索、告警、拓扑、分析、智能体和编排，再经北向接口对接云管与 ITSM，云端 DME IQ 提供远程运维。</desc>
+      <defs><marker id="a10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .n{fill:var(--card);stroke:var(--line);stroke-width:1.3;rx:8}
+        .nt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .nm{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .e{stroke:var(--accent);stroke-width:1.5;fill:none;marker-end:url(#a10)}
+        .z{fill:var(--soft);stroke:none;rx:10}
+        .h{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <rect class="z" x="20" y="20" width="880" height="78"/><text class="h" x="34" y="42">设备/平台</text>
+      <rect rx="8" class="n" x="40" y="52" width="150" height="34"/><text class="nt" x="54" y="74">存储阵列</text>
+      <rect rx="8" class="n" x="205" y="52" width="150" height="34"/><text class="nt" x="219" y="74">FC/IP 交换机</text>
+      <rect rx="8" class="n" x="370" y="52" width="150" height="34"/><text class="nt" x="384" y="74">服务器/虚拟化</text>
+      <rect rx="8" class="n" x="535" y="52" width="150" height="34"/><text class="nt" x="549" y="74">容器/CSI</text>
+      <rect rx="8" class="n" x="700" y="52" width="180" height="34"/><text class="nt" x="714" y="74">备份/安全设备</text>
+
+      <rect class="z" x="20" y="118" width="880" height="196"/><text class="h" x="34" y="140">iMaster DME（ServiceMesh 微服务）</text>
+      <rect rx="8" class="n" x="40" y="154" width="160" height="42"/><text class="nt" x="54" y="180">配置库/历史库</text>
+      <rect rx="8" class="n" x="220" y="154" width="160" height="42"/><text class="nt" x="234" y="180">OpenSearch 搜索</text>
+      <rect rx="8" class="n" x="400" y="154" width="160" height="42"/><text class="nt" x="414" y="180">告警/策略引擎</text>
+      <rect rx="8" class="n" x="580" y="154" width="160" height="42"/><text class="nt" x="594" y="180">拓扑/性能分析</text>
+      <rect rx="8" class="n" x="760" y="154" width="120" height="42"/><text class="nt" x="774" y="180">智能分析</text>
+      <rect rx="8" class="n" x="40" y="214" width="160" height="42"/><text class="nt" x="54" y="240">健康评分</text>
+      <rect rx="8" class="n" x="220" y="214" width="160" height="42"/><text class="nt" x="234" y="240">运维助手/故障 Agent</text>
+      <rect rx="8" class="n" x="400" y="214" width="160" height="42"/><text class="nt" x="414" y="240">资源发放/编排</text>
+      <rect rx="8" class="n" x="580" y="214" width="160" height="42"/><text class="nt" x="594" y="240">工作台/问题处理</text>
+      <rect rx="8" class="n" x="760" y="214" width="120" height="42"/><text class="nt" x="774" y="240">数据目录</text>
+      <text class="nm" x="40" y="290">南向：REST / SNMP / SSH / CSI / 平台 API　　北向：RESTful / SNMP Trap / Ansible / CSI / 云管 / ITSM</text>
+      <text class="nm" x="40" y="308">保留：分钟级 7 天 / 30 分钟 6 个月 / 天级 2 年；5 秒历史按需从设备读</text>
+
+      <rect class="z" x="20" y="332" width="430" height="76"/><text class="h" x="34" y="354">北向生态</text>
+      <rect rx="8" class="n" x="40" y="364" width="120" height="34"/><text class="nt" x="54" y="386">云管</text>
+      <rect rx="8" class="n" x="180" y="364" width="120" height="34"/><text class="nt" x="194" y="386">ITSM</text>
+      <rect rx="8" class="n" x="320" y="364" width="110" height="34"/><text class="nt" x="334" y="386">自建平台</text>
+
+      <rect class="z" x="470" y="332" width="430" height="76"/><text class="h" x="484" y="354">iMasterCloud DME IQ</text>
+      <rect rx="8" class="n" x="490" y="364" width="120" height="34"/><text class="nt" x="504" y="386">移动 APP</text>
+      <rect rx="8" class="n" x="630" y="364" width="120" height="34"/><text class="nt" x="644" y="386">Call Home</text>
+      <rect rx="8" class="n" x="770" y="364" width="110" height="34"/><text class="nt" x="784" y="386">工单/客服</text>
+      <path class="e" d="M460 160 V120"/><path class="e" d="M460 310 V332"/>
+    </svg>
+    <figcaption>图 10-1　DME 逻辑架构。设备侧事实、平台内分析与智能体、北向生态、云端 DME IQ 四层。公开材料没有给出每层的证据 ID/模型指标/动作授权细节。</figcaption>
+  </figure>
+  <h3>10.2 九个环节逐段对照</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>环节</th><th>DME 公开能力</th><th>机制/边界</th><th>仍然缺什么</th></tr></thead>
+    <tbody>
+      <tr><td>0 本体/资源</td><td>多厂商 CMDB、Catalog/Schema/Dataset/Table、标签/机柜/维保/服务年限</td><td>以设备为中心的配置库 + OpenSearch；数据目录管文件元数据</td><td>没有公开的存储本体/图查询；知识图谱有产品页/博客表述，白皮书未展开</td></tr>
+      <tr><td>1 路径/SLO</td><td>SAN/NAS/容器拓扑、I/O 全路径、首错模块、5 秒视图</td><td>边界是它纳管的网元；看不到应用进程内部</td><td>没有业务 SLO/错误预算；没有应用侧 OTel/追踪</td></tr>
+      <tr><td>2 采集/时序</td><td>REST/SNMP/SSH/CSI；1/5 分钟；7d/6mo/2y；OpenSearch</td><td>产品内闭环，优先管理面查询/报表</td><td>没有原始遥测导出、查询 ID、覆盖率 API</td></tr>
+      <tr><td>3 资产/拓扑</td><td>WWN+HostLink、IO trace、CSI；6 小时同步</td><td>当前状态 + 定期同步</td><td>没有 as-of 拓扑/映射 epoch/图查询</td></tr>
+      <tr><td>4 检测/告警</td><td>屏蔽/闪断/汇聚/相关性/自动确认；检查策略；健康评分；80+ 经验</td><td>规则/策略 + 统计 + 预测的混合</td><td>没有公开误报/召回/MTTD；没有 SLO 燃烧率</td></tr>
+      <tr><td>5 预测</td><td>容量 1 年（最多 180 天历史）、性能 2 周、硬盘 14 天健康度、特定 SAS HDD 30 天故障预测、SSD 寿命</td><td>白皮书说明硬盘模型离线训练并随版本升级，健康度为产品评分</td><td>评测口径、校准、误报和客户侧再训练能力待确认</td></tr>
+      <tr><td>6 根因</td><td>智能分析、故障树、首错、故障智能体覆盖 64%</td><td>故障树 + 产品知识 + 有限工具调用</td><td>没有证据对象/反证/公开评测；排除主机/交换机/对象/迁移/容灾/备份</td></tr>
+      <tr><td>7 Agent/工具</td><td>对话式运维、故障 Agent、北向 API 接入跨域智能体</td><td>意图库、场景库与工具调用；优化 Agent 来自博客说明</td><td>从引用的公开资料尚无法确认 MCP、工具 Schema、轨迹或 RAG ACL</td></tr>
+      <tr><td>8 处置/验证</td><td>资源发放、待办、编排、Ansible、工作台、防勒索</td><td>预置工作流 + 审批；自定义动作多由华为服务人员执行</td><td>没有公开的 Agent 授权/幂等/回滚/双验收契约</td></tr>
+      <tr><td>9 评测/多集群</td><td>多 DC、175 套、DME IQ、Call Home、7×24</td><td>多套 DME + 云管的联邦</td><td>没有公开回放集/负对照/跨套全局图</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>10.3 DataMaster：LLM + 知识 + 技能 + 工具</h3>
+  <figure class="diagram">
+    <svg viewBox="0 0 920 300" role="img" aria-labelledby="dmTitle dmDesc">
+      <title id="dmTitle">DataMaster 的 AgenticOps 结构</title>
+      <desc id="dmDesc">LLM 负责规划，知识库、Skill 库、工具库分别提供长期记忆、场景技能和 API，云端 MaaS 与本地工具协同。</desc>
+      <defs><marker id="a11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <style>
+        .n{fill:var(--card);stroke:var(--line);stroke-width:1.4;rx:9}
+        .nt{fill:var(--ink);font:12px system-ui,"Microsoft YaHei",sans-serif}
+        .nm{fill:var(--muted);font:11px system-ui,"Microsoft YaHei",sans-serif}
+        .e{stroke:var(--accent);stroke-width:1.6;fill:none;marker-end:url(#a11)}
+        .h{fill:var(--accent);font:700 12px system-ui,"Microsoft YaHei",sans-serif}
+      </style>
+      <rect rx="8" class="n" x="30" y="40" width="170" height="52"/><text class="nt" x="44" y="62">用户目标/告警</text><text class="nm" x="44" y="82">自然语言/告警</text>
+      <rect rx="8" class="n" x="240" y="40" width="180" height="52"/><text class="nt" x="254" y="62">LLM 规划</text><text class="nm" x="254" y="82">意图/任务拆解</text>
+      <rect rx="8" class="n" x="460" y="40" width="180" height="52"/><text class="nt" x="474" y="62">知识库</text><text class="nm" x="474" y="82">手册/最佳实践/故障模式</text>
+      <rect rx="8" class="n" x="680" y="40" width="210" height="52"/><text class="nt" x="694" y="62">Skill 库</text><text class="nm" x="694" y="82">场景化运维技能</text>
+      <rect rx="8" class="n" x="680" y="140" width="210" height="52"/><text class="nt" x="694" y="162">工具库</text><text class="nm" x="694" y="182">指标/配置/故障定位 API</text>
+      <rect rx="8" class="n" x="460" y="140" width="180" height="52"/><text class="nt" x="474" y="162">本地 DME</text><text class="nm" x="474" y="182">设备/拓扑/告警/动作</text>
+      <rect rx="8" class="n" x="240" y="140" width="180" height="52"/><text class="nt" x="254" y="162">云端 MaaS</text><text class="nm" x="254" y="182">周级迭代（数据边界待确认）</text>
+      <rect rx="8" class="n" x="30" y="140" width="170" height="52"/><text class="nt" x="44" y="162">结论/建议/验证</text><text class="nm" x="44" y="182">管理员确认后执行</text>
+      <path class="e" d="M200 66 H235"/><path class="e" d="M420 66 H455"/><path class="e" d="M640 66 H675"/>
+      <path class="e" d="M790 92 V135"/><path class="e" d="M680 166 H645"/><path class="e" d="M460 166 H425"/><path class="e" d="M240 166 H205"/>
+      <text class="nm" x="30" y="240">Copilot：对话/查询/汇总；故障 Agent：场景匹配/思维链/工具/故障树；优化 Agent：按 SLO 设计方案。</text>
+      <text class="nm" x="30" y="264">博客明确挑战：幻觉、权限围栏、爆炸半径、数字孪生、跨域协同。</text>
+      <text class="nm" x="30" y="288">这些是方向；白皮书里的可交付能力是故障树/智能分析/故障智能体/运维助手。</text>
+    </svg>
+    <figcaption>图 10-2　根据 AgenticOps 博客绘制的概念图。25.1.0 的优化 Agent、MaaS 部署与数据驻留范围需确认。</figcaption>
+  </figure>
+  <h3>10.4 七个关键缺口与补法</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>缺口</th><th>为什么关键</th><th>补法</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>工具契约/MCP</td><td>通用 Agent 无法即插即用；工具语义/权限/时间参数不可控</td><td>自建 DME REST→MCP 适配层：10–20 个只读工具，严格 schema、证据 ID、查询预算</td></tr>
+      <tr><td>2</td><td>可核验评测</td><td>无法证明系统比人强，也无法发现回归</td><td>自建 30–100 个事故回放 + 负对照 + 缺数据/晚到变体；盲评</td></tr>
+      <tr><td>3</td><td>时态拓扑/证据</td><td>根因可能指向错误设备，结论不可审计</td><td>定时拓扑快照 + 变更事件 + 外部双时态图；证据对象带 query_id/snapshot_id</td></tr>
+      <tr><td>4</td><td>业务 SLO/端到端</td><td>告警级别与业务影响脱节</td><td>应用侧 OTel/埋点 + SLO/错误预算；与 DME 指标时间对齐</td></tr>
+      <tr><td>5</td><td>处置治理</td><td>Agent 误动作的代价不对称</td><td>读/写分离、A0–A4 分级、审批、幂等、回滚、爆炸半径、双验收</td></tr>
+      <tr><td>6</td><td>覆盖范围</td><td>64% 场景 + 排除主机/交换机/对象/迁移/容灾/备份</td><td>DME 做设备侧，OTel/CMDB/工单补主机/网络/应用；覆盖外路由人工</td></tr>
+      <tr><td>7</td><td>数据可携带/可重训</td><td>无法做客户侧模型、长期回放、合规审计</td><td>谈原始遥测导出/流式接口；至少导出聚合+事件+拓扑快照；自建特征库</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>10.5 在 DME 之上补什么</h3>
+  <pre><code>┌─────────────────────────────────────────────┐
+│ 评测面：回放/负对照/缺数据/晚到/盲评/成本      │
+├─────────────────────────────────────────────┤
+│ 推理面：规则+统计+故障树+因果图+LLM+验证器     │
+│         工具网关（MCP）：DME/OTel/CMDB/ITSM    │
+├─────────────────────────────────────────────┤
+│ 知识面：设备/故障/版本/症状/动作本体 + Runbook  │
+├─────────────────────────────────────────────┤
+│ 证据面：双时态拓扑 + 事件时间线 + 指标快照      │
+├─────────────────────────────────────────────┤
+│ 状态面：DME 北向 REST/SNMP + 应用 OTel + CMDB  │
+├─────────────────────────────────────────────┤
+│ 行动面：DME 工作流/API + Ansible + 审批/审计    │
+└─────────────────────────────────────────────┘</code></pre>
+  <p>分工：设备纳管/资源台账/设备指标/告警/巡检/拓扑当前态/故障树/容量/硬盘预测/资源发放 → 用 DME；业务 SLO、应用追踪、双时态证据、MCP 工具层、跨域 RCA、处置治理、回放评测 → 自建。</p>
+
+  <details class="quiz"><summary>自测：如果只能先补一件事，应该补工具契约还是评测？</summary><div class="answer"><p>先补评测。没有评测，工具契约的“好坏”无法判断，也无法证明补了之后有增益。最小评测可以先用 10 个真实/合成事故 + 5 个负对照 + 缺数据/晚到变体，记录根因、证据、时间和成本；然后再补 MCP/工具层，用同一套评测比较增益。</p></div></details>
+
+  <p class="source">原始资料（只作出处）：<a href="https://e.huawei.com/cn/products/storage/data-management">DME 产品页</a> · <a href="https://e.huawei.com/cn/products/storage/data-management/eservice">DME IQ</a> · <a href="https://e.huawei.com/cn/documents/products/storage/113fc2f4d1f54670942dd224c8060d62">DME 25.1.0 白皮书</a> · <a href="https://e.huawei.com/cn/blogs/2026/solutions/storage/agenticops">AgenticOps 博客</a></p>
+</section>
+<section class="module" id="m11">
+  <h2><span class="num">11</span> 自测：10 个必须能答的问题</h2>
+  <p class="lead">先合上答案，用自己的话回答；再展开对照。答不出来，回到对应模块。更多题（90 道）在<a href="./练习与考核答案.html">答案册</a>。</p>
+
+  <details class="quiz"><summary>1. 为什么 IOPS 不变、P99 升高时，先扩容可能无效？</summary><div class="answer"><p>因为瓶颈可能是服务时间/排队，而不是并发能力：backfill、GC、缓存降级、锁/元数据热点、网络重传都会让同样负载变慢。扩容不缩短已有请求的排队，甚至可能因重建/再平衡加剧争用。先查队列、后台任务、缓存、错误与重传。</p></div></details>
+
+  <details class="quiz"><summary>2. 三个客户端 P99 分别是 10/20/30ms，全局 P99 是多少？</summary><div class="answer"><p>不能从这三个数算出来。全局 P99 取决于各客户端的请求量分布和尾部形状；必须合并相同桶边界的直方图后插值。直接平均会失真。</p></div></details>
+
+  <details class="quiz"><summary>3. 一半 OSD 停报，平均延迟下降，为什么危险？</summary><div class="answer"><p>停报的可能是高负载/不健康 OSD，剩余样本是选择性偏差；平均值下降会掩盖采集失败。必须用 expected/reporting 计算覆盖率，并把缺失实体列入证据；覆盖率低时不得输出全局均值。</p></div></details>
+
+  <details class="quiz"><summary>4. 为什么调查要保留历史拓扑？</summary><div class="answer"><p>维护和迁移会改变 PG 到 OSD 的映射。按 <code>valid_from/valid_to</code> 选事发时点有效的关系，再按 <code>known_from/known_to</code> 选调查时点可见的修订。晚到纠正需要保留旧修订，才能复现原来的调查。</p></div></details>
+
+  <details class="quiz"><summary>5. 5 万条序列、3.5σ 单点阈值，为什么每天会有十几万误报？</summary><div class="answer"><p>双侧 3.5σ 单次误报概率约 0.000465；50,000 × 0.000465 ≈ 23.3 条/次；15 秒采样每天 5,760 次 → 约 13.4 万。必须加连续窗口、效应量、分组检测、最小样本和告警预算。</p></div></details>
+
+  <details class="quiz"><summary>6. 为什么硬盘预测不能随机切分？</summary><div class="answer"><p>同一块盘的多天样本高度相关，随机切分会让同一次故障前后样本同时进入训练/测试，模型记住“指纹”而非可迁移特征。按时间 + 按设备切分，并隔离同盘同次故障；留出新型号/新固件做迁移测试。</p></div></details>
+
+  <details class="quiz"><summary>7. 什么证据会推翻“backfill 争用”假设？</summary><div class="answer"><p>限速/暂停 backfill 后 P99 不降、受影响 OSD 队列不降；业务不经过这些 OSD；对照业务同等恶化；或发现更早的可解释触发（端口丢包/控制器饱和）且 backfill 只是伴随。反证要写进报告。</p></div></details>
+
+  <details class="quiz"><summary>8. 为什么 Agent 必须先查采集健康，再查业务指标？</summary><div class="answer"><p>数据不齐时，指标可能只代表已观测子集，缺失还可能非随机（故障设备更容易停报）。先查 coverage/watermark/missing，再决定能不能下全局结论；覆盖率低时输出“未决 + 下一步”，而不是高置信根因。</p></div></details>
+
+  <details class="quiz"><summary>9. P99 恢复到 SLO 内，为什么还不能结案？</summary><div class="answer"><p>业务恢复 ≠ 冗余恢复。还要看 degraded/undersized PG、副本/EC 同步、重建速率、scrub 错误、复制/双活 lag、快照/备份、容量水位、配置是否保持。状态应是“已缓解”，不是“已恢复/已结案”。</p></div></details>
+
+  <details class="quiz"><summary>10. 如何验证“故障处理周期缩短 90%”这句话？</summary><div class="answer"><p>定义指标（MTTD/MTTA/MTTR 或告警到关闭）、分母（事故类型/级别）、对照（同一事故集/人工/旧系统）、盲评、时间切分、混杂控制（人员/流程/设备）、统计显著性和成本/误报。要求厂商给出测试条件、样本量、失败案例；否则只能当营销口径。</p></div></details>
+</section>
+<section class="module" id="m12">
+  <h2><span class="num">12</span> 原始资料索引：链接只放在这里</h2>
+  <p class="lead">正文的每个知识点都已经展开成机制、图和算例；下面的链接只作为出处和延伸阅读。产品能力、版本和指标以原文与现场版本为准。</p>
+
+  <h3>12.1 存储与观测基础</h3>
+  <ul>
+    <li>Ceph OSD/PG 监控：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">docs.ceph.com</a></li>
+    <li>Ceph 健康检查：<a href="https://docs.ceph.com/en/latest/rados/operations/health-checks/">health-checks</a></li>
+    <li>Ceph 文档总入口：<a href="https://docs.ceph.com/">docs.ceph.com</a></li>
+    <li>Ceph Prometheus 模块：<a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">mgr/prometheus</a></li>
+    <li>Ceph 监控（Squid）：<a href="https://docs.ceph.com/en/squid/rados/operations/monitoring/">monitoring</a></li>
+    <li>Ceph mClock：<a href="https://docs.ceph.com/en/tentacle/rados/configuration/mclock-config-ref/">mclock-config-ref</a></li>
+    <li>Prometheus 直方图：<a href="https://prometheus.io/docs/practices/histograms/">histograms</a></li>
+    <li>Prometheus 原生直方图：<a href="https://prometheus.io/docs/specs/native_histograms/">native histograms</a></li>
+    <li>Prometheus 文档：<a href="https://prometheus.io/docs/">prometheus.io/docs</a></li>
+    <li>OpenTelemetry 日志模型：<a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">logs data model</a></li>
+    <li>OpenTelemetry 文档：<a href="https://opentelemetry.io/docs/">opentelemetry.io</a></li>
+    <li>NVMe 规范：<a href="https://nvmexpress.org/specifications/">nvmexpress.org</a></li>
+    <li>SNIA 技术活动：<a href="https://www.snia.org/tech_activities">snia.org</a></li>
+    <li>Google SRE Workbook：<a href="https://sre.google/workbook/">sre.google/workbook</a></li>
+  </ul>
+
+  <h3>12.2 厂商运维架构</h3>
+  <ul>
+    <li>Everpure Pure1 Agentic 说明：<a href="https://blog.everpuredata.com/products/pure1-now-agentic/">blog.everpuredata.com</a></li>
+    <li>2026-09 官方演示：<a href="https://www.everpuredata.com/au/video/webinars/ask-us-everything-about-pure1-ai-copilot-mcp-server-fusion/6405406488112.html">webinar</a></li>
+    <li>Fusion MCP 用户指南：<a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">GitHub</a></li>
+    <li>Everpure 跨栈 MCP 案例：<a href="https://blog.everpuredata.com/purely-technical/mcp-across-everpure-nutanix-kubernetes/">blog</a></li>
+    <li>NetApp AutoSupport / Digital Advisor：<a href="https://docs.netapp.com/us-en/ontap/system-admin/autosupport-active-iq-digital-advisor-concept.html">docs.netapp.com</a></li>
+    <li>Active IQ 发布记录：<a href="https://docs.netapp.com/us-en/active-iq/reference_new_activeiq.html">release notes</a></li>
+    <li>DII 发布记录：<a href="https://docs.netapp.com/us-en/data-infrastructure-insights/concept_whats_new.html">what's new</a></li>
+    <li>DII MCP：<a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">mcp overview</a></li>
+    <li>DII Monitor：<a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">create monitor</a></li>
+    <li>Dell AIOps：<a href="https://www.dell.com/en-us/infohub/articles/dell-aiops-assure-infrastructure-integrity-with-ease">infohub</a></li>
+    <li>PowerStore 可观测性：<a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">infohub</a></li>
+    <li>AWS DevOps Agent GA：<a href="https://aws.amazon.com/blogs/mt/announcing-general-availability-of-aws-devops-agent/">aws.amazon.com</a></li>
+    <li>AWS 服务卡：<a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">docs.aws.amazon.com</a></li>
+    <li>AWS 更新记录：<a href="https://docs.aws.amazon.com/devopsagent/latest/userguide/whats-new.html">what's new</a></li>
+  </ul>
+
+  <h3>12.3 华为 DME</h3>
+  <ul>
+    <li>DME 数据管理产品页：<a href="https://e.huawei.com/cn/products/storage/data-management">e.huawei.com</a></li>
+    <li>DME 产品页：<a href="https://e.huawei.com/cn/products/storage/data-management/data-management-engine">data-management-engine</a></li>
+    <li>DME IQ 产品页：<a href="https://e.huawei.com/cn/products/storage/data-management/eservice">eservice</a></li>
+    <li>DME 25.1.0 白皮书：<a href="https://e.huawei.com/cn/documents/products/storage/113fc2f4d1f54670942dd224c8060d62">documents</a></li>
+    <li>DME 25.1.0 彩页：<a href="https://e.huawei.com/cn/documents/products/storage/69ddfac82b98443aa070ae54adda1edd">documents</a></li>
+    <li>DME IQ 彩页：<a href="https://e.huawei.com/cn/documents/products/storage/2dc27b1210404a5580f802575653910e">documents</a></li>
+    <li>AgenticOps 博客：<a href="https://e.huawei.com/cn/blogs/2026/solutions/storage/agenticops">e.huawei.com</a></li>
+  </ul>
+
+  <h3>12.4 评测、预测与协议</h3>
+  <ul>
+    <li>AIOpsLab 论文页：<a href="https://www.microsoft.com/en-us/research/publication/aiopslab-a-holistic-framework-for-evaluating-ai-agents-for-enabling-autonomous-cloud/">Microsoft Research</a></li>
+    <li>AIOpsLab arXiv：<a href="https://arxiv.org/abs/2501.06706">2501.06706</a></li>
+    <li>RCAEval：<a href="https://github.com/phamquiluan/RCAEval">GitHub</a></li>
+    <li>ORCA-bench：<a href="https://arxiv.org/abs/2607.28545">arXiv</a></li>
+    <li>FAST ’20 硬盘预测：<a href="https://www.usenix.org/conference/fast20/presentation/lu">USENIX</a></li>
+    <li>Backblaze Drive Stats：<a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">backblaze.com</a></li>
+    <li>MCP 规范：<a href="https://modelcontextprotocol.io/">modelcontextprotocol.io</a></li>
+  </ul>
+
+  <p class="source">配套文档：<a href="./专家系统深入篇.html">深入篇</a> · <a href="./专家系统进阶篇.html">进阶篇</a> · <a href="./华为DME全链路解剖.html">DME 解剖</a> · <a href="./外部资料拆解.html">资料拆解</a> · <a href="./练习与考核答案.html">答案册</a> · <a href="./Ceph事故回放实验.html">Ceph 实验</a>。</p>
+</section>
+<section class="module" id="m13">
+  <h2><span class="num">13</span> PB 级建设与实操</h2>
+  <p class="lead">从纳管一台设备到关闭一张工单，走通设备接入、现场取证、Agent 计划、异步执行，以及业务和数据保护验收。</p>
+  <div class="grid2">
+    <div class="card"><h4>建设手册</h4><p>用三站点 10 PB 的教学场景展开定容、厂商适配、运行态资产映射、任务技能、持久执行、数据资产运营和生产验收。</p><p><a href="./PB级存储智能运维建设手册.html">打开 PB 级建设手册</a></p></div>
+    <div class="card"><h4>三站实操</h4><p>从已有实验 Ceph 集群采集，再用合成数据区分后台恢复、网络拥塞和写负载变化。最后在本机模拟执行器重启与设备作业对账。</p><p><a href="./PB级存储运维实操.html">打开实操与验收步骤</a></p></div>
+  </div>
+</section>
+</main>
+</div>
+<footer><div class="wrap">资料核验：基础章节 2026-11-18，PB 级建设、实操与产品对标 2026-11-21 · 产品能力以合同与现场版本为准。</div></footer>
+<script>
+(function(){
+  const links=[...document.querySelectorAll('.sidebar a[href^="#"]')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      links.forEach(a=>a.classList.remove('active'));
+      const a=map.get(e.target.id); if(a){a.classList.add('active');}
+    });
+  },{rootMargin:'-20% 0px -70% 0px',threshold:0});
+  document.querySelectorAll('section.module').forEach(s=>obs.observe(s));
+})();
+</script>
+</body>
+</html>

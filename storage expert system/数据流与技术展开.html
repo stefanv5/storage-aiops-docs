@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>从存储遥测到可验证的 AI 诊断</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ink:#152a22; --muted:#405950; --paper:#f2f6f1; --card:#fff;
+  --line:#d6e1d7; --accent:#08644a; --code:#edf4ee; --soft:#e6efe8;
+  --hero:#12352a; --hero-text:#f2fbf6; --hero-link:#d8eee3;
+}
+@media (prefers-color-scheme:dark) {
+  :root { --ink:#e7f0ea; --muted:#a9beb4; --paper:#0d1512; --card:#14201b;
+    --line:#2a3d35; --accent:#7cdcb6; --code:#0a120f; --soft:#18261f; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink);
+  font:16px/1.78 system-ui,"Microsoft YaHei","Noto Sans SC",sans-serif; }
+a { color:var(--accent); text-underline-offset:.2em; }
+a:focus-visible, summary:focus-visible, .table-wrap:focus-visible {
+  outline:2px solid var(--accent); outline-offset:4px; }
+.page-width { width:min(1180px,calc(100% - 40px)); margin-inline:auto; }
+.skip { position:absolute; left:.75rem; top:.75rem; z-index:2; padding:.4rem .7rem;
+  background:var(--card); transform:translateY(-180%); }
+.skip:focus { transform:translateY(0); }
+header { background:var(--hero); color:var(--hero-text); padding:22px 0 30px; }
+.primary { display:flex; flex-wrap:wrap; gap:5px 19px; margin:0 0 23px; }
+.primary a { color:var(--hero-link); font-size:.9rem; }
+.primary a[aria-current="page"] { color:var(--hero-text); font-weight:700; }
+.primary a:focus-visible { outline-color:var(--hero-text); }
+h1, h2, h3, h4, h5, h6 { line-height:1.36; overflow-wrap:anywhere; }
+h1 { font-size:clamp(1.75rem,4.6vw,3rem); letter-spacing:-.035em; margin:0; }
+h2 { font-size:clamp(1.3rem,3vw,1.7rem); margin:2.1rem 0 .7rem; }
+h3 { font-size:1.15rem; margin:1.7rem 0 .5rem; color:var(--accent); }
+h4, h5, h6 { margin:1.4rem 0 .5rem; }
+h2[id], h3[id], h4[id], h5[id], h6[id] { scroll-margin-top:1rem; }
+.layout { display:grid; grid-template-columns:245px minmax(0,1fr); gap:24px;
+  align-items:start; padding-block:24px 44px; }
+.toc { position:sticky; top:1rem; max-height:calc(100vh - 2rem); overflow:auto;
+  border:1px solid var(--line); background:var(--card); border-radius:12px; }
+.toc nav { padding:0 14px 14px; font-size:.86rem; line-height:1.5; }
+summary { cursor:pointer; font-weight:650; color:var(--accent); padding:11px 14px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc li { margin:.42em 0; }
+.toc a { display:block; overflow-wrap:anywhere; }
+.toc .sub { padding-left:.8em; }
+article { min-width:0; padding:clamp(16px,3.2vw,38px); background:var(--card);
+  border:1px solid var(--line); border-radius:12px; overflow-wrap:anywhere; }
+article > :first-child { margin-top:0; }
+article > :last-child { margin-bottom:0; }
+p { margin:0 0 1em; }
+li + li { margin-top:.25em; }
+ul, ol { padding-left:1.6em; }
+blockquote { margin:1em 0; padding:.5em 0 .5em 1em; border-left:3px solid var(--accent); color:var(--muted); }
+blockquote > :last-child { margin-bottom:0; }
+code { font: .89em ui-monospace,"Cascadia Code",Consolas,monospace;
+  background:var(--code); border-radius:4px; padding:.1em .25em; }
+pre { border:1px solid var(--line); border-radius:8px; overflow:auto;
+  padding:.85rem 1rem; background:var(--code); line-height:1.55; overflow-wrap:normal; }
+pre code { padding:0; font-size:.86rem; }
+.table-wrap { max-width:100%; overflow:auto; border:1px solid var(--line);
+  border-radius:8px; margin:1rem 0; }
+table { border-collapse:collapse; width:100%; min-width:32rem; font-size:.9rem; }
+th, td { text-align:left; padding:.52em .7em; border-bottom:1px solid var(--line); vertical-align:top; }
+th { background:var(--soft); }
+tbody tr:last-child td { border-bottom:0; }
+article details { border:1px solid var(--line); border-radius:8px; padding:0 .85rem; margin:1rem 0; }
+article details summary { padding-inline:0; }
+img { max-width:100%; height:auto; }
+hr { border:0; border-top:1px solid var(--line); margin:1.5rem 0; }
+footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
+@media (max-width:760px) {
+  .page-width { width:calc(100% - 26px); }
+  .layout { grid-template-columns:minmax(0,1fr); gap:15px; padding-top:15px; }
+  .toc { position:static; max-height:min(15rem,50vh); }
+  .primary { margin-bottom:.9rem; }
+}
+@media print {
+  header { padding:0 0 1rem; background:none; color:#000; }
+  .layout { display:block; }
+  .primary,.toc,footer,.skip { display:none; }
+  article { border:0; padding:0; background:none; }
+  table { min-width:0; }
+  pre { white-space:pre-wrap; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳转到正文</a>
+<header>
+  <div class="page-width">
+    <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
+<a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
+<a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
+<a href="./PB级存储运维实操.html">三站实操</a></nav>
+    <h1>从存储遥测到可验证的 AI 诊断</h1>
+  </div>
+</header>
+<main id="main" class="page-width layout">
+  <details class="toc" open><summary>本页目录</summary><nav aria-label="本页目录"><ul><li><a href="#0-三条流">0. 三条流</a></li>
+<li><a href="#1-存储语义与服务目标">1. 存储语义与服务目标</a></li>
+<li><a href="#2-采集时序与海量成本">2. 采集、时序与海量成本</a></li>
+<li><a href="#3-资产身份与时态拓扑">3. 资产、身份与时态拓扑</a></li>
+<li><a href="#4-异常检测与告警聚合">4. 异常检测与告警聚合</a></li>
+<li><a href="#5-容量与硬盘风险预测">5. 容量与硬盘风险预测</a></li>
+<li><a href="#6-根因证据与反证">6. 根因、证据与反证</a></li>
+<li><a href="#7-llm-调查rag-与工具契约">7. LLM 调查、RAG 与工具契约</a></li>
+<li><a href="#8-处置验证与评测">8. 处置、验证与评测</a></li>
+<li><a href="#9-多集群与落地">9. 多集群与落地</a></li></ul></nav></details>
+  <article>
+<p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E4%B8%9A%E7%95%8C%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%A0%94.html">业界调研</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">深入篇</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a> · <a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a> · <a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html">Ceph 回放</a></p>
+<p>资料核验日期：2026-11-18。本文是 30–60 分钟的路线图：先画出三条流，再解释每条流的关键机制和失败点。<strong>正文不靠外链论证</strong>；每个主题的架构图、例子和原文出处见各节末尾的“参考”，更细的拆解见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a>。</p>
+<h2 id="0-三条流">0. 三条流</h2>
+<pre><code class="language-text">业务 I/O
+  应用 → 客户端/协议网关 → 存储池/PG → OSD/控制器 → 介质
+
+遥测与知识
+  指标/日志/事件/变更/拓扑 → 采集与实体对齐
+  → 时序库/事件库/历史拓扑/文档索引 → 异常/预测/证据
+
+调查与处置
+  投诉/告警 → 工具查询 + 文档检索 → 假设/反证/影响范围
+  → 受监督处置 → 业务+冗余双验收 → 回放/学习
+</code></pre>
+<p>三条流的时间语义不同：业务 I/O 是毫秒级，遥测是秒/分钟级，调查是分钟/小时级。专家系统的核心工作是<strong>把三条流对齐到同一个实体和时间窗</strong>。</p>
+<h2 id="1-存储语义与服务目标">1. 存储语义与服务目标</h2>
+<p><strong>先画请求路径</strong>：</p>
+<pre><code class="language-text">块：应用 → 客户端队列 → FC/iSCSI/NVMe-oF → 前端端口 → 控制器/缓存
+    → 后端 → 池/extent → SSD/HDD
+
+文件：客户端 → 元数据服务（目录/锁/权限）→ 元数据池
+      客户端 → 数据服务 → 数据池
+
+对象：S3 客户端 → 网关/认证 → 桶索引/元数据 → 对象数据 → EC/池
+
+Ceph：对象 → hash → PG → CRUSH → OSD 集合 → BlueStore → 介质
+</code></pre>
+<p><strong>机制</strong>：块存储的写路径关键在“何时向主机确认”（写回/写穿）；文件存储要分开元数据路径和数据路径；对象存储要分 GET/PUT/LIST；Ceph 要区分 <code>active/clean/degraded</code> 与 <code>up/down/in/out</code>。不同路径的瓶颈不同，不能用一个“存储延迟”概括。</p>
+<p><strong>SLO</strong>：写清测量点、好事件、分母。例子：</p>
+<pre><code class="language-text">好请求 = 成功 且 端到端延迟 ≤20ms 的写请求
+SLO = 好请求数 / 纳入统计的写请求数 ≥99.9%/30 天
+</code></pre>
+<p>不同客户端的 P99 不能平均；有相同桶边界的直方图，按 <code>le</code> 求和后再算全局分位。低流量窗口要带样本量。</p>
+<p><strong>例子</strong>：订单写 P99 从 6ms 升到 46ms，但 IOPS 从 1000 只降到 990，错误率略升。IOPS 不变说明不是流量洪峰，而是同样负载下服务时间变长；要查后端队列、backfill、缓存、网络，而不是先扩容。</p>
+<p>参考：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.ceph.com/en/latest/rados/operations/health-checks/">Ceph 健康检查</a> · <a href="https://prometheus.io/docs/practices/histograms/">Prometheus 直方图</a></p>
+<h2 id="2-采集时序与海量成本">2. 采集、时序与海量成本</h2>
+<p><strong>流水线</strong>：</p>
+<pre><code class="language-text">设备/主机/应用
+   │ 拉取/推送：REST、SNMP、SSH、OTel、syslog
+   ▼
+采集与缓冲（去重、水位、背压）
+   │
+   ├─ 时序库（指标/直方图）
+   ├─ 事件库（告警/变更/工单）
+   ├─ 对象存储（日志/证据快照）
+   └─ 文档索引（Runbook/复盘）
+</code></pre>
+<p><strong>机制</strong>：指标要定义实体、单位、标签；标签是维度，不是流水号。计数器先处理重置再求速率；缺失不等于 0；事件时间/观测时间/知识时间要分开。采集覆盖率是“一等指标”：一半 OSD 停报时，平均延迟可能下降，但覆盖率会暴露样本偏差。</p>
+<p><strong>成本算例</strong>：</p>
+<pre><code class="language-text">50,000 序列 × 86,400/15 = 288,000,000 样本/天
+2 字节/样本 ≈ 576 MB/天（单副本）
+3 副本 ≈ 1.7 GB/天；一年 ≈ 0.63 TB
+</code></pre>
+<p>分层：原始 7–30 天，聚合 6–12 个月，天级 2–5 年；秒级数据只用于现场。DME 的产品化策略是分钟级 7 天、30 分钟 6 个月、天级 2 年，5 秒历史按需从设备读、最长一周。</p>
+<p><strong>例子</strong>：调查先读集群趋势，再缩到池/OSD/变更窗口；每一步带覆盖率和查询预算。若 coverage &lt;80%，禁止输出“全局平均”，只报“已观测子集”。</p>
+<p>参考：<a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">OpenTelemetry 日志模型</a> · <a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://prometheus.io/docs/specs/native_histograms/">Prometheus 原生直方图</a></p>
+<h2 id="3-资产身份与时态拓扑">3. 资产、身份与时态拓扑</h2>
+<p><strong>图模型</strong>：</p>
+<pre><code class="language-text">Workload → Volume/LUN/FS/Bucket
+Volume   → Pool → PG → OSD → Disk
+Host     → HBA/Port → Switch Port → Array Port → Controller
+Array    → Site/Rack/Power/FailureDomain
+Change   → Target
+Incident → Symptom/Entity
+Runbook  → Product/Version/FaultCode/Symptom
+</code></pre>
+<p><strong>机制</strong>：实体用稳定 ID、别名和生命周期，OSD 数字编号可能复用，因此记录 UUID。边的每个修订保留有效区间、知识区间和来源观测时间。查询“02:16 可见、02:10:30 有效”的拓扑时，事发时点匹配 <code>[valid_from, valid_to)</code>，调查截止匹配 <code>[known_from, known_to)</code>。晚到的纠正作为新修订保存，旧修订可供历史回放。</p>
+<p><strong>例子</strong>：维护 <code>osd.11</code> 前后两版拓扑：</p>
+<pre><code class="language-text">T01 02:00–02:10:30：orders → vol01 → hot → PG1 → osd.11/12/13
+T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
+</code></pre>
+<p>02:16 的报告用 T02 解释 backfill 目标；用 T01 解释维护前路径。两版都保留，不能只存当前拓扑。</p>
+<p>参考：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS DevOps Agent 服务卡</a></p>
+<h2 id="4-异常检测与告警聚合">4. 异常检测与告警聚合</h2>
+<p><strong>流水线</strong>：</p>
+<pre><code class="language-text">指标/日志/事件
+   ├─ 规则（硬边界/合规）
+   ├─ 统计基线（同组/同时段/滚动中位数+MAD）
+   ├─ 变化点（CUSUM/PELT）
+   └─ 多指标模型（隔离森林/矩阵画像）
+        │
+        ▼
+异常候选 → 持续性/效应量/最小样本 → 告警
+        │
+        ▼
+按拓扑/时间/因果聚合 → 业务 SLO 分级
+</code></pre>
+<p><strong>机制</strong>：固定阈值适合硬边界。处理季节性和工作负载变化时，可用分组基线。MAD 要处理分母为零。在正态边际分布和双侧 3.5σ 阈值的算例中，5 万序列每轮采样期望约 23 次单点超限。实际通知量用连续窗口、效应量、最小样本和聚合规则回放评估。聚合要保留原始告警 ID 和合并理由。</p>
+<p><strong>例子</strong>：M01–M05 P99=5,6,5,7,6 → 中位数 6、MAD 1；M06=33 → z=18.21，M07=46 → z=26.98。若规则要求连续 2 点，M07 才触发；M07 好请求 93.27%，M08 对照 99.97%。这说明“设备告警”与“业务故障”可以同时存在，也可以有时间差。</p>
+<p>参考：<a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">NetApp DII Monitor</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">Dell PowerStore 可观测性</a></p>
+<h2 id="5-容量与硬盘风险预测">5. 容量与硬盘风险预测</h2>
+<p><strong>容量账本</strong>：</p>
+<pre><code class="language-text">raw → usable（副本/RAID/EC）→ effective（快照/克隆/元数据/回收站/水位）
+到阈值天数 = (effective × 阈值 − 已用) / 净增
+</code></pre>
+<p><strong>硬盘样本</strong>：</p>
+<pre><code class="language-text">样本 = (disk_id, day, 当时可见特征)
+正例 = 未来 H 天内真实故障
+排除/删失 = 主动更换、迁移、观测结束
+切分 = 按时间 + 按设备，禁止同盘泄漏
+评测 = PR-AUC、召回@告警预算、提前量、校准
+</code></pre>
+<p><strong>机制</strong>：容量预测的难点是口径（raw/usable/effective），不是模型；硬盘预测的难点是标签/截尾/竞争风险，不是分类器。厂商的“14 天/30 天/健康度 60 分”是不同口径，不能互换，也不能直接当概率。</p>
+<p><strong>例子</strong>：2,400 TB raw、EC 8+2（80%）、5% 水位、已用 1,500 TB、净增 6 TB/天 → 到 95% 水位约 38.8 天；净增 3/9 TB/天 → 77.6/25.9 天。硬盘 10,000 块、AFR 2%、召回 80%、精确率 20% → 总告警 2.19/天，其中误报 1.75/天。</p>
+<p>参考：<a href="https://www.usenix.org/conference/fast20/presentation/lu">FAST ’20 硬盘预测</a> · <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a></p>
+<h2 id="6-根因证据与反证">6. 根因、证据与反证</h2>
+<p><strong>流程图</strong>：</p>
+<pre><code class="language-text">症状/影响范围
+   │
+   ├─ 时间上先于症状的变更
+   ├─ 事发拓扑可达的实体
+   ├─ 同故障域共现异常
+   ├─ 已知故障树/历史工单
+   └─ 对照（未受影响业务）
+        │
+        ▼
+候选假设 → 每项写：支持/反证/鉴别查询/停止条件
+        │
+        ▼
+根因 + 传播 + 系统性原因（三层）
+</code></pre>
+<p><strong>机制</strong>：相关不等于因果；最强证据是“时间领先 + 路径可达 + 剂量响应 + 特异性 + 对照 + 干预响应”。故障树适合已知设备故障，因果图适合共同原因/传播，LLM 适合从非结构化线索生成假设；三者结合，不要让 LLM 单独判因果。</p>
+<p><strong>例子</strong>：维护 <code>osd.11</code> → backfill 与前台写争用。H1 backfill：支持 E01/E02/T02/M06/M07；反证缺口是 OSD 级队列/恢复速率；鉴别是限速 backfill 后 P99 是否降。H2 备份：E03 在另一站点、T03 无共享路径、M08 对照正常 → 解释力低。H3 网络：重传持平 → 只降低已观测 TCP 路径故障，不能排除交换机端口丢包。</p>
+<p>参考：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://github.com/phamquiluan/RCAEval">RCAEval</a></p>
+<h2 id="7-llm-调查rag-与工具契约">7. LLM 调查、RAG 与工具契约</h2>
+<p><strong>流程图</strong>：</p>
+<pre><code class="language-text">症状/窗口/权限
+   → 查采集健康/覆盖率
+   → 查业务影响（SLO）
+   → 查事发拓扑
+   → 查变更/事件
+   → 生成候选假设
+   → 对每个假设选最有区分度的查询
+   → 证据足够/预算耗尽/需人工 → 报告/未决
+</code></pre>
+<p><strong>工具契约</strong>：每个工具要有输入 schema、输出 schema、时间语义、权限、错误类型、查询 ID。例子：</p>
+<pre><code class="language-text">query_metric(entity_id, metric, start, end, step)
+  → unit, samples, missing_intervals, coverage, query_id, source
+</code></pre>
+<p><strong>RAG</strong>：先按 ACL/租户/产品/型号/版本/故障码/审批/生效时间过滤，再做关键词+向量召回、重排；冲突文档返回版本/出处/适用范围，不强行合并。<strong>证据对象</strong>带 <code>evidence_id/query_id/source/entity_id/window/observed_at/quality/payload_ref</code>；报告区分事实/推断/未决。</p>
+<p><strong>例子</strong>：同一份 02:16 快照，“直接问模型”可能编造 46ms 的“平均值”；“工具约束+证据 ID”会返回 M06/M07 的窗口、单位、覆盖率和查询 ID，验证器还能拒绝引用 E04（02:18 才可见）。</p>
+<p>参考：<a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS 服务卡</a></p>
+<h2 id="8-处置验证与评测">8. 处置、验证与评测</h2>
+<p><strong>流程图</strong>：</p>
+<pre><code class="language-text">调查结论
+   → 变更请求（目标/前置/预期/幂等/回滚/观察窗/审批）
+   → 再次读取状态（拓扑/授权/冗余）
+   → 执行（A2/A3/A4 分级）
+   → 业务 SLO 验收 + 冗余/耐久性验收
+   → 写回事故库/评测集
+</code></pre>
+<p><strong>机制</strong>：调查与处置分开授权；读工具默认开，写工具默认关；每次变更要有幂等键、回滚、爆炸半径和观察窗。存储处置必须双验收：业务指标恢复不等于副本/复制/备份恢复。</p>
+<p><strong>例子</strong>：Ceph 回放中模拟调度调整后，02:25 的窗口写 P99 为 14 ms，好请求比例约 99.95%，仍有 11 个退化 PG。业务窗口已达标，继续检查冗余、恢复进度和新故障域压力。 <a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html#%E5%8F%82%E8%80%83%E7%BB%93%E6%9E%9C%E4%B8%8E%E9%AA%8C%E6%94%B6">实验验收</a></p>
+<p><strong>评测</strong>：同一快照比较规则、规则+统计、Agent+工具、Agent+工具+拓扑/RAG；指标包括检测、Top-k、证据正确率、缺数据暂缓率、越权拒绝率、成本。回放集要有正常、真实、缺数据、晚到、负对照；按事故/时间/集群切分，隐藏答案。</p>
+<p>参考：<a href="https://docs.ceph.com/en/tentacle/rados/configuration/mclock-config-ref/">Ceph mClock</a> · <a href="https://arxiv.org/abs/2501.06706">AIOpsLab</a> · <a href="https://github.com/phamquiluan/RCAEval">RCAEval</a> · <a href="https://arxiv.org/abs/2607.28545">ORCA-bench</a></p>
+<h2 id="9-多集群与落地">9. 多集群与落地</h2>
+<p><strong>分层</strong>：</p>
+<pre><code class="language-text">站点边缘：就近采集、缓冲、脱敏、粗聚合、断链续传
+区域中心：跨站资产目录、拓扑快照、证据索引、查询路由
+全局：策略、模型、评测、审计（不存明细）
+</code></pre>
+<p><strong>机制</strong>：查询尽量下推，明细按需回查；断链时保留水位，恢复后补数并标记“迟到”；租户隔离/数据驻留要在采集层设计。多集群不是“把所有明细集中”，而是“目录集中、证据按需”。</p>
+<p><strong>落地里程碑</strong>：</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>交付</th>
+<th>验收</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–1 月</td>
+<td>实体表、SLO、覆盖率、事件时间</td>
+<td>能回答“当时是什么、缺了什么”</td>
+</tr>
+<tr>
+<td>1–3 月</td>
+<td>规则+稳健基线、告警聚合、时间线</td>
+<td>误报/集群日可接受，MTTD 下降</td>
+</tr>
+<tr>
+<td>3–6 月</td>
+<td>时态拓扑、变更关联、证据对象、RAG</td>
+<td>根因 Top-3 + 证据可复核</td>
+</tr>
+<tr>
+<td>6–12 月</td>
+<td>工具层/MCP、Agent 调查、回放评测</td>
+<td>同快照可复现，缺数据会暂缓</td>
+</tr>
+<tr>
+<td>12 月+</td>
+<td>受监督处置、双验收、有限自治</td>
+<td>越权为零，回滚可演练</td>
+</tr>
+</tbody>
+</table></div>
+<p>参考：<a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a></p>
+<p>接下来可按<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a>展开站点定容、设备接入和工作流，或进入<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">三站实操</a>。</p>
+
+  </article>
+</main>
+<footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>
+</body>
+</html>

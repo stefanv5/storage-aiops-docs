@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ceph 事故回放：尾延迟为何升高</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ink:#152a22; --muted:#405950; --paper:#f2f6f1; --card:#fff;
+  --line:#d6e1d7; --accent:#08644a; --code:#edf4ee; --soft:#e6efe8;
+  --hero:#12352a; --hero-text:#f2fbf6; --hero-link:#d8eee3;
+}
+@media (prefers-color-scheme:dark) {
+  :root { --ink:#e7f0ea; --muted:#a9beb4; --paper:#0d1512; --card:#14201b;
+    --line:#2a3d35; --accent:#7cdcb6; --code:#0a120f; --soft:#18261f; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink);
+  font:16px/1.78 system-ui,"Microsoft YaHei","Noto Sans SC",sans-serif; }
+a { color:var(--accent); text-underline-offset:.2em; }
+a:focus-visible, summary:focus-visible, .table-wrap:focus-visible {
+  outline:2px solid var(--accent); outline-offset:4px; }
+.page-width { width:min(1180px,calc(100% - 40px)); margin-inline:auto; }
+.skip { position:absolute; left:.75rem; top:.75rem; z-index:2; padding:.4rem .7rem;
+  background:var(--card); transform:translateY(-180%); }
+.skip:focus { transform:translateY(0); }
+header { background:var(--hero); color:var(--hero-text); padding:22px 0 30px; }
+.primary { display:flex; flex-wrap:wrap; gap:5px 19px; margin:0 0 23px; }
+.primary a { color:var(--hero-link); font-size:.9rem; }
+.primary a[aria-current="page"] { color:var(--hero-text); font-weight:700; }
+.primary a:focus-visible { outline-color:var(--hero-text); }
+h1, h2, h3, h4, h5, h6 { line-height:1.36; overflow-wrap:anywhere; }
+h1 { font-size:clamp(1.75rem,4.6vw,3rem); letter-spacing:-.035em; margin:0; }
+h2 { font-size:clamp(1.3rem,3vw,1.7rem); margin:2.1rem 0 .7rem; }
+h3 { font-size:1.15rem; margin:1.7rem 0 .5rem; color:var(--accent); }
+h4, h5, h6 { margin:1.4rem 0 .5rem; }
+h2[id], h3[id], h4[id], h5[id], h6[id] { scroll-margin-top:1rem; }
+.layout { display:grid; grid-template-columns:245px minmax(0,1fr); gap:24px;
+  align-items:start; padding-block:24px 44px; }
+.toc { position:sticky; top:1rem; max-height:calc(100vh - 2rem); overflow:auto;
+  border:1px solid var(--line); background:var(--card); border-radius:12px; }
+.toc nav { padding:0 14px 14px; font-size:.86rem; line-height:1.5; }
+summary { cursor:pointer; font-weight:650; color:var(--accent); padding:11px 14px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc li { margin:.42em 0; }
+.toc a { display:block; overflow-wrap:anywhere; }
+.toc .sub { padding-left:.8em; }
+article { min-width:0; padding:clamp(16px,3.2vw,38px); background:var(--card);
+  border:1px solid var(--line); border-radius:12px; overflow-wrap:anywhere; }
+article > :first-child { margin-top:0; }
+article > :last-child { margin-bottom:0; }
+p { margin:0 0 1em; }
+li + li { margin-top:.25em; }
+ul, ol { padding-left:1.6em; }
+blockquote { margin:1em 0; padding:.5em 0 .5em 1em; border-left:3px solid var(--accent); color:var(--muted); }
+blockquote > :last-child { margin-bottom:0; }
+code { font: .89em ui-monospace,"Cascadia Code",Consolas,monospace;
+  background:var(--code); border-radius:4px; padding:.1em .25em; }
+pre { border:1px solid var(--line); border-radius:8px; overflow:auto;
+  padding:.85rem 1rem; background:var(--code); line-height:1.55; overflow-wrap:normal; }
+pre code { padding:0; font-size:.86rem; }
+.table-wrap { max-width:100%; overflow:auto; border:1px solid var(--line);
+  border-radius:8px; margin:1rem 0; }
+table { border-collapse:collapse; width:100%; min-width:32rem; font-size:.9rem; }
+th, td { text-align:left; padding:.52em .7em; border-bottom:1px solid var(--line); vertical-align:top; }
+th { background:var(--soft); }
+tbody tr:last-child td { border-bottom:0; }
+article details { border:1px solid var(--line); border-radius:8px; padding:0 .85rem; margin:1rem 0; }
+article details summary { padding-inline:0; }
+img { max-width:100%; height:auto; }
+hr { border:0; border-top:1px solid var(--line); margin:1.5rem 0; }
+footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
+@media (max-width:760px) {
+  .page-width { width:calc(100% - 26px); }
+  .layout { grid-template-columns:minmax(0,1fr); gap:15px; padding-top:15px; }
+  .toc { position:static; max-height:min(15rem,50vh); }
+  .primary { margin-bottom:.9rem; }
+}
+@media print {
+  header { padding:0 0 1rem; background:none; color:#000; }
+  .layout { display:block; }
+  .primary,.toc,footer,.skip { display:none; }
+  article { border:0; padding:0; background:none; }
+  table { min-width:0; }
+  pre { white-space:pre-wrap; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳转到正文</a>
+<header>
+  <div class="page-width">
+    <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
+<a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
+<a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
+<a href="./PB级存储运维实操.html">三站实操</a></nav>
+    <h1>Ceph 事故回放：尾延迟为何升高</h1>
+  </div>
+</header>
+<main id="main" class="page-width layout">
+  <details class="toc" open><summary>本页目录</summary><nav aria-label="本页目录"><ul><li><a href="#任务与数据口径">任务与数据口径</a></li>
+<li><a href="#现场证据">现场证据</a></li>
+<li><a href="#操作顺序">操作顺序</a></li>
+<li class="sub"><a href="#模型输入模板">模型输入模板</a></li>
+<li><a href="#参考结果与验收">参考结果与验收</a></li></ul></nav></details>
+  <article>
+<p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">专家系统深入篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">华为 DME 全链路解剖</a> · <a href="./lab/latency-replay.csv">下载合成遥测 CSV</a> · <a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">进阶三站实操</a></p>
+<p>预计 60–90 分钟。用文本编辑器或电子表格完成首轮。追加 5 个追问与答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#6-ceph-%E5%AE%9E%E9%AA%8C%E8%BF%BD%E5%8A%A0-5-%E9%97%AE">答案册第 6 节</a>。也可把当前阶段允许查看的数据交给任意支持结构化输出的模型做对照。本实验模拟 Ceph 的后台恢复与前台 I/O 竞争，使用自定义列名和合成数据。</p>
+<blockquote>
+<p>实验涉及的 Ceph/Prometheus 机制，见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解 §1–§3</a>；文末链接只作出处。</p>
+</blockquote>
+<h2 id="任务与数据口径">任务与数据口径</h2>
+<p>02:16 UTC 值班收到 <code>orders</code> 写延迟投诉，确定影响范围、排出根因候选，并决定还需要查什么。每行时间是一个 5 分钟聚合窗口的结束时刻，密集行的窗口有重叠。请求总数包含错误，<code>healthy_writes_under_20ms</code> 是成功且延迟不超过 20 ms 的请求数。<code>write_iops</code> 为窗口内平均提交速率，<code>write_p99_ms</code> 为应用端窗口 P99。<code>osd_device_queue</code> 为目标路径上观测到的最高设备队列深度，<code>retransmits_per_s</code> 为已采集 TCP 路径的平均重传率。<code>backfill_mib_s</code> 为池相关活动的窗口平均速率。覆盖率表示已上报的期望目标 OSD 数量，单独于退出服务的旧 OSD。</p>
+<p>SLO 练习值为每个窗口至少 99% 的写请求成功且 ≤20 ms。按 <code>observed_utc ≤ 调查时点</code> 读取日志和遥测，按事发时间读取拓扑。当一个窗口失败，保留该窗口的错误数与总请求数。以下事件、拓扑和结果均为合成信息。</p>
+<h2 id="现场证据">现场证据</h2>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>事件时间 UTC</th>
+<th>可见时间 UTC</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E01</td>
+<td>02:10:30</td>
+<td>02:10:45</td>
+<td>已批准的 <code>CHG-18</code> 在 <code>ceph-a</code> 对 <code>osd.11</code> 实施计划下线并显式标记 <code>out</code>。相关 PG 映射更新到包含 <code>osd.17</code>、<code>osd.18</code> 的目标集合</td>
+</tr>
+<tr>
+<td>E02</td>
+<td>02:11:00</td>
+<td>02:11:20</td>
+<td><code>hot</code> 池观察到重映射与 backfill 开始，相关目标 OSD 队列上升</td>
+</tr>
+<tr>
+<td>E03</td>
+<td>02:12:00</td>
+<td>02:12:10</td>
+<td><code>ceph-b</code> 备份作业按计划启动，告警同样出现于汇总面板</td>
+</tr>
+<tr>
+<td>E04</td>
+<td>02:12:30</td>
+<td>02:18:00</td>
+<td>延迟上报的应用日志确认 <code>orders</code> 写请求最早从 02:12:30 开始积压</td>
+</tr>
+<tr>
+<td>E05</td>
+<td>02:19:00</td>
+<td>02:19:10</td>
+<td>沙箱中模拟审批后的恢复调度调整，仅针对 <code>ceph-a</code> 受影响对象。记录变更前配置与退出条件</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>拓扑有效期 UTC</th>
+<th>最迟可见时间 UTC</th>
+<th>关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T01</td>
+<td>02:00:00–02:10:30</td>
+<td>02:00:10</td>
+<td><code>orders → vol01 → hot → PG group 1 → osd.11 / osd.12 / osd.13</code></td>
+</tr>
+<tr>
+<td>T02</td>
+<td>02:10:30 起</td>
+<td>02:11:00</td>
+<td><code>orders → vol01 → hot → PG group 1 → osd.12 / osd.17 / osd.18</code>。这里记录新放置目标。真实环境还需分别核对 <code>up</code>、<code>acting</code> 与实际服务路径</td>
+</tr>
+<tr>
+<td>T03</td>
+<td>02:00:00 起</td>
+<td>02:00:10</td>
+<td><code>audit → vol02 → cold</code>，走另一组 OSD。<code>ceph-b</code> 在另一站点，已知数据路径与本案无共享存储或已登记链路</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="操作顺序">操作顺序</h2>
+<ol>
+<li><strong>检测。</strong> 用 M01–M05 的 P99 算中位数和 MAD。用 <code>z = 0.6745 × (值 − 中位数) / max(MAD, 1 ms)</code> 给 M06、M07 打分。将 <code>z ≥ 3.5</code> 且连续两条采样满足作为教学触发规则，注明连续窗口重叠。再计算 M07 和 M08 的 SLO 好请求比例。</li>
+<li><strong>定位。</strong> 只看 02:16 时可见证据。沿 T02 找与 backfill 重合的设备。写出三个假设：后端资源争用、备份流量、网络问题。每个假设至少写一条支持证据或反证，以及一个还能查的指标。</li>
+<li><strong>模拟 Agent。</strong> 在同一份 02:16 快照上先用阈值规则，再用模型起草报告。可以用下面的工具契约为模型分次提供证据，记录模型请求和返回条目。缺少信息时允许模型提出下一次有界查询或结束为未决。固定输出结构并保留证据 ID。</li>
+<li><strong>缺数据的对照。</strong> 隐藏 E02、T02 和 M06–M07 的 backfill、队列字段，将两行 <code>reporting_osds</code> 改为 1。保留应用 SLO。检查报告是否指出业务影响真实存在，当前采集不足以定位到后台恢复争用。</li>
+<li><strong>处置验证。</strong> 以 02:35:15 为截止，加入 E04、E05 与 M09–M12。计算每行好请求比例，核对观测期间请求强度与退化 PG 趋势。说明何时应用好转、何时冗余恢复，以及还缺哪些数据才能确认两个条件持续成立。</li>
+</ol>
+<h3 id="模型输入模板">模型输入模板</h3>
+<pre><code class="language-text">角色：只读取证的存储值班助手。
+任务：分析 ceph-a 的 orders 写尾延迟告警，按 UTC 重建时间线。
+信息截止：2026-11-10T02:16:00Z。只能引用当前快照提供的证据 ID。
+可请求：采集健康、事发拓扑、限定时间和实体的指标、维护变更、适用 Runbook。
+逐个列出假设、支持证据、反证、尚缺检查。列出证据时间和受影响实体。
+输出字段：impact, timeline, hypotheses, missing_checks, recommendation。
+缺少证据时标记未决。返回操作建议与验证条件。
+</code></pre>
+<p>为当前时点开一段独立会话，供给 M01–M08、E01–E03、T01–T03。缺数据对照另开会话，仅供给变体快照。处置验证单独加入晚到证据和干预数据。模型上下文不要包含本页下方参考答案。</p>
+<h2 id="参考结果与验收">参考结果与验收</h2>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>检查</th>
+<th>参考结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>基线和触发</td>
+<td>中位数 6 ms，MAD 1 ms。M06 的 z≈18.21，M07 的 z≈26.98。在 M07 到达后满足两次连续超阈值</td>
+</tr>
+<tr>
+<td>业务范围</td>
+<td>M07 为 <code>277000 / 297000 ≈ 93.27%</code>，M08 为 <code>224940 / 225000 ≈ 99.97%</code>。已观测的对照业务仍达标</td>
+</tr>
+<tr>
+<td>根因与传播</td>
+<td>E01 是最早的相关触发事件，E02 与 T02 给出 backfill 通过受影响 OSD 的机制，M06/M07 显示队列和延迟同时升高、IOPS 接近基线。T03 和 M08 降低备份干扰的解释力。重传没有明显上升，只能降低已观测 TCP 路径故障的解释力。可以补查交换机端口丢包、其他客户端和设备服务耗时</td>
+</tr>
+<tr>
+<td>时间稽核</td>
+<td>02:16 的报告只能描述已观察到的故障窗，不能引用 02:18 才可用的 E04。拓扑使用 T02，并保留 T01 用于解释维护前后变化</td>
+</tr>
+<tr>
+<td>缺失稽核</td>
+<td>变体中的采集覆盖率是 <code>1 / 3</code>，应用数据仍显示受影响。能提出恢复争用候选，同时说明缺乏事件、路径与 OSD 级实测证据</td>
+</tr>
+<tr>
+<td>处置后</td>
+<td>02:20 窗口跨越 02:19 的调度调整，好请求约 98.53%。02:25 是首个观察到达标的完整处置后窗口，好请求约 99.95%，当时仍有 11 个退化 PG。02:35 观测到 0 个退化 PG，应用继续达标。还要检查 <code>active+clean</code>、其他健康状态、更长窗口以及新故障域压力，再判断是否结案</td>
+</tr>
+</tbody>
+</table></div>
+<p>评分可用 10 分制。检测与影响 2 分，根因及竞争假设 3 分，正确引用与时间稽核 2 分，缺数时正确暂缓 1 分，业务与冗余双验收 2 分。使用未来数据或编造证据的报告需要重做。一次合成事故只验证流程，应另以无事故窗口、真实故障标签和负对照组成回放集再估计模型指标。</p>
+<p>进阶练习可在版本固定的本地 Ceph 环境采集 Prometheus 指标和健康事件，复用同一输出结构，把 PG 状态、采集缺口与变更时刻写入回放资料。另选 Backblaze 的连续季度做硬盘风险支线，用时序切分和误报预算比较不同阈值。机制拆解见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解 §1–§3、§17</a>。</p>
+<p>参考（原文）：<a href="https://docs.ceph.com/en/squid/rados/operations/monitoring/">Ceph 监控</a> · <a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze 数据</a></p>
+
+  </article>
+</main>
+<footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>
+</body>
+</html>

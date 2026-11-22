@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PB 级存储智能运维三站实操</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ink:#152a22; --muted:#405950; --paper:#f2f6f1; --card:#fff;
+  --line:#d6e1d7; --accent:#08644a; --code:#edf4ee; --soft:#e6efe8;
+  --hero:#12352a; --hero-text:#f2fbf6; --hero-link:#d8eee3;
+}
+@media (prefers-color-scheme:dark) {
+  :root { --ink:#e7f0ea; --muted:#a9beb4; --paper:#0d1512; --card:#14201b;
+    --line:#2a3d35; --accent:#7cdcb6; --code:#0a120f; --soft:#18261f; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink);
+  font:16px/1.78 system-ui,"Microsoft YaHei","Noto Sans SC",sans-serif; }
+a { color:var(--accent); text-underline-offset:.2em; }
+a:focus-visible, summary:focus-visible, .table-wrap:focus-visible {
+  outline:2px solid var(--accent); outline-offset:4px; }
+.page-width { width:min(1180px,calc(100% - 40px)); margin-inline:auto; }
+.skip { position:absolute; left:.75rem; top:.75rem; z-index:2; padding:.4rem .7rem;
+  background:var(--card); transform:translateY(-180%); }
+.skip:focus { transform:translateY(0); }
+header { background:var(--hero); color:var(--hero-text); padding:22px 0 30px; }
+.primary { display:flex; flex-wrap:wrap; gap:5px 19px; margin:0 0 23px; }
+.primary a { color:var(--hero-link); font-size:.9rem; }
+.primary a[aria-current="page"] { color:var(--hero-text); font-weight:700; }
+.primary a:focus-visible { outline-color:var(--hero-text); }
+h1, h2, h3, h4, h5, h6 { line-height:1.36; overflow-wrap:anywhere; }
+h1 { font-size:clamp(1.75rem,4.6vw,3rem); letter-spacing:-.035em; margin:0; }
+h2 { font-size:clamp(1.3rem,3vw,1.7rem); margin:2.1rem 0 .7rem; }
+h3 { font-size:1.15rem; margin:1.7rem 0 .5rem; color:var(--accent); }
+h4, h5, h6 { margin:1.4rem 0 .5rem; }
+h2[id], h3[id], h4[id], h5[id], h6[id] { scroll-margin-top:1rem; }
+.layout { display:grid; grid-template-columns:245px minmax(0,1fr); gap:24px;
+  align-items:start; padding-block:24px 44px; }
+.toc { position:sticky; top:1rem; max-height:calc(100vh - 2rem); overflow:auto;
+  border:1px solid var(--line); background:var(--card); border-radius:12px; }
+.toc nav { padding:0 14px 14px; font-size:.86rem; line-height:1.5; }
+summary { cursor:pointer; font-weight:650; color:var(--accent); padding:11px 14px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc li { margin:.42em 0; }
+.toc a { display:block; overflow-wrap:anywhere; }
+.toc .sub { padding-left:.8em; }
+article { min-width:0; padding:clamp(16px,3.2vw,38px); background:var(--card);
+  border:1px solid var(--line); border-radius:12px; overflow-wrap:anywhere; }
+article > :first-child { margin-top:0; }
+article > :last-child { margin-bottom:0; }
+p { margin:0 0 1em; }
+li + li { margin-top:.25em; }
+ul, ol { padding-left:1.6em; }
+blockquote { margin:1em 0; padding:.5em 0 .5em 1em; border-left:3px solid var(--accent); color:var(--muted); }
+blockquote > :last-child { margin-bottom:0; }
+code { font: .89em ui-monospace,"Cascadia Code",Consolas,monospace;
+  background:var(--code); border-radius:4px; padding:.1em .25em; }
+pre { border:1px solid var(--line); border-radius:8px; overflow:auto;
+  padding:.85rem 1rem; background:var(--code); line-height:1.55; overflow-wrap:normal; }
+pre code { padding:0; font-size:.86rem; }
+.table-wrap { max-width:100%; overflow:auto; border:1px solid var(--line);
+  border-radius:8px; margin:1rem 0; }
+table { border-collapse:collapse; width:100%; min-width:32rem; font-size:.9rem; }
+th, td { text-align:left; padding:.52em .7em; border-bottom:1px solid var(--line); vertical-align:top; }
+th { background:var(--soft); }
+tbody tr:last-child td { border-bottom:0; }
+article details { border:1px solid var(--line); border-radius:8px; padding:0 .85rem; margin:1rem 0; }
+article details summary { padding-inline:0; }
+img { max-width:100%; height:auto; }
+hr { border:0; border-top:1px solid var(--line); margin:1.5rem 0; }
+footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
+@media (max-width:760px) {
+  .page-width { width:calc(100% - 26px); }
+  .layout { grid-template-columns:minmax(0,1fr); gap:15px; padding-top:15px; }
+  .toc { position:static; max-height:min(15rem,50vh); }
+  .primary { margin-bottom:.9rem; }
+}
+@media print {
+  header { padding:0 0 1rem; background:none; color:#000; }
+  .layout { display:block; }
+  .primary,.toc,footer,.skip { display:none; }
+  article { border:0; padding:0; background:none; }
+  table { min-width:0; }
+  pre { white-space:pre-wrap; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳转到正文</a>
+<header>
+  <div class="page-width">
+    <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
+<a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
+<a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
+<a href="./PB级存储运维实操.html" aria-current="page">三站实操</a></nav>
+    <h1>PB 级存储智能运维三站实操</h1>
+  </div>
+</header>
+<main id="main" class="page-width layout">
+  <details class="toc" open><summary>本页目录</summary><nav aria-label="本页目录"><ul><li><a href="#1-接入一个实验-ceph-集群">1. 接入一个实验 Ceph 集群</a></li>
+<li class="sub"><a href="#收集并对照三类事实">收集并对照三类事实</a></li>
+<li class="sub"><a href="#验收与故障变体">验收与故障变体</a></li>
+<li><a href="#2-从同一个症状识别三种原因">2. 从同一个症状识别三种原因</a></li>
+<li class="sub"><a href="#任务与比较方法">任务与比较方法</a></li>
+<li><a href="#3-验证一次跨进程的卷扩容任务">3. 验证一次跨进程的卷扩容任务</a></li>
+<li class="sub"><a href="#路线-a设备已受理执行器丢了响应">路线 A：设备已受理，执行器丢了响应</a></li>
+<li class="sub"><a href="#路线-b审批后的拓扑发生变化">路线 B：审批后的拓扑发生变化</a></li>
+<li class="sub"><a href="#复盘与迁移到真实接口">复盘与迁移到真实接口</a></li></ul></nav></details>
+  <article>
+<p><a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">建设手册</a> · <a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html">基础 Ceph 回放</a></p>
+<p>三站共用一个工作目标。先知道集群里有什么、数据是否可信，再从同一种业务症状区分三种原因，最后观察设备作业如何经受响应丢失和执行进程重启。第一站使用已有的实验 Ceph 集群。第二、三站使用随文合成数据，在仓库根目录可直接开始。第三站需要 Python 3.10 或以上和 SQLite 3.35 或以上，可用 <code>python -c &quot;import sqlite3; print(sqlite3.sqlite_version)&quot;</code> 检查。</p>
+<h2 id="1-接入一个实验-ceph-集群">1. 接入一个实验 Ceph 集群</h2>
+<h3 id="收集并对照三类事实">收集并对照三类事实</h3>
+<p>准备已部署的、版本明确的实验 Ceph 集群。在可访问管理面的实验节点或 cephadm shell 中使用已授权的只读身份。记录站点、责任人、Ceph 版本和集群 FSID。如果已有业务测试客户端，登记其 workload ID、稳定卷或共享 ID 与所用池。将下面的配置和 keyring 路径替换为实验环境的实际位置。 <a href="https://docs.ceph.com/en/tentacle/monitoring/">Ceph 监控</a> · <a href="https://docs.ceph.com/en/tentacle/rados/operations/devices/">Ceph 设备管理</a></p>
+<pre><code class="language-bash">ceph_read() {
+  ceph -c /etc/ceph/ceph.conf -n client.ops-observer \
+    -k /etc/ceph/ceph.client.ops-observer.keyring &quot;$@&quot;
+}
+ceph_read fsid
+ceph_read status --format json
+ceph_read osd tree --format json
+ceph_read osd dump --format json
+ceph_read device ls --format json
+ceph_read health detail --format json
+ceph_read mgr services --format json
+</code></pre>
+<ol>
+<li><strong>期望资产</strong>由完整资产快照和设备映射提供。从 OSD 树记录主机和故障域，从 OSD map 记录 epoch 与 <code>up/in</code>，从设备信息记录盘身份。为快照登记采集时间、发布时点和原文指针。缺少物理盘映射的 OSD 标记为待核对。</li>
+<li><strong>已观测事实</strong>来自 Prometheus。查询本环境实际存在的 OSD 状态和进程性能计数器。挑一台 OSD，对照资产、状态和采样时间。聚合只能在同单位和同测量点发生。以期望资产清单作为覆盖率分母。</li>
+<li><strong>事件与变更</strong>由健康事件与实验维护记录提供。用观测时点快照之间的差异生成事件，为同一变化保留稳定 ID。首次只需要能追溯“哪次快照观察到什么变化”，之后再接真实推送或 ITSM 事件。已有业务测试客户端时，另接应用成功率和尾延迟。</li>
+</ol>
+<p>建议先交付三张表。<code>inventory_snapshot(snapshot_id, collected_at, complete, source_ref)</code> 记录完整性。<code>entity_revision(entity_id, native_id, source_id, valid_from/to, known_from/to)</code> 保存资产和关系版本。<code>source_health(source_id, expected_count, reporting_count, watermark, missing_ids)</code> 供调查器先核对证据覆盖。</p>
+<h3 id="验收与故障变体">验收与故障变体</h3>
+<p>先用健康快照建立基线，再在本地采集副本或回放文件中模拟以下情况。可用截短的副本模拟分页漏读，保持实验集群可观测。</p>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>变体</th>
+<th>预期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>资产快照缺最后一页</td>
+<td>保留上次完整结果，显示本轮不完整。原有资产保持期望成员资格</td>
+</tr>
+<tr>
+<td>同一事件重复回放</td>
+<td>按 <code>source + event_id</code> 去重，游标在持久化后推进</td>
+</tr>
+<tr>
+<td>一个 OSD 指标源停报</td>
+<td>期望数保持，报告上报数下降和缺失实体</td>
+</tr>
+<tr>
+<td>晚到的拓扑纠正</td>
+<td>旧调查时点的快照可复现。新调查时点读取修订后的关系</td>
+</tr>
+<tr>
+<td>相同 OSD 编号被新生命周期复用</td>
+<td>历史事故仍关联原 OSD UUID 或代次，当前资产使用新身份</td>
+</tr>
+</tbody>
+</table></div>
+<p>交付一份接入验收表。至少列出源、权限、期望数、覆盖率、采样频率、重复测试、断连时间、补传后水位，以及一条可追到原样本的证据。没有可用实验集群时，可先用第二站的 CSV 练习数据口径。真实接入验收需要补做。</p>
+<h2 id="2-从同一个症状识别三种原因">2. 从同一个症状识别三种原因</h2>
+<p>打开<a href="./lab/cross-layer-replay.csv">跨层回放 CSV</a>。A、B、C 是独立合成事故，都从应用写 P99 升到 46 ms 开始，调查截止为 <code>2026-11-21T02:16:00Z</code>。CSV 中 <code>observed_at</code> 代表该条目开始可见的时间。网络值是同一条已映射业务路径对自身基线的比值，独立对照业务使用另一条路径及池。一次只给模型一个案例和当前已查询证据。A 的晚到材料留到复盘。</p>
+<pre><code class="language-powershell">$replay = Import-Csv -LiteralPath '.\storage expert system\lab\cross-layer-replay.csv'
+$cutoff = [DateTimeOffset]'2026-11-21T02:16:00Z'
+$replay | Where-Object { $_.case_id -eq 'A' -and [DateTimeOffset]$_.observed_at -le $cutoff }
+</code></pre>
+<h3 id="任务与比较方法">任务与比较方法</h3>
+<ol>
+<li>先用共同的规则基线“写 P99 超过 20 ms”发出告警。记录规则能回答的范围。</li>
+<li>与模型逐轮交互。初始只给业务告警、时间和可查源名称。把 <code>application</code>、<code>network</code>、<code>ceph</code>、<code>device</code>、<code>changes</code>、<code>control</code> 当作受限工具，一次调用返回相应来源的可见数据。分别记录模型发起的查询、返回证据 ID 和剩余问题。可让模型并行请求独立来源，也可自行扮演 Agent 按同样规则选择下一项查询。</li>
+<li>输出 <code>impact</code>、<code>hypotheses</code>、<code>evidence_for</code>、<code>evidence_against</code>、<code>next_check</code>。根因保留候选强度。给出一个实际可证伪的后续检查，并写清哪里还缺信息。</li>
+<li>从 B 的快照移除 B04、B05、B08、B10，同时明确网络和相关变更来源缺失，再答一次。待查询网络路径的候选可保留，结论强度要随证据降低。</li>
+</ol>
+<details>
+<summary>参考证据与评分</summary>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>案例</th>
+<th>支持最强的候选</th>
+<th>排除其他路径还需要什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>A06–A08 支持 PG 映射变化后 backfill 与前台争用。A02–A05 使提交量突增或已观测网络拥塞的解释变弱</td>
+<td>查询实际 <code>acting</code> 路径与 OSD 服务时延。02:16 的报告不能引用 A10</td>
+</tr>
+<tr>
+<td>B</td>
+<td>B04、B05、B08、B10 支持有效链路减少后该路径拥塞。B06、B07 降低后端恢复争用的解释力</td>
+<td>核对主机和交换机两端的时间及流量，确认该链路确实承载受影响业务</td>
+</tr>
+<tr>
+<td>C</td>
+<td>C03、C08、C10 支持单次写入量增加，池吞吐上升。C07 队列上升，C06 未观察到 backfill</td>
+<td>查块大小分布、并发与同池其他负载，验证批量导出和设备压力的时序</td>
+</tr>
+</tbody>
+</table></div>
+<p>每例 5 分。根因排序 2 分，引用及反证 2 分，有效下一步 1 分。单列未来数据引用和编造证据这两类错误。缺数变体验收业务影响是否仍成立、解释空间是否随缺失扩大。比较获得第一条区分性证据的耗时、工具调用数和人工复核耗时。保留来源快照一致，使两种方法能够对照。</p>
+</details>
+<h2 id="3-验证一次跨进程的卷扩容任务">3. 验证一次跨进程的卷扩容任务</h2>
+<p><a href="./lab/workflow_replay.py">工作流模拟器</a>使用 SQLite 保存教学状态。模拟设备作业与执行器的状态分次提交，每条命令启动一个新进程。它模拟已有审批、设备接受请求后响应丢失、按请求键查询任务、业务先恢复，以及审批后拓扑变化。使用一条命令完成一小步，按顺序操作。</p>
+<h3 id="路线-a设备已受理执行器丢了响应">路线 A：设备已受理，执行器丢了响应</h3>
+<p>在 PowerShell 中从仓库根目录运行。每次演练创建独立的临时数据库，便于保留此前结果。</p>
+<pre><code class="language-powershell">$script = '.\storage expert system\lab\workflow_replay.py'
+$db = Join-Path ([IO.Path]::GetTempPath()) ('storage-replay-' + [Guid]::NewGuid() + '.sqlite')
+python $script $db init
+python $script $db step
+python $script $db step
+python $script $db step
+python $script $db step
+python $script $db step
+python $script $db verify-protection
+python $script $db step
+</code></pre>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>调用</th>
+<th>预期状态</th>
+<th>验收点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>init</code></td>
+<td><code>approved</code></td>
+<td>审批与设备拓扑修订均为 7</td>
+</tr>
+<tr>
+<td>第 1 次 <code>step</code></td>
+<td><code>submission_unknown</code></td>
+<td>设备任务数为 1，执行器没有拿到 job ID</td>
+</tr>
+<tr>
+<td>第 2 次 <code>step</code></td>
+<td><code>tracking</code></td>
+<td>新进程用原请求键找回 job ID，设备任务数仍为 1</td>
+</tr>
+<tr>
+<td>第 3 次 <code>step</code></td>
+<td><code>tracking</code></td>
+<td>设备作业仍在运行</td>
+</tr>
+<tr>
+<td>第 4 次 <code>step</code></td>
+<td><code>verifying</code></td>
+<td>作业完成，业务验证通过，保护验证待完成</td>
+</tr>
+<tr>
+<td>第 5 次 <code>step</code></td>
+<td><code>verifying</code></td>
+<td>保护信号缺失，工作流仍开放</td>
+</tr>
+<tr>
+<td><code>verify-protection</code></td>
+<td><code>verifying</code></td>
+<td>保护验证通过，等待状态机读取验证结果</td>
+</tr>
+<tr>
+<td>最后一次 <code>step</code></td>
+<td><code>succeeded</code></td>
+<td>业务与保护验证均通过，设备受理作业数为 1</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="路线-b审批后的拓扑发生变化">路线 B：审批后的拓扑发生变化</h3>
+<pre><code class="language-powershell">$driftDb = Join-Path ([IO.Path]::GetTempPath()) ('storage-drift-' + [Guid]::NewGuid() + '.sqlite')
+python $script $driftDb init
+python $script $driftDb drift-topology
+python $script $driftDb step
+python $script $driftDb status
+</code></pre>
+<p>预期 <code>needs_reapproval</code>，设备任务数为 0。再查 <code>status</code>，确认审批仍绑定修订 7，现场拓扑已为 8。写出重新规划时需要复验的容量、影响路径及保护依赖。</p>
+<h3 id="复盘与迁移到真实接口">复盘与迁移到真实接口</h3>
+<p>该模拟使用单执行者、预置审批与合成验证，真实设备由厂商 API 或集群管理器返回作业。以 ONTAP 为例，可从异步响应取得 job ID 再追踪结果。按客户端请求键对账的能力视接口而定，无法核实受理状态时转人工。真实扩容还要先确认数据面与文件系统支持、池水位与保护关系，再验证应用可用空间和业务读写。若扩容无法按原样回退，预先定义补偿和交接。 <a href="https://docs.netapp.com/us-en/ontap-automation/rest/asynchronous_processing.html">ONTAP 异步作业</a></p>
+<p>最后留下一份对照记录，包含 <code>request_id</code>、设备 <code>job_id</code>、审批版本、每次推进前后状态、两路验收证据和设备受理的作业数。将同样结构复用到换盘、固件升级、迁移和恢复演练。</p>
+
+  </article>
+</main>
+<footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>
+</body>
+</html>

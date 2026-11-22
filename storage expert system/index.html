@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>海量数据存储运维专家系统</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ink:#152a22; --muted:#405950; --paper:#f2f6f1; --card:#fff;
+  --line:#d6e1d7; --accent:#08644a; --code:#edf4ee; --soft:#e6efe8;
+  --hero:#12352a; --hero-text:#f2fbf6; --hero-link:#d8eee3;
+}
+@media (prefers-color-scheme:dark) {
+  :root { --ink:#e7f0ea; --muted:#a9beb4; --paper:#0d1512; --card:#14201b;
+    --line:#2a3d35; --accent:#7cdcb6; --code:#0a120f; --soft:#18261f; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink);
+  font:16px/1.78 system-ui,"Microsoft YaHei","Noto Sans SC",sans-serif; }
+a { color:var(--accent); text-underline-offset:.2em; }
+a:focus-visible, summary:focus-visible, .table-wrap:focus-visible {
+  outline:2px solid var(--accent); outline-offset:4px; }
+.page-width { width:min(1180px,calc(100% - 40px)); margin-inline:auto; }
+.skip { position:absolute; left:.75rem; top:.75rem; z-index:2; padding:.4rem .7rem;
+  background:var(--card); transform:translateY(-180%); }
+.skip:focus { transform:translateY(0); }
+header { background:var(--hero); color:var(--hero-text); padding:22px 0 30px; }
+.primary { display:flex; flex-wrap:wrap; gap:5px 19px; margin:0 0 23px; }
+.primary a { color:var(--hero-link); font-size:.9rem; }
+.primary a[aria-current="page"] { color:var(--hero-text); font-weight:700; }
+.primary a:focus-visible { outline-color:var(--hero-text); }
+h1, h2, h3, h4, h5, h6 { line-height:1.36; overflow-wrap:anywhere; }
+h1 { font-size:clamp(1.75rem,4.6vw,3rem); letter-spacing:-.035em; margin:0; }
+h2 { font-size:clamp(1.3rem,3vw,1.7rem); margin:2.1rem 0 .7rem; }
+h3 { font-size:1.15rem; margin:1.7rem 0 .5rem; color:var(--accent); }
+h4, h5, h6 { margin:1.4rem 0 .5rem; }
+h2[id], h3[id], h4[id], h5[id], h6[id] { scroll-margin-top:1rem; }
+.layout { display:grid; grid-template-columns:245px minmax(0,1fr); gap:24px;
+  align-items:start; padding-block:24px 44px; }
+.toc { position:sticky; top:1rem; max-height:calc(100vh - 2rem); overflow:auto;
+  border:1px solid var(--line); background:var(--card); border-radius:12px; }
+.toc nav { padding:0 14px 14px; font-size:.86rem; line-height:1.5; }
+summary { cursor:pointer; font-weight:650; color:var(--accent); padding:11px 14px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc li { margin:.42em 0; }
+.toc a { display:block; overflow-wrap:anywhere; }
+.toc .sub { padding-left:.8em; }
+article { min-width:0; padding:clamp(16px,3.2vw,38px); background:var(--card);
+  border:1px solid var(--line); border-radius:12px; overflow-wrap:anywhere; }
+article > :first-child { margin-top:0; }
+article > :last-child { margin-bottom:0; }
+p { margin:0 0 1em; }
+li + li { margin-top:.25em; }
+ul, ol { padding-left:1.6em; }
+blockquote { margin:1em 0; padding:.5em 0 .5em 1em; border-left:3px solid var(--accent); color:var(--muted); }
+blockquote > :last-child { margin-bottom:0; }
+code { font: .89em ui-monospace,"Cascadia Code",Consolas,monospace;
+  background:var(--code); border-radius:4px; padding:.1em .25em; }
+pre { border:1px solid var(--line); border-radius:8px; overflow:auto;
+  padding:.85rem 1rem; background:var(--code); line-height:1.55; overflow-wrap:normal; }
+pre code { padding:0; font-size:.86rem; }
+.table-wrap { max-width:100%; overflow:auto; border:1px solid var(--line);
+  border-radius:8px; margin:1rem 0; }
+table { border-collapse:collapse; width:100%; min-width:32rem; font-size:.9rem; }
+th, td { text-align:left; padding:.52em .7em; border-bottom:1px solid var(--line); vertical-align:top; }
+th { background:var(--soft); }
+tbody tr:last-child td { border-bottom:0; }
+article details { border:1px solid var(--line); border-radius:8px; padding:0 .85rem; margin:1rem 0; }
+article details summary { padding-inline:0; }
+img { max-width:100%; height:auto; }
+hr { border:0; border-top:1px solid var(--line); margin:1.5rem 0; }
+footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
+@media (max-width:760px) {
+  .page-width { width:calc(100% - 26px); }
+  .layout { grid-template-columns:minmax(0,1fr); gap:15px; padding-top:15px; }
+  .toc { position:static; max-height:min(15rem,50vh); }
+  .primary { margin-bottom:.9rem; }
+}
+@media print {
+  header { padding:0 0 1rem; background:none; color:#000; }
+  .layout { display:block; }
+  .primary,.toc,footer,.skip { display:none; }
+  article { border:0; padding:0; background:none; }
+  table { min-width:0; }
+  pre { white-space:pre-wrap; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳转到正文</a>
+<header>
+  <div class="page-width">
+    <nav class="primary" aria-label="学习资料导航"><a href="./index.html" aria-current="page">资料目录</a>
+<a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
+<a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
+<a href="./PB级存储运维实操.html">三站实操</a></nav>
+    <h1>海量数据存储运维专家系统</h1>
+  </div>
+</header>
+<main id="main" class="page-width layout">
+  <details class="toc" open><summary>本页目录</summary><nav aria-label="本页目录"><ul><li><a href="#学完能做什么">学完能做什么</a></li>
+<li><a href="#阅读顺序">阅读顺序</a></li>
+<li><a href="#正文答案与实操怎么配合">正文、答案与实操怎么配合</a></li></ul></nav></details>
+  <article>
+<p>资料核验：基础章节 2026-11-18，PB 级建设、实操与产品对标 2026-11-21。适合已有数据工程或知识图谱基础、希望学习存储 AIOps 的读者。</p>
+<p><strong>第一站：<a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">存储专家系统学习路径与资料指南</a></strong>。可直接在浏览器打开，按章节阅读机制、架构图、算例和自测。准备设计系统时可直接进入<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a>和<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">三站实操</a>。</p>
+<h2 id="学完能做什么">学完能做什么</h2>
+<p>在多集群存储环境里，从应用 I/O 症状出发，联合设备遥测、维护变更、时态拓扑和版本化 Runbook，让 AI 提出可证伪的故障假设，生成有证据的调查报告，并定义处置后的验证条件。同时能独立设计容量预测和硬盘故障预测的基线、数据切分与评测。还能把华为 DME 的公开能力逐环节映射到这套架构，判断哪些直接用、哪些要自建。</p>
+<p>主模板选用 <strong>Everpure Pure1 + Fusion</strong>。公开资料覆盖设备群遥测、拓扑、AI Copilot 与 MCP 工具接口，Fusion 还提供开源实现。用 <strong>NetApp DII / Digital Advisor、华为 DME / DME IQ、Dell AIOps</strong> 比较存储运维能力，用 <strong>AWS DevOps Agent</strong> 对照跨栈调查。实操采用 <strong>Ceph 语义的合成数据</strong>，可在没有商业账号、存储设备和模型密钥的情况下开始。选型依据和发布状态见<a href="./%E4%B8%9A%E7%95%8C%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%A0%94.html">业界系统调研</a>。</p>
+<h2 id="阅读顺序">阅读顺序</h2>
+<div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>内容</th>
+<th>完成标志</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>入门</td>
+<td><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> → <a href="./%E4%B8%9A%E7%95%8C%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%A0%94.html">业界系统调研</a></td>
+<td>能把一项产品能力映射到数据、分析、工具、决策或执行层，并说明公开证据范围</td>
+</tr>
+<tr>
+<td>展开</td>
+<td><a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">数据流与技术展开</a></td>
+<td>能画出一次 I/O、一次遥测写入和一次 Agent 调查的时序</td>
+</tr>
+<tr>
+<td>深入</td>
+<td><a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">专家系统深入篇</a></td>
+<td>能推导尾延迟放大、MAD、燃烧率、EC 容量和告警预算；能为每个环节写出证据与失败模式</td>
+</tr>
+<tr>
+<td>进阶</td>
+<td><a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">专家系统进阶篇</a></td>
+<td>能从介质/控制器/RAID/EC/协议/Ceph 内部算到量级；能写表、SQL、PromQL、工具契约和 Agent 循环</td>
+</tr>
+<tr>
+<td>建设</td>
+<td><a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a></td>
+<td>能从规模预算推到多站点接入、任务技能、异步执行和生产验收</td>
+</tr>
+<tr>
+<td>产品对标</td>
+<td><a href="./%E4%B8%9A%E7%95%8CAI%E8%BF%90%E7%BB%B4%E4%BA%A7%E5%93%81%E4%B8%8E%E5%8D%8E%E4%B8%BADME%E5%AF%B9%E6%A0%87.html">业界 AI 运维产品与华为 DME 对标</a></td>
+<td>能说清五款产品的实际调查与处置链，并用同一组场景核验 DME 的可交付能力</td>
+</tr>
+<tr>
+<td>拆解</td>
+<td><a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a></td>
+<td>能对每个外部来源讲出它的架构、流程图、例子和证据边界，而不是只贴链接</td>
+</tr>
+<tr>
+<td>对照</td>
+<td><a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">华为 DME 全链路解剖</a></td>
+<td>能逐环节说出 DME 有什么、业界怎么做、缺什么、怎么补；能列出尽调问题</td>
+</tr>
+<tr>
+<td>答案</td>
+<td><a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html">练习与考核答案</a></td>
+<td>能对照检查计算、设计、案例和 30 题自测；知道评分标准与常见失分</td>
+</tr>
+<tr>
+<td>实操</td>
+<td><a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html">Ceph 事故回放</a> → <a href="./lab/latency-replay.csv">合成遥测</a></td>
+<td>能计算异常、定位作用域、给出证据和反证，并在关键数据缺失时降低结论强度</td>
+</tr>
+<tr>
+<td>联调</td>
+<td><a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">PB 级存储运维三站实操</a></td>
+<td>实验 Ceph 接入、同症状跨层取证、跨进程追踪设备作业与双验收</td>
+</tr>
+</tbody>
+</table></div>
+<p>已经掌握存储、PromQL 和 SLO 的读者可直接从深入篇的异常检测与 RCA 开始。已有知识图谱可承接 Runbook、产品型号和历史故障的检索，时序查询及事件时刻的拓扑查询承担现场取证。</p>
+<h2 id="正文答案与实操怎么配合">正文、答案与实操怎么配合</h2>
+<ul>
+<li><strong>技术展开</strong>是 30–60 分钟的路线图，先建立“业务 I/O、遥测、调查与处置”三条流。</li>
+<li><strong>深入篇</strong>是 4–6 小时的系统学习，每个环节都有公式、数值例子、失败模式和验收；适合边读边在自己的数据上复算。</li>
+<li><strong>进阶篇</strong>是底层机制与实现手册：介质/控制器、RAID/EC/快照/复制、FC/iSCSI/NVMe-oF/NFS/S3、Ceph 内部、性能/容量建模、算法、表/SQL/PromQL/工具契约，最后有一个完整案例。</li>
+<li><strong>资料拆解</strong>把 42 个外部链接按主题拆成 21 节：每节先讲问题，再画架构/流程，给例子，最后才附原文；适合建立自己的判断，而不是背链接。</li>
+<li><strong>DME 解剖</strong>是产品对照手册，按同样的九个环节看华为的能力边界；适合选型、面试、方案设计和厂商尽调。</li>
+<li><strong>答案册</strong>覆盖以上所有练习和 30 题自测，含计算步骤、设计要点、评分表和常见失分。</li>
+<li><strong>PB 级建设手册</strong>从设备纳管讲到业务验收，复用原有章节的知识图谱、时态拓扑、告警规则与 Agent 工具契约。</li>
+<li><strong>三站实操</strong>把单事故回放延伸到接入验收、跨层归因和长任务。后两站使用本地合成数据和 Python 标准库，可单独开始。</li>
+</ul>
+<p>五份正文用同一套环节编号，读到 DME 的“环节 6”可以直接回到深入篇第 6 节对照原理；进阶篇的公式和实现则用来把结论算实。</p>
+
+  </article>
+</main>
+<footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>
+</body>
+</html>
