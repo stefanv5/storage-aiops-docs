@@ -102,18 +102,18 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
   <details class="toc" open><summary>本页目录</summary><nav aria-label="本页目录"><ul><li><a href="#1-定容与部署">1. 定容与部署</a></li>
 <li><a href="#2-多厂商接入与数据管道">2. 多厂商接入与数据管道</a></li>
 <li class="sub"><a href="#新设备从登记到上线">新设备从登记到上线</a></li>
-<li class="sub"><a href="#采集契约与落库">采集契约与落库</a></li>
+<li class="sub"><a href="#采集契约与落库">采集字段和存储方式</a></li>
 <li><a href="#3-业务到物理设备的映射">3. 业务到物理设备的映射</a></li>
 <li><a href="#4-按设备与故障域诊断">4. 按设备与故障域诊断</a></li>
 <li><a href="#5-agent-怎样承接不同运维任务">5. Agent 怎样承接不同运维任务</a></li>
-<li><a href="#6-持久执行与变更闭环">6. 持久执行与变更闭环</a></li>
+<li><a href="#6-持久执行与变更闭环">6. 记录变更、作业和验收结果</a></li>
 <li><a href="#7-pb-级数据资产运营">7. PB 级数据资产运营</a></li>
 <li><a href="#8-评测与上线验收">8. 评测与上线验收</a></li></ul></nav></details>
   <article>
 <p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">原理与实现</a> · <a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">三站实操</a> · <a href="./%E4%B8%9A%E7%95%8C%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%A0%94.html">厂商能力对照</a></p>
-<p>本篇以三个站点约 10 PB 原始容量、块/文件/对象混合部署为教学假设，沿着同一条路线建设系统：<strong>设备纳管 → 现场证据 → Agent 调查与计划 → 审批和执行 → 业务与数据保护验收</strong>。初版选择一个 Ceph 集群、一条应用写入路径和一个可观察的设备异步作业。第二个厂商接入后，用同一任务协议验证设备适配层。容量、采样和验收数字均为算例，上线时由业务 SLO、采购周期和设备实测决定。</p>
+<p>本手册以三个站点、约 10 PB 原始容量、块/文件/对象混合部署为例。先接入设备并采集证据，再用 Agent 调查和拟计划，经审批后执行，最后验收业务和数据保护。初版选一个 Ceph 集群、一条应用写入路径和一个可查询状态的设备异步作业。接入第二家厂商后，用同一任务协议检验适配器。容量、采样和验收数字均为算例，上线时按业务 SLO、采购周期和设备实测确定。</p>
 <h2 id="1-定容与部署">1. 定容与部署</h2>
-<p>先列四本账。业务账决定可承载多少数据与负载，观测账决定采集规模，资产账决定拓扑和清单规模，任务账决定调查与处置并发。每本账都有独立分母。</p>
+<p>按下表分别估算业务与保护、遥测、资产与清单、运维任务。各项使用各自的统计口径。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -145,7 +145,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>算例。</strong> 20 万条活跃序列 × 每 15 秒采一次 ≈ 13,333 样本/秒，约 11.52 亿样本/天。某站平均 12 MB/s 遥测、断链目标 6 小时，积压约 259.2 GB。恢复后若一小时内追完，需要额外 72 MB/s，连同新数据共需 84 MB/s 有效吞吐。按峰值、压缩、磁盘预算和站点设备管理面的承载能力复算。若 30 天新增 1 PB 的是<strong>运维数据</strong>，平均入口约 386 MB/s，另计写放大、索引和副本。以上均使用十进制单位。</p>
+<p><strong>算例。</strong> 20 万条活跃序列每 15 秒采一次，约 13,333 样本/秒、11.52 亿样本/天。某站平均接收 12 MB/s 遥测，按断链 6 小时计算，需要缓冲约 259.2 GB。恢复后若要在一小时内补齐，额外需要 72 MB/s。连同新数据，共需 84 MB/s 有效吞吐。再按峰值、压缩、磁盘预算和站点设备管理接口的承载能力复算。若 30 天新增 1 PB <strong>运维数据</strong>，平均入口约 386 MB/s，写放大、索引和副本另计。以上均用十进制单位。</p>
 <pre><code class="language-text">业务 I/O ─────► 主机 / 网关 / 阵列 / Ceph ─────► 介质
                          │
 站点边缘      设备适配器 + Host/OTel 采集 + 事件订阅 + 持久缓冲
@@ -156,18 +156,18 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
                                              │ 审批绑定计划版本
 执行通道      策略判定 → 持久工作流 → 设备原生作业 → 独立验收 → 工单回写
 </code></pre>
-<p>站点断链时，边缘继续采集和本地告警，中心把该站标记为证据过期，并用现有证据输出已知影响。需要最新集群状态的远程任务等待重检。中央模型不可用时，设备原生监控、告警和已启动作业跟踪由各自服务继续。采集、查证和变更分别设并发与超时预算，避免调查洪峰拖慢设备管理面。 <a href="https://opentelemetry.io/docs/collector/resiliency/">OpenTelemetry Collector 可靠性</a> · <a href="https://opentelemetry.io/docs/collector/scaling/">Collector 扩展</a></p>
+<p>站点断链时，边缘继续采集和发本地告警。中心标记该站证据过期，并报告现有证据能确认的影响。依赖最新集群状态的远程任务等重检后再继续。中央模型不可用时，各服务继续监控设备、告警和跟踪已启动的作业。给采集、查证和变更分别设并发和超时上限，避免大量调查拖慢设备管理接口。 <a href="https://opentelemetry.io/docs/collector/resiliency/">OpenTelemetry Collector 可靠性</a> · <a href="https://opentelemetry.io/docs/collector/scaling/">Collector 扩展</a></p>
 <h2 id="2-多厂商接入与数据管道">2. 多厂商接入与数据管道</h2>
 <h3 id="新设备从登记到上线">新设备从登记到上线</h3>
 <ol>
-<li><strong>登记。</strong> 录入站点、设备所有者、管理端点、厂家型号、固件、设备标识范围和权限。适配器获得独立只读凭据，执行通用的身份和时间探测。</li>
-<li><strong>能力探测。</strong> 记录能否列出盘/卷/端口、哪些指标可读、历史查询范围、事件订阅、分页和限流语义。明确每项能力所需版本。异步作业查询和写入能力另行登记。</li>
-<li><strong>首轮全量。</strong> 按页遍历资产，记录快照标识与采集状态。在完整快照成功后发布新一代资产。分页失败时保留上一次完整结果，标记过期。只有确认扫描完整后才将消失的资产转为待核对或退役。</li>
-<li><strong>增量与对账。</strong> 有事件游标时从游标续订，用事件通知驱动重点对象刷新，同时周期获取全量或摘要核对。全量期间收到的事件按快照边界及源版本重放。接口缺少稳定快照或游标时，记录盲区并缩小重查范围。</li>
-<li><strong>上线验收。</strong> 对照设备界面抽查身份、单位、数量和路径。模拟凭据失效、分页错误、事件丢失和限流。固件升级后重新探测，设备退役时保留历史身份和证据引用。</li>
+<li><strong>登记。</strong> 录入站点、设备所有者、管理端点、厂家型号、固件、设备标识范围和权限。给适配器单独的只读凭据，试查设备身份和设备时钟。</li>
+<li><strong>能力探测。</strong> 试查盘、卷、端口和指标。记录历史能查多久、事件如何订阅、如何翻页、如何限流，以及各项能力所需版本。异步作业查询和写入能力单独登记。</li>
+<li><strong>首轮全量。</strong> 逐页读取资产，记录快照 ID 和采集状态。完整读完才发布新清单。某页失败时保留上次完整清单，标为过期。确认扫描完整后，才把消失的资产标为待核对或退役。</li>
+<li><strong>增量与对账。</strong> 有事件游标时从游标续订，收到通知后刷新相关对象，并定期用全量或摘要对账。全量扫描期间收到的事件，按快照边界和源版本重放。缺少稳定快照或游标时，记录查不到的范围，并缩小重查范围。</li>
+<li><strong>上线验收。</strong> 对照设备界面抽查身份、单位、数量和路径。模拟凭据失效、分页错误、事件丢失和限流。升级固件后重新探测。设备退役后保留历史身份和证据引用。</li>
 </ol>
-<p>按实际设备能力选择厂商 REST、Redfish/Swordfish、Ceph、SNMP 或受限的只读采集器。Swordfish 给出通用的存储资源模型，各型号仍需对照其实际支持。Ceph Manager 的 Prometheus 模块提供集群级监控，<code>ceph_exporter</code> 暴露进程性能计数器，应用端 SLO 另从业务测量。 <a href="https://www.snia.org/tech_activities/standards/curr_standards/swordfish">SNIA Swordfish</a> · <a href="https://docs.ceph.com/en/tentacle/monitoring/">Ceph Tentacle 监控</a></p>
-<h3 id="采集契约与落库">采集契约与落库</h3>
+<p>按设备支持的能力选用厂商 REST、Redfish/Swordfish、Ceph、SNMP 或受限的只读采集器。Swordfish 提供通用的存储资源模型，仍要核对各型号实际支持哪些字段和操作。Ceph Manager 的 Prometheus 模块提供集群级监控，<code>ceph_exporter</code> 提供进程性能计数器。应用端 SLO 从业务侧测量。 <a href="https://www.snia.org/tech_activities/standards/curr_standards/swordfish">SNIA Swordfish</a> · <a href="https://docs.ceph.com/en/tentacle/monitoring/">Ceph Tentacle 监控</a></p>
+<h3 id="采集契约与落库">采集字段和存储方式</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -180,17 +180,17 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>资产和拓扑</td>
 <td><code>source_id</code>、原生 UUID、<code>entity_id</code>、版本、<code>observed_at</code>、<code>valid_from/to</code>、<code>known_from/to</code></td>
-<td>资产表与关系历史。逐页失败不发布部分为完整，补录保留旧修订</td>
+<td>保存资产和关系历史。读完所有页才发布完整结果。补录时保留旧版本</td>
 </tr>
 <tr>
 <td>指标</td>
 <td>指标名、实体、单位、测量点、类型、采样间隔、值、质量标记</td>
-<td>时序库保留关键直方图。计数器重置先处理，再算速率。高基数字段保留在日志或明细层</td>
+<td>在时序库保留关键直方图。处理计数器重置后再算速率。取值种类多的字段留在日志或明细层</td>
 </tr>
 <tr>
 <td>事件和变更</td>
 <td><code>source + event_id</code>、实体、事件类别、<code>event_at</code>、<code>observed_at</code>、<code>known_at</code>、源游标、正文引用</td>
-<td>幂等入库；归一化异常保留在隔离区；游标于成功持久化后提交</td>
+<td>重复事件只入库一次。无法转换为统一格式的记录放隔离区。写入成功后再提交游标</td>
 </tr>
 <tr>
 <td>日志、追踪、支持包</td>
@@ -200,13 +200,13 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>Runbook 和历史案例</td>
 <td>产品、型号、固件范围、生效期、原文位置、审核状态</td>
-<td>复用现有知识图谱，先按访问权限、版本和生效时间过滤，再进行关键词与语义召回</td>
+<td>复用现有知识图谱。先按权限、版本和生效时间过滤，再用关键词和语义检索</td>
 </tr>
 </tbody>
 </table></div>
-<p>每种数据独立设水位。推荐同时展示<strong>期望设备数、上报设备数、关键指标新鲜率、延迟分位和丢弃量</strong>。断链恢复后按优先级上传关键事件、恢复查询水位，再补普通明细。只对有明确语义的重复项去重。缓冲满时记录丢失的信号类型、数量和时间段，排查工具返回 <code>PARTIAL_COVERAGE</code>。以上游至少一次交付为工作假设，接收端用源 ID 或稳定键防重。</p>
+<p>分别记录每类数据已处理到哪个时点。显示预期和实际的上报设备数、关键指标更新时间、延迟分位数和丢弃量。断链恢复后，先补关键事件，再补明细。缓冲满时记录丢失的类型、数量和时间，排查工具返回 <code>PARTIAL_COVERAGE</code>。同一记录可能送达多次。事件按 <code>source + event_id</code> 去重，其他记录用能唯一标识该记录的稳定键。</p>
 <h2 id="3-业务到物理设备的映射">3. 业务到物理设备的映射</h2>
-<p>一个可用的实体目录要把三条关系区分开。</p>
+<p>实体目录分别记录 I/O 路径、放置与保护关系、共享故障域。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -233,8 +233,8 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p>容器场景先从业务、Pod、PVC、PV 找到 CSI <code>volumeHandle</code>，再用驱动或后端接口映射到卷的稳定 UUID。FC 可按主机 WWPN、交换网络和阵列卷映射对齐。Ceph 路径同时留 OSD map epoch、<code>up</code> 和 <code>acting</code>，避免把正在迁移的放置目标当成实际服务路径。资产表记录“同一物理盘的新旧名称”“同一槽位换了盘”“一个 OSD 重新部署”等区别。低置信匹配允许查看并标注，设备变更前需要确认目标。 <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">Kubernetes 持久卷</a> · <a href="https://docs.ceph.com/en/tentacle/rados/operations/monitoring-osd-pg/">Ceph OSD 与 PG 状态</a></p>
-<p>证据服务按 <code>实体 + 事件窗口 + 调查截止</code> 查询，并返回数据新鲜度、来源、单位、原始查询与证据 ID。调用时先查应用和影响范围，再看事发拓扑。缩小到候选路径后才读取设备明细。更新后仍要能回放事故当时看到的关系，具体表和索引见<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#72-as-of-%E6%9F%A5%E8%AF%A2">进阶篇时态查询</a>。</p>
+<p>容器场景沿业务、Pod、PVC、PV 找到 CSI <code>volumeHandle</code>，再用驱动或后端接口查卷的稳定 UUID。FC 按主机 WWPN、交换网络和阵列卷映射核对。Ceph 同时记录 OSD map epoch、<code>up</code> 和 <code>acting</code>，分别核对放置目标和当前服务路径。资产表区分同一物理盘改名、同一槽位换盘和 OSD 重新部署。置信度低的匹配可以查看，须明确标注。执行设备变更前先确认目标。 <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">Kubernetes 持久卷</a> · <a href="https://docs.ceph.com/en/tentacle/rados/operations/monitoring-osd-pg/">Ceph OSD 与 PG 状态</a></p>
+<p>证据服务按 <code>实体 + 事件窗口 + 调查截止</code> 查询，返回数据新鲜度、来源、单位、原始查询和证据 ID。先查应用与影响范围，再看事发拓扑，缩小到候选路径后读取设备明细。更新关系后仍须能够还原事故当时看到的拓扑。表和索引见<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#72-as-of-%E6%9F%A5%E8%AF%A2">进阶篇时态查询</a>。</p>
 <h2 id="4-按设备与故障域诊断">4. 按设备与故障域诊断</h2>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -247,23 +247,23 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tbody>
 <tr>
 <td>介质、背板与盘柜</td>
-<td>盘的介质错误和延迟上升；横向比较同盘柜、同型号的盘。多盘同时异常时，重查共享链路、电源与控制器</td>
-<td>风险评估按物理标识和所在故障域。验证新盘身份、数据迁移、冗余与业务影响</td>
+<td>查看介质错误和延迟，与同盘柜、同型号的盘比较。多盘同时异常时，重查共享链路、电源和控制器</td>
+<td>按物理标识和所在故障域评估风险。核对新盘身份、数据迁移、冗余和业务影响</td>
 </tr>
 <tr>
 <td>主机、多路径与 SAN</td>
-<td>应用慢且主机队列升高。区分写量与块大小变化、路径切换、交换机拥塞及阵列端口异常</td>
-<td>用实际有效路径对照，观察重试、队列、错误和端到端好请求比例</td>
+<td>应用慢且主机队列升高时，分别查写量、块大小、路径切换、交换机拥塞和阵列端口</td>
+<td>按实际在用的路径对照，查重试、队列、错误和端到端好请求比例</td>
 </tr>
 <tr>
 <td>控制器与共享池</td>
-<td>比较控制器 CPU、缓存、端口与池延迟。同池和异池负载形成不同对照</td>
-<td>评估 QoS、工作负载安置或迁移，追踪受影响租户和控制器余量</td>
+<td>比较控制器 CPU、缓存、端口和池延迟。分别对照同池和异池负载</td>
+<td>评估 QoS、安置位置或迁移，追踪受影响的租户和控制器余量</td>
 </tr>
 <tr>
 <td>Ceph 恢复与重平衡</td>
-<td>查 OSD/PG、up/acting、backfill 与恢复速率。与前台请求强度、网络及设备队列对齐</td>
-<td>受监督评估后台调度和维护窗口。校验前台恢复及 PG 冗余完成</td>
+<td>查 OSD/PG、up/acting、backfill 和恢复速率。按时间对照前台请求强度、网络和设备队列</td>
+<td>在监督下评估后台调度和维护窗口。确认前台恢复、PG 冗余恢复</td>
 </tr>
 <tr>
 <td>文件与对象元数据</td>
@@ -272,15 +272,15 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 <tr>
 <td>复制、快照与备份</td>
-<td>跟踪复制 lag、恢复点年龄、完整性校验、任务失败、保护目标和远端水位</td>
-<td>实际恢复到隔离目标，检查数据一致性和应用能否读取，再计算实测 RPO/RTO</td>
+<td>查复制滞后、恢复点年龄、完整性校验、失败任务、保护目标和远端水位</td>
+<td>恢复到隔离目标。检查数据是否一致、应用能否读取，再计算实测 RPO/RTO</td>
 </tr>
 </tbody>
 </table></div>
-<p>一个风险盘口径应证明 <strong>预测 → 资产认定 → 变更可行性 → 验收</strong>。输入盘寿命预测时保留模型、阈值和预测窗口。Agent 对照同机框信号与历史故障，检查是否存在同时发生的链路或固件问题。准备维护时按故障域排序，验证副本与 <code>min_size</code>、设备余量、正在恢复的任务、备件与当班工单。作业进行中监控恢复速度与业务 SLO，结束后核对硬件序列号及业务读写。升级同理，额外核对兼容矩阵、分批窗口、回退限制和混合版本约束。 <a href="https://docs.ceph.com/en/tentacle/rados/operations/devices/">Ceph 设备管理</a> · <a href="https://docs.ceph.com/en/tentacle/cephadm/services/osd/">Ceph OSD 服务</a> · <a href="https://docs.ceph.com/en/tentacle/cephfs/troubleshooting/">CephFS 排障</a> · <a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing-validation.html">AWS Backup 恢复验证</a></p>
-<p><strong>算例。</strong> 两块风险盘都告警。盘 A 的介质错误持续增加，同机框其他盘无相同变化。盘 B 的介质错误平稳，但同机框多盘的链路重试同步上升。Agent 对 A 生成换盘候选，对 B 追加背板、控制器端口与电源检查。若 A 所在池仍在恢复，即使预测风险高，也要先复验冗余。假设需迁移 12 TB，有效恢复速率估为 200 MB/s，理想耗时约 16.7 小时。若维护窗口仅 4 小时，要评估窗口外持续恢复的业务和保护影响，再决定改期或调整分批。</p>
+<p>处理风险盘时，先核对预测和物理身份，再判断能否更换，最后验收。接收盘寿命预测时记录模型、阈值和预测窗口。Agent 对照同机框信号和历史故障，查是否同时有链路或固件问题。维护前按故障域排序，核对副本、<code>min_size</code>、设备余量、正在恢复的任务、备件和当班工单。作业中监控恢复速度及业务 SLO，结束后核对硬件序列号并验业务读写。升级还需要查兼容矩阵、分批窗口、回退限制和混合版本约束。 <a href="https://docs.ceph.com/en/tentacle/rados/operations/devices/">Ceph 设备管理</a> · <a href="https://docs.ceph.com/en/tentacle/cephadm/services/osd/">Ceph OSD 服务</a> · <a href="https://docs.ceph.com/en/tentacle/cephfs/troubleshooting/">CephFS 排障</a> · <a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing-validation.html">AWS Backup 恢复验证</a></p>
+<p><strong>算例。</strong> 两块盘都报风险。盘 A 的介质错误持续增加，同机框其他盘没有类似变化，可先把 A 列为换盘候选。盘 B 的介质错误平稳，但同机框多盘的链路重试同时增加，需查背板、控制器端口和电源。若 A 所在池仍在恢复，即使预测风险高，也要先复验冗余。若要迁移 12 TB，按有效恢复速率 200 MB/s 估算，理想耗时约 16.7 小时。若维护窗口只有 4 小时，先评估窗口外继续恢复会怎样影响业务和保护，再决定改期或调整批次。</p>
 <h2 id="5-agent-怎样承接不同运维任务">5. Agent 怎样承接不同运维任务</h2>
-<p>用户在对话、告警与工单入口提出目标。系统把意图转换为任务类型、设备范围、限制条件和期望交付。一个入口可以服务多类任务，技能负责各自的证据顺序和完成条件。</p>
+<p>对话、告警和工单可发起多类运维任务。系统根据请求确定任务类型、设备范围、限制和交付物，各技能规定查证顺序和完成条件。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -323,9 +323,9 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p>每个技能至少定义 <code>skill_id/version</code>、输入与授权范围、允许的工具、目标证据与候选假设、降级条件、最大时长/工具开销、响应结构、退出与交接。<strong>模型</strong>负责解释目标、选择下一条信息量大的查询、组织解释与计划。<strong>规则与统计模型</strong>负责阈值、趋势、硬盘风险和候选打分。<strong>工具网关</strong>负责用户身份、租户范围、强类型参数、查询预算与审计。<strong>执行器</strong>只接受策略认可并经过审批的动作版本。</p>
-<p>第一段查询通常取得业务影响、采集健康和拓扑。第二段可并行查网络、设备、近期变更，结果回来后只追踪仍有区分度的候选。例如 MDS 元数据延迟恶化而数据路径稳定，就查 create/stat、缓存回收和目录扫描。累积证据中断时，回传已经确认的事实、未决假设与下一步。记录技能、规则、模型、证据快照和调用轨迹，便于对照升级。 <a href="https://docs.aws.amazon.com/devopsagent/latest/userguide/about-aws-devops-agent.html">AWS DevOps Agent 技能与调查模式</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#74-%E5%B7%A5%E5%85%B7%E5%A5%91%E7%BA%A6%E4%B8%8E-mcp-%E9%80%82%E9%85%8D">已有工具契约</a></p>
-<h2 id="6-持久执行与变更闭环">6. 持久执行与变更闭环</h2>
+<p>每个技能记录 <code>skill_id/version</code>、输入与授权范围、可用工具、要找的证据与候选原因、降级条件、时长与工具开销上限、输出结构、退出与交接条件。模型理解请求，选下一项最能区分候选原因的查询，再写说明和计划。规则和统计模型算阈值、趋势、硬盘风险和候选分数。工具网关检查用户身份、租户范围、参数类型和查询预算，并写审计记录。执行器只执行符合策略且已审批的动作版本。</p>
+<p>先查业务影响、采集情况和拓扑。再并行查网络、设备和近期变更，按结果补查仍待区分的候选原因。例如 MDS 元数据延迟升高、数据路径稳定时，查 create/stat、缓存回收和目录扫描。证据收集中断时，返回已确认事实、未决假设和下一步。保存技能、规则、模型、证据快照和调用记录，便于比较升级前后的结果。 <a href="https://docs.aws.amazon.com/devopsagent/latest/userguide/about-aws-devops-agent.html">AWS DevOps Agent 技能与调查模式</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#74-%E5%B7%A5%E5%85%B7%E5%A5%91%E7%BA%A6%E4%B8%8E-mcp-%E9%80%82%E9%85%8D">已有工具契约</a></p>
+<h2 id="6-持久执行与变更闭环">6. 记录变更、作业和验收结果</h2>
 <pre><code class="language-text">已规划 → 待审批 → 已批准 → 执行前复检 → 已提交/提交结果未知
                                 │               │
                            状态变化则重审        ├─ 查作业 ID、关联键或设备状态
@@ -335,12 +335,12 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
                                        独立验证业务与保护
                                    成功 / 已缓解继续验收 / 失败交接
 </code></pre>
-<p>计划记录目标稳定 ID、事实快照、预期配置差异、策略版本、风险限制、验证与补偿。审批绑定计划哈希、目标和有效期。执行开始时重读配置、拓扑、容量和冗余，检查工作流是否与别的维护冲突。动作在限定范围用单独服务身份执行，持续追踪厂商作业或集群状态。长时任务保存作业 ID、游标、已完成步骤与复查截止时间，工作进程重启后继续。</p>
-<p><strong>重点是处理结果未知。</strong> 客户端超时可能发生在设备接受动作之后。先保存提交意图和幂等键，重启或超时后按幂等键、作业 ID、设备状态对账。如果接口支持原生幂等，重试应沿用同一个键。只有能确认先前动作未受理时，才考虑重新提交。接口无法确认时，交给人工核对。幂等键应与不可变请求内容关联。并发执行以集群、池或故障域限制影响量，并用租约与版本防止过期执行者推进任务。ONTAP 的异步 <code>202</code> 和设备 job 示例可用来理解受理与完成的区别。 <a href="https://docs.netapp.com/us-en/ontap-automation/rest/asynchronous_processing.html">ONTAP 异步作业</a> · <a href="https://docs.temporal.io/activities">Temporal 活动与重试</a></p>
-<p>验证读取设备实际状态和业务指标。恢复操作还要验校验结果、应用可读与复制进度。可逆配置按预案撤回。卷扩容等操作应按产品能力提前定义补偿、隔离、人工接管或恢复路径。分批部署时用同类设备作对照，并检查样本量和查询质量。 <a href="https://sre.google/workbook/canarying-releases/">Google SRE 金丝雀发布</a></p>
+<p>写下目标稳定 ID、事实快照、预期配置差异、策略版本、风险限制、验收和补偿办法。把审批绑定到计划哈希、目标和有效期。执行前重读配置、拓扑、容量和冗余，并检查有无维护冲突。用单独的服务身份在规定范围内执行，持续跟踪厂商作业或集群状态。长时任务保存作业 ID、游标、已完成步骤和复查截止时间，工作进程重启后可从记录继续。</p>
+<p>客户端超时时，设备可能已经受理请求。提交前保存请求意图和幂等键，重启或超时后按幂等键、作业 ID 和设备状态核对。幂等键绑定不可变的请求内容。接口支持原生幂等时，重试沿用同一个键。只有确认先前动作未受理，才考虑重新提交。无法确认时交给人工。按集群、池或故障域限制并发影响范围，用租约和版本拦截已过期的执行者。ONTAP 返回异步 <code>202</code> 表示已受理，完成状态要查设备 job。 <a href="https://docs.netapp.com/us-en/ontap-automation/rest/asynchronous_processing.html">ONTAP 异步作业</a> · <a href="https://docs.temporal.io/activities">Temporal 活动与重试</a></p>
+<p>验收时读取设备实际状态和业务指标。恢复操作还要确认校验通过、应用可读以及复制进度符合预期。可逆配置按预案撤回。卷扩容等操作按产品能力提前确定补偿、隔离、人工接管或恢复办法。分批部署时用同类设备作对照，并查样本量和查询质量。 <a href="https://sre.google/workbook/canarying-releases/">Google SRE 金丝雀发布</a></p>
 <h2 id="7-pb-级数据资产运营">7. PB 级数据资产运营</h2>
-<p>需要做归档、迁移、空间回收时，新增<strong>资产清单与生命周期任务</strong>。原始数据留在存储侧，区域目录记录对象或文件版本、大小、时间、租户、保护状态、可用的访问特征与数据位置。业务访问热度应来自独立的访问记录或对应产品提供的统计。清单用作基线，增量事件用于追踪变化，定期对账发现删除、改名、版本变更和遗漏。文件系统的 inode 身份需要带文件系统与生命周期，不能把一次路径扫描当成永久身份。</p>
-<p>例如归档 200 TB 文件或对象，持续可用带宽 400 MB/s，理论数据搬运约 139 小时，实际还要考虑小文件的元数据开销、校验、重试、回读成本与业务高峰。技能先查访问热度与归属，再排除保留期限、法务保全、快照引用、合规与恢复时限不满足的对象。执行按批次保存清单、迁移状态与校验结果，只有策略允许且核验通过才进入源数据处置。快照或版本保留可能让逻辑删除与实际释放容量不同。 <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-inventory.html">Amazon S3 Inventory</a> · <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/troubleshoot-lifecycle.html">S3 Lifecycle 行为</a></p>
+<p>要归档、迁移或回收空间时，建立资产清单和生命周期任务。原始数据留在存储侧。区域目录记录文件或对象的版本、大小、时间、租户、保护状态、能取得的访问特征和位置。用访问记录或产品统计判断数据访问热度。先建清单，再用增量事件追踪变化，定期对账找出删除、改名、版本变更和遗漏。记录 inode 时带上所属文件系统和生命周期，路径扫描结果只代表当次观测。</p>
+<p>例如归档 200 TB 文件或对象，按持续可用带宽 400 MB/s 计算，搬运约需 139 小时。排期时再计入小文件元数据开销、校验、重试、回读成本和业务高峰。先查访问热度和归属，再排除受保留期限、法务保全、快照引用、合规或恢复时限约束的对象。逐批保存清单、迁移状态和校验结果。策略允许且核验通过后才处理源数据。若快照或版本仍保留，实际释放容量可能和逻辑删除量不同。 <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-inventory.html">Amazon S3 Inventory</a> · <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/troubleshoot-lifecycle.html">S3 Lifecycle 行为</a></p>
 <h2 id="8-评测与上线验收">8. 评测与上线验收</h2>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -373,8 +373,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p>从历史案例回放起步，按时间、设备型号和站点划分评测集。再做影子调查，与当前值班流程对照，记录真实人工复核耗时。第一条纵向验收选择单集群与单应用，只读接入和调查先跑通。受监督作业先用模拟器验证，再在实验集群验证。多厂商之后用同一批场景比较覆盖率、时效和证据质量。具体操作和对照答案见<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">三站实操</a>。</p>
-
+<p>先回放历史案例，按时间、设备型号和站点划分评测集。再让系统用同一批现场数据独立调查，与当前值班流程对照，记录人工复核耗时。首次验收只选一个集群、一个应用，先完成只读接入和调查。需监督的作业先在模拟器验证，再在实验集群验证。接入多家厂商后，用同一批场景比较覆盖率、时效和证据质量。操作和对照答案见<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">三站实操</a>。</p>
   </article>
 </main>
 <footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>

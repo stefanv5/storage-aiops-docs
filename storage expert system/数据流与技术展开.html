@@ -106,12 +106,12 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><a href="#4-异常检测与告警聚合">4. 异常检测与告警聚合</a></li>
 <li><a href="#5-容量与硬盘风险预测">5. 容量与硬盘风险预测</a></li>
 <li><a href="#6-根因证据与反证">6. 根因、证据与反证</a></li>
-<li><a href="#7-llm-调查rag-与工具契约">7. LLM 调查、RAG 与工具契约</a></li>
+<li><a href="#7-llm-调查rag-与工具契约">7. 大模型怎样查数据和手册</a></li>
 <li><a href="#8-处置验证与评测">8. 处置、验证与评测</a></li>
 <li><a href="#9-多集群与落地">9. 多集群与落地</a></li></ul></nav></details>
   <article>
 <p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E4%B8%9A%E7%95%8C%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%A0%94.html">业界调研</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">深入篇</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a> · <a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a> · <a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html">Ceph 回放</a></p>
-<p>资料核验日期：2026-11-18。本文是 30–60 分钟的路线图：先画出三条流，再解释每条流的关键机制和失败点。<strong>正文不靠外链论证</strong>；每个主题的架构图、例子和原文出处见各节末尾的“参考”，更细的拆解见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a>。</p>
+<p>读完约需 30–60 分钟。沿着业务 I/O、遥测和故障调查三条路径，看请求经过哪里、故障怎么查。资料核验日期为 2026-11-18。各节末尾附有原文，架构和例子见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a>。</p>
 <h2 id="0-三条流">0. 三条流</h2>
 <pre><code class="language-text">业务 I/O
   应用 → 客户端/协议网关 → 存储池/PG → OSD/控制器 → 介质
@@ -124,9 +124,9 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
   投诉/告警 → 工具查询 + 文档检索 → 假设/反证/影响范围
   → 受监督处置 → 业务+冗余双验收 → 回放/学习
 </code></pre>
-<p>三条流的时间语义不同：业务 I/O 是毫秒级，遥测是秒/分钟级，调查是分钟/小时级。专家系统的核心工作是<strong>把三条流对齐到同一个实体和时间窗</strong>。</p>
+<p>业务 I/O 按毫秒计，遥测按秒或分钟计，调查按分钟或小时计。调查时，把三条流中的记录对应到同一个实体和时间窗。</p>
 <h2 id="1-存储语义与服务目标">1. 存储语义与服务目标</h2>
-<p><strong>先画请求路径</strong>：</p>
+<p>先看各类请求经过哪些组件。</p>
 <pre><code class="language-text">块：应用 → 客户端队列 → FC/iSCSI/NVMe-oF → 前端端口 → 控制器/缓存
     → 后端 → 池/extent → SSD/HDD
 
@@ -137,16 +137,16 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 
 Ceph：对象 → hash → PG → CRUSH → OSD 集合 → BlueStore → 介质
 </code></pre>
-<p><strong>机制</strong>：块存储的写路径关键在“何时向主机确认”（写回/写穿）；文件存储要分开元数据路径和数据路径；对象存储要分 GET/PUT/LIST；Ceph 要区分 <code>active/clean/degraded</code> 与 <code>up/down/in/out</code>。不同路径的瓶颈不同，不能用一个“存储延迟”概括。</p>
-<p><strong>SLO</strong>：写清测量点、好事件、分母。例子：</p>
+<p>块存储要确认何时向主机应答，区分写回和写穿。文件存储分元数据和数据两条路径。对象存储分 GET、PUT、LIST。Ceph 要分别看 PG 的 <code>active/clean/degraded</code> 和 OSD 的 <code>up/down/in/out</code>。按路径找瓶颈。</p>
+<p>定义 SLO 时，写清在哪里测、什么算好请求、哪些请求计入分母。</p>
 <pre><code class="language-text">好请求 = 成功 且 端到端延迟 ≤20ms 的写请求
 SLO = 好请求数 / 纳入统计的写请求数 ≥99.9%/30 天
 </code></pre>
-<p>不同客户端的 P99 不能平均；有相同桶边界的直方图，按 <code>le</code> 求和后再算全局分位。低流量窗口要带样本量。</p>
-<p><strong>例子</strong>：订单写 P99 从 6ms 升到 46ms，但 IOPS 从 1000 只降到 990，错误率略升。IOPS 不变说明不是流量洪峰，而是同样负载下服务时间变长；要查后端队列、backfill、缓存、网络，而不是先扩容。</p>
-<p>参考：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.ceph.com/en/latest/rados/operations/health-checks/">Ceph 健康检查</a> · <a href="https://prometheus.io/docs/practices/histograms/">Prometheus 直方图</a></p>
+<p>直方图的桶边界相同时，先按 <code>le</code> 汇总桶计数，再算全局 P99。流量低的窗口同时报告样本量。</p>
+<p>订单写 P99 从 6ms 升到 46ms，IOPS 从 1000 降到 990，错误率略升。IOPS 接近原水平，先查后端队列、backfill、缓存和网络，确认是否是单次请求耗时变长，再判断是否需要扩容。</p>
+<p>参考见 <a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.ceph.com/en/latest/rados/operations/health-checks/">Ceph 健康检查</a> · <a href="https://prometheus.io/docs/practices/histograms/">Prometheus 直方图</a></p>
 <h2 id="2-采集时序与海量成本">2. 采集、时序与海量成本</h2>
-<p><strong>流水线</strong>：</p>
+<p>采集后的数据按用途入库。</p>
 <pre><code class="language-text">设备/主机/应用
    │ 拉取/推送：REST、SNMP、SSH、OTel、syslog
    ▼
@@ -157,17 +157,17 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9%/30 天
    ├─ 对象存储（日志/证据快照）
    └─ 文档索引（Runbook/复盘）
 </code></pre>
-<p><strong>机制</strong>：指标要定义实体、单位、标签；标签是维度，不是流水号。计数器先处理重置再求速率；缺失不等于 0；事件时间/观测时间/知识时间要分开。采集覆盖率是“一等指标”：一半 OSD 停报时，平均延迟可能下降，但覆盖率会暴露样本偏差。</p>
-<p><strong>成本算例</strong>：</p>
+<p>每个指标写清实体、单位和标签。标签放可分组查询的维度，流水号留在日志或事件里。计数器先处理重置再求速率。缺报单独标记。分别记录事件发生、采集端看到事件和调查系统可用这条记录的时间。一半 OSD 停报时，平均延迟可能下降，查覆盖率才能发现样本少了一半。</p>
+<p>以每 15 秒采样为例。</p>
 <pre><code class="language-text">50,000 序列 × 86,400/15 = 288,000,000 样本/天
 2 字节/样本 ≈ 576 MB/天（单副本）
 3 副本 ≈ 1.7 GB/天；一年 ≈ 0.63 TB
 </code></pre>
-<p>分层：原始 7–30 天，聚合 6–12 个月，天级 2–5 年；秒级数据只用于现场。DME 的产品化策略是分钟级 7 天、30 分钟 6 个月、天级 2 年，5 秒历史按需从设备读、最长一周。</p>
-<p><strong>例子</strong>：调查先读集群趋势，再缩到池/OSD/变更窗口；每一步带覆盖率和查询预算。若 coverage &lt;80%，禁止输出“全局平均”，只报“已观测子集”。</p>
-<p>参考：<a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">OpenTelemetry 日志模型</a> · <a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://prometheus.io/docs/specs/native_histograms/">Prometheus 原生直方图</a></p>
+<p>可将原始数据保留 7–30 天，聚合数据保留 6–12 个月，天级数据保留 2–5 年。秒级数据用于现场调查。DME 保留分钟级数据 7 天、30 分钟聚合数据 6 个月、天级数据 2 年。5 秒历史按需从设备读取，最长一周。</p>
+<p>先查集群趋势，再缩到池、OSD 和变更窗口。每次查询都带上覆盖率和查询预算。若 coverage &lt;80%，只报告已观测子集。</p>
+<p>参考见 <a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">OpenTelemetry 日志模型</a> · <a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://prometheus.io/docs/specs/native_histograms/">Prometheus 原生直方图</a></p>
 <h2 id="3-资产身份与时态拓扑">3. 资产、身份与时态拓扑</h2>
-<p><strong>图模型</strong>：</p>
+<p>图里的边表示实体之间的关系。</p>
 <pre><code class="language-text">Workload → Volume/LUN/FS/Bucket
 Volume   → Pool → PG → OSD → Disk
 Host     → HBA/Port → Switch Port → Array Port → Controller
@@ -176,15 +176,15 @@ Change   → Target
 Incident → Symptom/Entity
 Runbook  → Product/Version/FaultCode/Symptom
 </code></pre>
-<p><strong>机制</strong>：实体用稳定 ID、别名和生命周期，OSD 数字编号可能复用，因此记录 UUID。边的每个修订保留有效区间、知识区间和来源观测时间。查询“02:16 可见、02:10:30 有效”的拓扑时，事发时点匹配 <code>[valid_from, valid_to)</code>，调查截止匹配 <code>[known_from, known_to)</code>。晚到的纠正作为新修订保存，旧修订可供历史回放。</p>
-<p><strong>例子</strong>：维护 <code>osd.11</code> 前后两版拓扑：</p>
+<p>给实体记录稳定 ID、别名和生命周期。OSD 数字编号可能复用，因此还要记 UUID。每版关系都记录有效区间、知识区间和来源观测时间。查询“02:16 可见、02:10:30 有效”的拓扑时，分别用 02:10:30 匹配 <code>[valid_from, valid_to)</code>，用 02:16 匹配 <code>[known_from, known_to)</code>。晚到的纠正另存一版，旧版供历史回放。</p>
+<p>维护 <code>osd.11</code> 前后各有一版拓扑。</p>
 <pre><code class="language-text">T01 02:00–02:10:30：orders → vol01 → hot → PG1 → osd.11/12/13
 T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
 </code></pre>
-<p>02:16 的报告用 T02 解释 backfill 目标；用 T01 解释维护前路径。两版都保留，不能只存当前拓扑。</p>
-<p>参考：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS DevOps Agent 服务卡</a></p>
+<p>02:16 的报告用 T02 解释 backfill 目标，用 T01 解释维护前的路径。两版都保留。</p>
+<p>参考见 <a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS DevOps Agent 服务卡</a></p>
 <h2 id="4-异常检测与告警聚合">4. 异常检测与告警聚合</h2>
-<p><strong>流水线</strong>：</p>
+<p>检测到异常后，再用持续时间、幅度和样本量决定是否告警。</p>
 <pre><code class="language-text">指标/日志/事件
    ├─ 规则（硬边界/合规）
    ├─ 统计基线（同组/同时段/滚动中位数+MAD）
@@ -197,26 +197,26 @@ T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
         ▼
 按拓扑/时间/因果聚合 → 业务 SLO 分级
 </code></pre>
-<p><strong>机制</strong>：固定阈值适合硬边界。处理季节性和工作负载变化时，可用分组基线。MAD 要处理分母为零。在正态边际分布和双侧 3.5σ 阈值的算例中，5 万序列每轮采样期望约 23 次单点超限。实际通知量用连续窗口、效应量、最小样本和聚合规则回放评估。聚合要保留原始告警 ID 和合并理由。</p>
-<p><strong>例子</strong>：M01–M05 P99=5,6,5,7,6 → 中位数 6、MAD 1；M06=33 → z=18.21，M07=46 → z=26.98。若规则要求连续 2 点，M07 才触发；M07 好请求 93.27%，M08 对照 99.97%。这说明“设备告警”与“业务故障”可以同时存在，也可以有时间差。</p>
-<p>参考：<a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">NetApp DII Monitor</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">Dell PowerStore 可观测性</a></p>
+<p>固定阈值适合容量水位等硬边界。存在周期规律或工作负载变化时，可按组建基线。用 MAD 算异常分数时，要处理分母为零的情况。假设每条序列服从正态分布，按双侧 3.5σ 判定，5 万条序列每轮采样期望约有 23 个单点超限。用历史回放估计实际通知量，计入连续窗口、异常幅度、最小样本量和聚合规则。聚合后保留原始告警 ID 和合并理由。</p>
+<p>M01–M05 P99=5,6,5,7,6，中位数为 6，MAD 为 1。M06=33，z=18.21。M07=46，z=26.98。若要求连续 2 点超限，M07 才触发。M07 的好请求比例是 93.27%，M08 对照组是 99.97%。分别记录设备告警和业务受影响的时间，两者可能有先后。</p>
+<p>参考见 <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">NetApp DII Monitor</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">Dell PowerStore 可观测性</a></p>
 <h2 id="5-容量与硬盘风险预测">5. 容量与硬盘风险预测</h2>
-<p><strong>容量账本</strong>：</p>
+<p>先算池还能用多久。</p>
 <pre><code class="language-text">raw → usable（副本/RAID/EC）→ effective（快照/克隆/元数据/回收站/水位）
 到阈值天数 = (effective × 阈值 − 已用) / 净增
 </code></pre>
-<p><strong>硬盘样本</strong>：</p>
+<p>硬盘预测按盘、按天组织样本。</p>
 <pre><code class="language-text">样本 = (disk_id, day, 当时可见特征)
 正例 = 未来 H 天内真实故障
 排除/删失 = 主动更换、迁移、观测结束
 切分 = 按时间 + 按设备，禁止同盘泄漏
 评测 = PR-AUC、召回@告警预算、提前量、校准
 </code></pre>
-<p><strong>机制</strong>：容量预测的难点是口径（raw/usable/effective），不是模型；硬盘预测的难点是标签/截尾/竞争风险，不是分类器。厂商的“14 天/30 天/健康度 60 分”是不同口径，不能互换，也不能直接当概率。</p>
-<p><strong>例子</strong>：2,400 TB raw、EC 8+2（80%）、5% 水位、已用 1,500 TB、净增 6 TB/天 → 到 95% 水位约 38.8 天；净增 3/9 TB/天 → 77.6/25.9 天。硬盘 10,000 块、AFR 2%、召回 80%、精确率 20% → 总告警 2.19/天，其中误报 1.75/天。</p>
-<p>参考：<a href="https://www.usenix.org/conference/fast20/presentation/lu">FAST ’20 硬盘预测</a> · <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a></p>
+<p>预测容量前，统一 raw、usable、effective 的计算口径。预测硬盘故障前，确认哪些记录是真实故障，哪些在观察结束前换盘、迁移或停止跟踪。比较厂商的“14 天”“30 天”和“健康度 60 分”时，分别核对预测窗口和评分定义，再判断能否与故障概率对应。</p>
+<p>原始容量 2,400 TB，EC 8+2 之后可用 1,920 TB。先扣 5% 容量预留，剩 1,824 TB，再按剩余容量的 95% 告警。已用 1,500 TB、每天净增 6 TB 时，约 38.8 天到阈值。每天净增 3 或 9 TB 时，分别约 77.6 或 25.9 天。10,000 块硬盘，AFR 2%、召回率 80%、精确率 20% 时，平均每天有 2.19 次告警，其中误报 1.75 次。</p>
+<p>参考见 <a href="https://www.usenix.org/conference/fast20/presentation/lu">FAST ’20 硬盘预测</a> · <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a></p>
 <h2 id="6-根因证据与反证">6. 根因、证据与反证</h2>
-<p><strong>流程图</strong>：</p>
+<p>沿着事发时的拓扑，找发生在症状前的变更。</p>
 <pre><code class="language-text">症状/影响范围
    │
    ├─ 时间上先于症状的变更
@@ -231,11 +231,11 @@ T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
         ▼
 根因 + 传播 + 系统性原因（三层）
 </code></pre>
-<p><strong>机制</strong>：相关不等于因果；最强证据是“时间领先 + 路径可达 + 剂量响应 + 特异性 + 对照 + 干预响应”。故障树适合已知设备故障，因果图适合共同原因/传播，LLM 适合从非结构化线索生成假设；三者结合，不要让 LLM 单独判因果。</p>
-<p><strong>例子</strong>：维护 <code>osd.11</code> → backfill 与前台写争用。H1 backfill：支持 E01/E02/T02/M06/M07；反证缺口是 OSD 级队列/恢复速率；鉴别是限速 backfill 后 P99 是否降。H2 备份：E03 在另一站点、T03 无共享路径、M08 对照正常 → 解释力低。H3 网络：重传持平 → 只降低已观测 TCP 路径故障，不能排除交换机端口丢包。</p>
-<p>参考：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://github.com/phamquiluan/RCAEval">RCAEval</a></p>
-<h2 id="7-llm-调查rag-与工具契约">7. LLM 调查、RAG 与工具契约</h2>
-<p><strong>流程图</strong>：</p>
+<p>要判断因果，检查事件是否先于症状、事发路径是否连通、压力越大时症状是否越重、症状是否只出现在相关范围，以及对照组和干预后的结果。用故障树查已知设备故障，用因果图查共同原因和传播路径。LLM 可从日志或工单提出假设，再由证据验证。</p>
+<p>维护 <code>osd.11</code> 后，怀疑 backfill 与前台写争用。E01/E02/T02/M06/M07 支持 H1。还缺实际服务的 OSD、各 OSD 的队列和恢复速率。也可检查限制 backfill 后 P99 是否下降。E03 的备份在另一站点，T03 未记录共享路径，M08 对照组正常。H2 的可能性较低。已观测的 TCP 重传持平，交换机端口丢包仍待查。</p>
+<p>参考见 <a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://github.com/phamquiluan/RCAEval">RCAEval</a></p>
+<h2 id="7-llm-调查rag-与工具契约">7. 大模型怎样查数据和手册</h2>
+<p>先查采集覆盖率，再判断业务影响和可查的路径。</p>
 <pre><code class="language-text">症状/窗口/权限
    → 查采集健康/覆盖率
    → 查业务影响（SLO）
@@ -245,15 +245,15 @@ T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
    → 对每个假设选最有区分度的查询
    → 证据足够/预算耗尽/需人工 → 报告/未决
 </code></pre>
-<p><strong>工具契约</strong>：每个工具要有输入 schema、输出 schema、时间语义、权限、错误类型、查询 ID。例子：</p>
+<p>每个工具都要约定输入、输出、时间口径、权限、错误类型和查询 ID。</p>
 <pre><code class="language-text">query_metric(entity_id, metric, start, end, step)
   → unit, samples, missing_intervals, coverage, query_id, source
 </code></pre>
-<p><strong>RAG</strong>：先按 ACL/租户/产品/型号/版本/故障码/审批/生效时间过滤，再做关键词+向量召回、重排；冲突文档返回版本/出处/适用范围，不强行合并。<strong>证据对象</strong>带 <code>evidence_id/query_id/source/entity_id/window/observed_at/quality/payload_ref</code>；报告区分事实/推断/未决。</p>
-<p><strong>例子</strong>：同一份 02:16 快照，“直接问模型”可能编造 46ms 的“平均值”；“工具约束+证据 ID”会返回 M06/M07 的窗口、单位、覆盖率和查询 ID，验证器还能拒绝引用 E04（02:18 才可见）。</p>
-<p>参考：<a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS 服务卡</a></p>
+<p>RAG 先按 ACL、租户、产品、型号、版本、故障码、审批状态和生效时间筛选，再用关键词和向量检索并重排。文档冲突时，列出各自的版本、出处和适用范围。证据对象带 <code>evidence_id/query_id/source/entity_id/window/observed_at/quality/payload_ref</code>。报告分开写事实、推断和未决问题。</p>
+<p>用 02:16 的快照直接问模型，模型可能把 P99 的 46ms 写成“平均值”。用工具查 M06/M07，可拿到窗口、单位、覆盖率和查询 ID。验证器还能拒绝 E04，因为这条证据在 02:18 才可见。</p>
+<p>参考见 <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS 服务卡</a></p>
 <h2 id="8-处置验证与评测">8. 处置、验证与评测</h2>
-<p><strong>流程图</strong>：</p>
+<p>执行前复核状态，执行后同时检查业务和数据保护。</p>
 <pre><code class="language-text">调查结论
    → 变更请求（目标/前置/预期/幂等/回滚/观察窗/审批）
    → 再次读取状态（拓扑/授权/冗余）
@@ -261,18 +261,18 @@ T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
    → 业务 SLO 验收 + 冗余/耐久性验收
    → 写回事故库/评测集
 </code></pre>
-<p><strong>机制</strong>：调查与处置分开授权；读工具默认开，写工具默认关；每次变更要有幂等键、回滚、爆炸半径和观察窗。存储处置必须双验收：业务指标恢复不等于副本/复制/备份恢复。</p>
-<p><strong>例子</strong>：Ceph 回放中模拟调度调整后，02:25 的窗口写 P99 为 14 ms，好请求比例约 99.95%，仍有 11 个退化 PG。业务窗口已达标，继续检查冗余、恢复进度和新故障域压力。 <a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html#%E5%8F%82%E8%80%83%E7%BB%93%E6%9E%9C%E4%B8%8E%E9%AA%8C%E6%94%B6">实验验收</a></p>
-<p><strong>评测</strong>：同一快照比较规则、规则+统计、Agent+工具、Agent+工具+拓扑/RAG；指标包括检测、Top-k、证据正确率、缺数据暂缓率、越权拒绝率、成本。回放集要有正常、真实、缺数据、晚到、负对照；按事故/时间/集群切分，隐藏答案。</p>
-<p>参考：<a href="https://docs.ceph.com/en/tentacle/rados/configuration/mclock-config-ref/">Ceph mClock</a> · <a href="https://arxiv.org/abs/2501.06706">AIOpsLab</a> · <a href="https://github.com/phamquiluan/RCAEval">RCAEval</a> · <a href="https://arxiv.org/abs/2607.28545">ORCA-bench</a></p>
+<p>调查与处置分开授权。读工具默认开，写工具默认关。每次变更要有幂等键、回滚方案、影响范围和观察窗。业务恢复后，还要查副本、复制和备份是否恢复。</p>
+<p>Ceph 回放模拟调整调度后，02:25 窗口的写 P99 为 14 ms，好请求比例约 99.95%。业务窗口已达标，但仍有 11 个退化 PG。继续查冗余、恢复进度和新故障域的压力。<a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html#%E5%8F%82%E8%80%83%E7%BB%93%E6%9E%9C%E4%B8%8E%E9%AA%8C%E6%94%B6">实验验收</a></p>
+<p>用同一快照比较规则、规则+统计、Agent+工具、Agent+工具+拓扑/RAG。评估检测结果、根因 Top-k、证据正确率、缺数据暂缓率、越权拒绝率和成本。回放集覆盖正常、真实故障、缺数据、数据晚到和负对照案例。按事故、时间和集群切分，隐藏答案。</p>
+<p>参考见 <a href="https://docs.ceph.com/en/tentacle/rados/configuration/mclock-config-ref/">Ceph mClock</a> · <a href="https://arxiv.org/abs/2501.06706">AIOpsLab</a> · <a href="https://github.com/phamquiluan/RCAEval">RCAEval</a> · <a href="https://arxiv.org/abs/2607.28545">ORCA-bench</a></p>
 <h2 id="9-多集群与落地">9. 多集群与落地</h2>
-<p><strong>分层</strong>：</p>
+<p>站点、区域和全局各保存不同粒度的数据。</p>
 <pre><code class="language-text">站点边缘：就近采集、缓冲、脱敏、粗聚合、断链续传
 区域中心：跨站资产目录、拓扑快照、证据索引、查询路由
 全局：策略、模型、评测、审计（不存明细）
 </code></pre>
-<p><strong>机制</strong>：查询尽量下推，明细按需回查；断链时保留水位，恢复后补数并标记“迟到”；租户隔离/数据驻留要在采集层设计。多集群不是“把所有明细集中”，而是“目录集中、证据按需”。</p>
-<p><strong>落地里程碑</strong>：</p>
+<p>尽量在站点内执行查询，按需回查明细。断链时记下采集进度，恢复后补数并标记迟到。在采集层确定租户隔离和数据驻留规则。统一维护目录，证据明细按需查询。</p>
+<p>各阶段按交付项验收。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -285,33 +285,32 @@ T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
 <tr>
 <td>0–1 月</td>
 <td>实体表、SLO、覆盖率、事件时间</td>
-<td>能回答“当时是什么、缺了什么”</td>
+<td>能查到事发状态并列出缺失数据</td>
 </tr>
 <tr>
 <td>1–3 月</td>
 <td>规则+稳健基线、告警聚合、时间线</td>
-<td>误报/集群日可接受，MTTD 下降</td>
+<td>每集群每天误报数在预算内，MTTD 下降</td>
 </tr>
 <tr>
 <td>3–6 月</td>
 <td>时态拓扑、变更关联、证据对象、RAG</td>
-<td>根因 Top-3 + 证据可复核</td>
+<td>记录前三个根因候选的命中率，每条证据可复核</td>
 </tr>
 <tr>
 <td>6–12 月</td>
 <td>工具层/MCP、Agent 调查、回放评测</td>
-<td>同快照可复现，缺数据会暂缓</td>
+<td>同一快照可复现，数据不足时暂缓下结论</td>
 </tr>
 <tr>
 <td>12 月+</td>
 <td>受监督处置、双验收、有限自治</td>
-<td>越权为零，回滚可演练</td>
+<td>越权为零，可演练回滚</td>
 </tr>
 </tbody>
 </table></div>
-<p>参考：<a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a></p>
-<p>接下来可按<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a>展开站点定容、设备接入和工作流，或进入<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">三站实操</a>。</p>
-
+<p>参考见 <a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a></p>
+<p>站点定容、设备接入和工作流见<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a>。演练见<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">三站实操</a>。</p>
   </article>
 </main>
 <footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>

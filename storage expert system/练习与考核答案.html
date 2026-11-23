@@ -138,13 +138,13 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><a href="#6-ceph-实验追加-5-问">6. Ceph 实验追加 5 问</a></li></ul></nav></details>
   <article>
 <p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">专家系统深入篇</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">华为 DME 全链路解剖</a></p>
-<p>资料核验日期：2026-11-18。本册覆盖学习导览九节点、深入篇、DME 篇、进阶篇的全部练习，以及进阶篇末尾的 30 题综合自测。<strong>建议先闭卷做，再对照；开放题看“参考要点 + 评分”，不要背唯一答案。</strong></p>
+<p>资料核验于 2026-11-18。本册收录学习导览九节点、深入篇、DME 篇、进阶篇的全部练习答案，以及进阶篇末尾的 30 题综合自测答案。先闭卷做题，再按参考要点给自己评分。</p>
 <h2 id="0-怎么用这本答案册">0. 怎么用这本答案册</h2>
 <ul>
-<li>计算题：先看步骤，再核对数字；单位（ms/s、MiB/MB、TB/TiB）要写清。</li>
-<li>设计题：答案是“最小可行方案”，不是唯一解；评分看约束、失败模式、验证。</li>
-<li>案例题：先自己写时间线/假设/证据，再对照参考答案；重点看“缺什么证据”和“什么时候该沉默”。</li>
-<li>评分：10 分制。事实/计算 40%，机制/推理 30%，证据/时间稽核 20%，表达/边界 10%。</li>
+<li>计算题先对步骤，再核对数字。写清单位，例如 ms/s、MiB/MB、TB/TiB。</li>
+<li>设计题给出一种最小可行方案。按约束、失败场景和验证方法评分，其他方案也可得分。</li>
+<li>案例题先自己写时间线、假设和证据，再对答案。找出还缺的证据，以及哪些结论需要暂缓。</li>
+<li>满分 10 分。事实和计算占 40%，机制和推理占 30%，证据和时间截止占 20%，表达和边界占 10%。</li>
 </ul>
 <h3 id="01-答案速查">0.1 答案速查</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -190,8 +190,8 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </table></div>
 <h2 id="1-深入篇练习答案">1. 深入篇练习答案</h2>
 <h3 id="11-第-1-节直方图合并与延迟分解">1.1 第 1 节：直方图合并与延迟分解</h3>
-<p><strong>题目回顾</strong>：三个客户端、不同请求量，合并直方图算全局 P99；再写一次 Ceph 维护导致的延迟分解。</p>
-<p><strong>参考数据</strong>（教学构造）：</p>
+<p>把三个请求量不同的客户端的直方图合起来算全局 P99。再用 Ceph 维护案例判断延迟出在哪一段。</p>
+<p>下表为教学数据。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -241,13 +241,13 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <p>P99 的秩为 990,000，落在 (20, 50] ms 桶里。桶内位置为 6,000，桶宽 30 ms，桶内计数为 996,900 − 984,000 = 12,900。</p>
 <pre><code class="language-text">P99 ≈ 20 + (6,000 / 12,900) × 30 = 33.95 ms
 </code></pre>
-<p>各客户端自己的 P99：</p>
+<p>分别计算三个客户端的 P99。</p>
 <pre><code class="language-text">A: 秩 594,000 → (10,20] 桶内 4,000/9,000 → 10 + 4.44 = 14.44 ms
 B: 秩 297,000 → (20,50] 桶内 2,000/4,000 → 20 + 15 = 35 ms
 C: 秩  99,000 → (50,100] 桶内 1,000/2,000 → 50 + 25 = 75 ms
 </code></pre>
 <p>三个客户端 P99 的算术平均约 41.48 ms。全局 P99 约 33.95 ms，依据是合并后的累计桶计数和桶内线性插值。</p>
-<p>延迟分解（用实验室 M07）：P99 46ms，设备队列 34，backfill 615 MiB/s，IOPS 990（基线约 1,000），重传 0.3/s（持平）。</p>
+<p>用实验数据 M07 逐段排查。P99 为 46ms，设备队列为 34，backfill 为 615 MiB/s，IOPS 为 990（基线约 1,000），重传持平（0.3/s）。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -265,7 +265,7 @@ C: 秩  99,000 → (50,100] 桶内 1,000/2,000 → 50 + 25 = 75 ms
 <tr>
 <td>网络</td>
 <td>重传 0.3/s 未升</td>
-<td>已观测 TCP 路径不支持网络故障；不能排除交换机端口丢包</td>
+<td>重传数据只削弱已观测 TCP 路径故障的解释。还要查交换机端口丢包</td>
 </tr>
 <tr>
 <td>存储前端</td>
@@ -280,7 +280,7 @@ C: 秩  99,000 → (50,100] 桶内 1,000/2,000 → 50 + 25 = 75 ms
 <tr>
 <td>后端队列/介质</td>
 <td><code>osd_device_queue=34</code>、backfill 615</td>
-<td>直接证据：后端争用</td>
+<td>直接支持后端争用</td>
 </tr>
 <tr>
 <td>重试</td>
@@ -289,10 +289,10 @@ C: 秩  99,000 → (50,100] 桶内 1,000/2,000 → 50 + 25 = 75 ms
 </tr>
 </tbody>
 </table></div>
-<p>结论写法：<strong>“在已观测段内，后端队列与 backfill 争用是最强解释；客户端队列和交换机端口是缺口。”</strong> 不能写“根因就是 backfill”而不标缺口。</p>
-<p>评分要点：直方图合并 2 分；全局 vs 平均 1 分；延迟分解 2 分；证据/缺口 2 分。</p>
+<p>已观测到的后端队列与 backfill 数据最支持后端争用。还需补查客户端队列和交换机端口。</p>
+<p>直方图合并 2 分，区分全局 P99 和平均 P99 1 分，延迟分解 2 分，证据与缺口 2 分。</p>
 <h3 id="12-第-2-节遥测规模成本与覆盖率">1.2 第 2 节：遥测规模、成本与覆盖率</h3>
-<p><strong>题目</strong>：10,000 OSD × 80 指标 × 15s；三副本年存储；30 天全量扫描；覆盖率规则。</p>
+<p>按 10,000 个 OSD、每个 80 个指标、每 15s 采一次，计算三副本一年的存储和 30 天全量扫描量。再写覆盖率规则。</p>
 <pre><code class="language-text">序列数 = 10,000 × 80 = 800,000
 每天样本 = 800,000 × 86,400 / 15 = 4,608,000,000（46.08 亿）
 2 字节/样本：9.216 GB/天（单副本）
@@ -301,7 +301,7 @@ C: 秩  99,000 → (50,100] 桶内 1,000/2,000 → 50 + 25 = 75 ms
 30 天扫描样本 = 4.608B × 30 = 138.24B
 2 字节：276.5 GB 逻辑；8 字节：1.106 TB
 </code></pre>
-<p>覆盖率规则（示例）：</p>
+<p>覆盖率可按下面的规则判断。</p>
 <pre><code class="language-text">coverage = reporting_osds / expected_osds
 若 coverage &lt; 0.8：
   - 禁止输出“全局平均/全局 P99”，改为“已观测子集”
@@ -310,7 +310,7 @@ C: 秩  99,000 → (50,100] 桶内 1,000/2,000 → 50 + 25 = 75 ms
   - 任何根因结论置信度降级；不得用缺失字段做反证
 若 5 分钟内 coverage 下降 &gt; 10%：立即告警
 </code></pre>
-<p>评分要点：样本量 1 分；三副本/年 1 分；扫描量 1 分；覆盖率规则 2 分（必须写“禁止全局均值”）。</p>
+<p>样本量 1 分，三副本年存储 1 分，扫描量 1 分，覆盖率规则 2 分。覆盖率规则须写明“禁止全局均值”。</p>
 <h3 id="13-第-3-节时态拓扑-sql">1.3 第 3 节：时态拓扑 SQL</h3>
 <pre><code class="language-sql">SELECT src_id, dst_id, relation, valid_from, valid_to, observed_at, source
 FROM edge
@@ -320,48 +320,49 @@ WHERE src_id = :entity_id
   AND known_from &lt;= :knowledge_cutoff
   AND (known_to IS NULL OR :knowledge_cutoff &lt; known_to);
 </code></pre>
-<p>用 <code>tstzrange</code> 版本：</p>
+<p>也可用 <code>tstzrange</code> 查询。</p>
 <pre><code class="language-sql">SELECT *
 FROM edge
 WHERE src_id = :entity_id
   AND tstzrange(valid_from, valid_to, '[)') @&gt; CAST(:t AS TIMESTAMPTZ)
   AND tstzrange(known_from, known_to, '[)') @&gt; CAST(:knowledge_cutoff AS TIMESTAMPTZ);
 </code></pre>
-<p>为什么不能只用 <code>valid_from</code>：</p>
+<p>回放时同时查有效时间和知识时间。</p>
 <ul>
-<li>一条边可能“现实中 02:00 就有效”，但 02:20 才被采集/写入；如果只用 <code>valid_from</code>，02:16 的回放会用到 02:20 才知道的知识，属于未来数据泄漏。</li>
-<li><code>valid_to</code> 缺失/开区间要按半开区间处理，否则边界时刻会重复或漏掉。</li>
+<li>关系可能从 02:00 起就有效，到 02:20 才被采集或写入。只查 <code>valid_from</code>，02:16 的报告就会提前用到这条记录。</li>
+<li>区间采用左闭右开。<code>valid_to</code> 缺失表示有效期无上界。这样边界上的关系不会重复或漏记。</li>
 <li>有效区间用于事发时点，知识区间用于调查截止。02:20 得知有效期实际在 02:10 结束时，保留旧记录的有效区间，关闭其知识区间并插入修订。这样查询 02:15 的拓扑时，02:16 的快照仍有该边，02:20 之后的快照已知该边失效。</li>
 </ul>
-<p>评分要点：SQL 2 分；半开区间 1 分；两个时间语义 2 分。</p>
+<p>SQL 2 分，半开区间 1 分，两种时间含义 2 分。</p>
 <h3 id="14-第-4-节异常slo-与误报">1.4 第 4 节：异常、SLO 与误报</h3>
 <p>M01–M05 P99 = 5, 6, 5, 7, 6 → 中位数 6，MAD = 1。</p>
 <pre><code class="language-text">M06: z = 0.6745 × (33 − 6) / 1 = 18.21
 M07: z = 0.6745 × (46 − 6) / 1 = 26.98
 </code></pre>
-<p>好请求比例：</p>
+<p>分别计算各窗口的好请求比例。</p>
 <pre><code class="language-text">M06: 285,000 / 299,700 = 95.095%
 M07: 277,000 / 297,000 = 93.266%
 M08: 224,940 / 225,000 = 99.973%
 </code></pre>
-<p>覆盖率：M01–M08 都是 3/3（期望 3、上报 3）；缺数据变体是 1/3。</p>
-<p>50,000 序列、3.5σ 双侧（p≈0.000465）：</p>
+<p>M01–M08 的覆盖率都是 3/3（期望 3、上报 3）。缺数据变体为 1/3。</p>
+<p>按 50,000 条序列和 3.5σ 双侧阈值（p≈0.000465）计算误报。</p>
 <pre><code class="language-text">单次采样期望误报 = 50,000 × 0.000465 ≈ 23.3
 每天（15s，5,760 次）= 23.3 × 5,760 ≈ 134,000
 连续 3 点（独立假设）= 50,000 × 5,760 × (0.000465)^3 ≈ 0.029/天
 </code></pre>
-<p>把误报降到 100/天以内的组合：</p>
+<p>可组合使用以下规则，把误报降到 100/天以内。</p>
 <ol>
-<li>连续 3 点超限（把单点噪声压掉）；</li>
-<li>效应量门槛：绝对增量 ≥ 5ms 或相对 ≥ 2×；</li>
-<li>先组级检测（按池/主机/型号分组），再下钻；</li>
-<li>最小样本量（低流量窗口不报）；</li>
-<li>已知良性模式白名单（带过期时间）；</li>
-<li>用回放集验证，不只看公式。</li>
+<li>连续 3 点超限才触发，滤掉单点噪声。</li>
+<li>限定变化幅度。绝对增量 ≥ 5ms 或相对 ≥ 2×。</li>
+<li>先按池、主机或型号分组检测，再查到具体设备。</li>
+<li>设最小样本量，低流量窗口暂停告警。</li>
+<li>将已知无害的模式加到白名单，并设过期时间。</li>
+<li>用回放集检验实际误报量。</li>
 </ol>
-<p>注意：真实序列相关，不能把 0.029/天当精确值；它只说明“持续性比单点阈值强几个数量级”。</p>
-<p>评分要点：z 2 分；SLO 2 分；误报量 2 分；规则组合 2 分。</p>
+<p>真实采样点有相关性，0.029/天来自独立假设。它说明在这一假设下，持续超限规则比单点阈值少报几个数量级。</p>
+<p>z 分数、SLO、误报量、规则组合各 2 分。</p>
 <h3 id="15-第-5-节容量与硬盘告警预算">1.5 第 5 节：容量与硬盘告警预算</h3>
+<p>先从可用容量扣 5% 预留，再用剩余容量的 95% 作为单独的告警阈值。</p>
 <pre><code class="language-text">raw = 2,400 TB
 EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
 5% 预留 = 1,824 TB
@@ -371,16 +372,16 @@ EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
 3 TB/天 → 77.6 天
 9 TB/天 → 25.9 天
 </code></pre>
-<p>硬盘告警：</p>
+<p>下面用故障率、召回率和精确率估算每天的硬盘告警量。</p>
 <pre><code class="language-text">10,000 盘 × 2% = 200 次/年 ≈ 0.548 次/天
 召回 80% → TP = 0.438/天
 精确率 20% → 总告警 = 0.438 / 0.2 = 2.19/天
 误报 = 1.75/天
 </code></pre>
-<p>如果运维只能处理 1 条/天，在召回 80% 下需要精确率 ≥ 43.8%；否则降低召回或提高自动化核实。公式：</p>
+<p>如果每天只能处理 1 条告警，召回率为 80% 时，精确率至少要 43.8%。达不到时，可降低召回率或增加自动核实。计算公式如下。</p>
 <pre><code class="language-text">告警/天 = (N × AFR / 365 × recall) / precision
 </code></pre>
-<p>评分要点：容量 3 分；硬盘 3 分；公式/决策 2 分。</p>
+<p>容量 3 分，硬盘 3 分，公式和决策 2 分。</p>
 <h3 id="16-第-6-节三个假设与反证">1.6 第 6 节：三个假设与反证</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -395,31 +396,31 @@ EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
 <tbody>
 <tr>
 <td>H1 backfill 争用</td>
-<td>02:16：E01/E02/T02、M06/M07；处置后回顾：E05、M09–M11</td>
-<td>尚缺逐 OSD 服务耗时与完整网络数据</td>
-<td>验证调度是否改变实际 backfill，观察 P99 与设备队列</td>
-<td>确认 backfill 已减弱而 P99 与队列持续无改善时，降低 H1 排名</td>
+<td>02:16 可见 E01/E02/T02、M06/M07。处置后补查 E05、M09–M11</td>
+<td>缺逐 OSD 服务耗时与完整网络数据</td>
+<td>核对调度是否改变了 backfill，再看 P99 和设备队列</td>
+<td>确认 backfill 已减弱且 P99 和队列持续未改善时，降低 H1 排名</td>
 </tr>
 <tr>
 <td>H2 备份流量</td>
 <td>E03 时间接近</td>
-<td>T03 另一站点/无共享路径；M08 对照正常</td>
-<td>暂停备份；看备份吞吐/网络</td>
-<td>暂停后无变化 → 排除</td>
+<td>T03 显示备份在另一站点，未记录共享存储或链路。M08 对照正常</td>
+<td>暂停备份，确认相关流量确实下降</td>
+<td>观察足够久，P99 仍不变时，降低 H2 的优先级</td>
 </tr>
 <tr>
 <td>H3 网络</td>
 <td>延迟升高</td>
-<td>重传 0.3/s 持平；无端口丢包数据</td>
-<td>交换机端口丢包/错包；其他客户端</td>
-<td>端口正常 → 降级</td>
+<td>重传 0.3/s 持平，缺端口丢包数据</td>
+<td>查交换机端口丢包和错包，对照其他客户端</td>
+<td>端口正常时降低 H3 排名</td>
 </tr>
 </tbody>
 </table></div>
-<p>注意：H2 的 E03 在 <code>ceph-b</code>，T03 明确另一站点、无共享存储/链路，所以 H2 的解释力低；H3 的重传持平只能降低“已观测 TCP 路径”故障，不能排除交换机端口丢包。</p>
-<p>评分要点：每个假设 2 分（支持/反证/鉴别各 1），时间/拓扑 2 分。</p>
+<p>E03 发生在 <code>ceph-b</code>，T03 显示它位于另一站点，且无共享存储或链路，因此 H2 排名较低。重传持平只削弱已观测 TCP 路径故障的解释，H3 还需补查交换机端口丢包。</p>
+<p>每个假设 2 分。说明支持证据与反证共 1 分，给出能区分假设的查询 1 分。时间与拓扑 2 分。</p>
 <h3 id="17-第-7-节五个工具契约">1.7 第 7 节：五个工具契约</h3>
-<p>最小契约（可压缩成表格）：</p>
+<p>下表给出各工具最少需要的输入、输出和限制。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -434,55 +435,56 @@ EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
 <td><code>get_collection_status</code></td>
 <td>cluster, window</td>
 <td>sources, watermark, missing_entities, coverage, query_id</td>
-<td>只读；返回缺失原因</td>
+<td>只读，返回缺失原因</td>
 </tr>
 <tr>
 <td><code>get_topology_at</code></td>
 <td>entity_id, as_of, knowledge_cutoff, direction, max_depth</td>
 <td>nodes, edges, valid_from/to, observed_at, source, coverage, query_id</td>
-<td>只读；禁止用当前拓扑替代</td>
+<td>只读，按指定时点查拓扑</td>
 </tr>
 <tr>
 <td><code>query_metric</code></td>
 <td>entity_id, metric enum, start, end, step, aggregation</td>
 <td>unit, samples, missing_intervals, coverage, query_id, source</td>
-<td>只读；限时间/行数；单位必填</td>
+<td>只读，限时间和行数，必填单位</td>
 </tr>
 <tr>
 <td><code>list_changes</code></td>
 <td>entity_id, window, change_type</td>
 <td>change_id, event_time, observed_at, status, source_ref</td>
-<td>只读；保留事件/观测时间</td>
+<td>只读，保留事件时间和观测时间</td>
 </tr>
 <tr>
 <td><code>search_runbooks</code></td>
 <td>product, version, fault_code, query, as_of</td>
 <td>chunks, doc_id, section, version, effective_at, acl, score</td>
-<td>只读；先过滤 ACL/版本/生效时间</td>
+<td>只读，先按 ACL、版本和生效时间过滤</td>
 </tr>
 </tbody>
 </table></div>
-<p>对比“直接问模型”：</p>
+<p>比较直接提问与用工具查证的结果。</p>
 <ul>
-<li>直接问：模型可能编造数值、混用单位、引用不存在的文档、不知道数据缺口。</li>
-<li>工具约束：返回 <code>query_id/coverage/missing</code>，报告可回查；覆盖率低时验证器可以拒绝高置信结论。</li>
-<li>代价：工具调用多、延迟高；要用预算和缓存控制。</li>
+<li>直接问模型时，模型可能编造数值、混用单位、引用不存在的文档或漏报数据缺口。</li>
+<li>工具返回 <code>query_id/coverage/missing</code>，可回查报告中的证据。覆盖率低时，验证器可以拒绝高置信结论。</li>
+<li>工具调用多时耗时更长，用预算和缓存控制。</li>
 </ul>
-<p>评分要点：每个工具 1 分，对比 1 分。</p>
+<p>每个工具 1 分，对比 1 分。</p>
 <h3 id="18-第-8-节变更契约与回放集">1.8 第 8 节：变更契约与回放集</h3>
-<p>变更契约（backfill 限速）：</p>
-<pre><code class="language-text">目标：ceph-a/hot 池的 backfill 限速
+<p>以下计划用 mClock 降低 backfill 的影响。回填并发上限按 OSD 生效。共用这些 OSD 的其他池也可能受影响，须一起评估。 <a href="https://docs.ceph.com/en/tentacle/rados/configuration/osd-config-ref/">Ceph OSD 配置</a></p>
+<pre><code class="language-text">目标：缓解 ceph-a/hot 池的 backfill 争用
+范围：参与 hot 回填的 OSD，核对共用这些 OSD 的其他池
 前置：无 down OSD；degraded PG 不高于基线；当前不在业务高峰；已备份配置；审批人 A/B
 变更前：记录 mClock 配置、backfill 速率、P99、degraded PG
 幂等键：CHG-&lt;id&gt;-&lt;target&gt;-&lt;version&gt;
-执行：只改目标池；dry-run/预检查；分批
+执行：先做 dry-run 和预检查，按审批中的 OSD 列表分批调整，核对生效值及共享池负载
 回滚：恢复原配置；触发条件 P99 不降或恢复停滞
 观察窗：30 分钟
 成功：P99 ≤20ms、错误率不升、degraded PG 下降、恢复速率 &gt;0
 失败：回滚并升级
 </code></pre>
-<p>回放集：正常 10、真实 10、缺数据 5、晚到 5；每个事故带快照 ID、知识截止、隐藏答案、必须引用/禁止引用证据、负对照、评分表。评分：检测 2、根因 3、证据 3、时间 1、缺数据 1、双验收 2（可按 10 分制缩放）。</p>
-<p>评分要点：前置/回滚/观察窗/双验收各 1 分；回放集覆盖 2 分。</p>
+<p>回放集包括正常窗口 10 个、真实事故 10 个、缺数据 5 个、晚到 5 个。每例记录快照 ID、知识截止、隐藏答案、必须引用和禁止引用的证据、负对照与评分表。检测 2 分、根因 3 分、证据 3 分、时间 1 分、缺数据 1 分、业务与保护验收 2 分，可按 10 分制换算。</p>
+<p>前置条件、回滚、观察窗、业务与保护验收各 1 分，回放集覆盖 2 分。</p>
 <h3 id="19-学习导览九节点练习答案">1.9 学习导览九节点练习答案</h3>
 <blockquote>
 <p>对应<a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a>每个节点的“练习与验收”。</p>
@@ -493,41 +495,41 @@ EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
 分母：纳入统计的所有逻辑写请求（含错误/超时）；重试单独标记，不静默去重
 排除：健康检查、合成探针、批处理补数（如纳入要单列）
 </code></pre>
-<p>集群健康告警与业务故障的时间差：PG <code>active+degraded</code> 仍可服务，副本不足不等于业务立刻失败；维护后 backfill 需要时间才与前台争用；应用有缓存/重试/队列吸收；告警在设备侧先出现，业务 SLO 在应用侧后恶化。两者测量点、阈值和传播延迟都不同。</p>
+<p>集群告警与应用 SLO 的测量点、阈值和传播延迟不同。PG <code>active+degraded</code> 表示副本不足时仍可服务。维护触发的 backfill 要过一段时间才会与前台争用，应用缓存、重试和队列也能暂时吸收影响。设备侧可能先告警，业务 SLO 随后才恶化。</p>
 <p><strong>节点 02：5 万序列的日样本量与治理</strong></p>
 <pre><code class="language-text">50,000 × 86,400 / 15 = 288,000,000 样本/天
 </code></pre>
-<p>限制标签：只保留实体 ID、集群、池、设备类型等低基数维度；禁止 request_id/文件名/会话 ID；高基数字段放日志/明细。保留桶：直方图按相同 <code>le</code> 保留，聚合时按桶求和，不能对分位二次聚合。检测 OSD 停报：期望数来自资产表，实际上报数来自 <code>up</code>/心跳；计算 coverage，设阈值告警；检查水位/最后样本时间/断连事件；缺数据时禁止输出全局均值。</p>
+<p>指标标签只保留实体 ID、集群、池、设备类型等取值较少的字段。把 request_id、文件名和会话 ID 等高基数字段放到日志或明细。合并直方图时，按相同 <code>le</code> 的桶求和，再算分位数。检测 OSD 停报时，用资产表取期望数，用 <code>up</code> 或心跳取上报数，计算 coverage 并设阈值告警。再查水位、最后样本时间和断连事件。数据不足时只报告已观测范围。</p>
 <p><strong>节点 03：维护前后两版 OSD 关系</strong></p>
 <pre><code class="language-text">T01（02:00–02:10:30）：orders → vol01 → hot → PG1 → osd.11/12/13
 T02（02:10:30 起）：orders → vol01 → hot → PG1 → osd.12/17/18
 </code></pre>
-<p>历史窗口选择：用事发时点匹配有效区间，用 02:16 匹配知识区间。比较维护前后时，变更事发时点并保持同一个调查截止。晚到事件按可见时间过滤，事件 ID 用于幂等。E04 在 02:18 才可见。</p>
+<p>用事发时点匹配有效区间，用 02:16 匹配知识区间。比较维护前后，改变事发时点，保持同一调查截止。按可见时间过滤晚到事件，按事件 ID 防重。E04 到 02:18 才可见。</p>
 <p><strong>节点 04：MAD 与首次触发</strong></p>
 <pre><code class="language-text">中位数 6，MAD 1
 M06: z=18.21；M07: z=26.98
 M07 好请求 93.27%
 </code></pre>
-<p>若规则要求连续 2 点超限，首次“触发”是 M07（M06 是首个超限点，M07 确认）。固定阈值：会错过缓慢劣化/季节性内的异常，或在高负载期误报；滚动基线：可能把事故起点吸收进基线（基线污染），也可能对突发硬故障反应慢。两者应并跑。</p>
+<p>连续 2 点超限才触发。M06 是首个超限点，M07 首次触发。固定阈值可能漏报缓慢劣化或季节性波动内的异常，也可能在高负载时误报。滚动基线可能把事故起点纳入正常范围，也可能对突发硬故障反应慢。两种规则并行比较。</p>
 <p><strong>节点 05：容量三情景与硬盘方案</strong></p>
 <pre><code class="language-text">38.8 天（6 TB/天）、77.6 天（3）、25.9 天（9）
 </code></pre>
-<p>硬盘方案：按设备日生成样本；标签区分真实故障/主动更换/迁移/观测结束；按时间 + 设备切分；PR 曲线选阈值；按告警预算（每千盘日误报）反推；新型号留出迁移测试；缺失标签单独建模，不硬填 0。</p>
+<p>按设备日生成样本，分开标注真实故障、主动更换、迁移和观测结束。按时间和设备切分，用 PR 曲线和每千盘日误报预算选阈值。留出新型号验证模型能否迁移。缺失标签单独建模，避免填成 0。</p>
 <p><strong>节点 06：触发、传播、补查</strong></p>
-<p>触发：维护让 osd.11 离线（E01）。传播：PG 重映射 → backfill 与前台写争用后端（E02/T02/M06/M07）。最需要补查：客户端队列、交换机端口丢包、OSD 级队列/恢复速率。网络反证：端口丢包/错包正常；备份反证：备份实际吞吐/路径与本案不共享（T03）。</p>
+<p>E01 的维护让 osd.11 离线。PG 重映射后，backfill 与前台写入争用后端资源（E02/T02/M06/M07）。优先补查客户端队列、交换机端口丢包、OSD 级队列和恢复速率。端口丢包与错包正常会削弱网络假设。若备份实际吞吐和路径与本案无共享，备份假设也会减弱（T03）。</p>
 <p><strong>节点 07：三份工具契约</strong></p>
 <pre><code class="language-text">get_collection_status(cluster, window) → sources, watermark, missing, coverage, query_id
 query_metric(entity, metric, start, end, step) → unit, samples, missing_intervals, coverage, query_id
 get_topology_at(entity, as_of, cutoff) → nodes, edges, valid_from/to, observed_at, coverage, query_id
 </code></pre>
-<p>报告带 <code>evidence_id/query_id</code>；覆盖率不足时输出“未决 + 下一步查询”，不得给高置信根因。</p>
+<p>报告附 <code>evidence_id/query_id</code>。覆盖不足时把根因标为未决，并写下一项查询。</p>
 <p><strong>节点 08：调度调整的前置/退出/验证</strong></p>
-<p>前置：副本完整、无 down OSD、非业务高峰、配置已备份、审批完成。退出：P99 不降、恢复停滞、错误率上升、新故障域压力。验证窗：至少 30 分钟，覆盖一个业务峰值。业务先达标、冗余后恢复时，值班状态是“已缓解、未恢复”：继续监控 degraded PG/重建速率/校验错误，不能结案。</p>
+<p>调整前确认副本完整、无 down OSD、处于非业务高峰、配置已备份、审批已完成。若 P99 不降、恢复停滞、错误率上升或新故障域承压，退出调整。至少观察 30 分钟并覆盖一个业务峰值。业务达标后，冗余仍在恢复时记为“已缓解、未恢复”。继续查 degraded PG、重建速率和校验错误，等冗余恢复后再结案。</p>
 <p><strong>节点 09：正常/缺数/晚到</strong></p>
-<p>正常：根因 Top-3、证据引用正确。缺数：应识别“数据不足”，降低结论强度，列下一步。晚到：不得引用截止后数据。误判归因：数据采集（覆盖率/字段缺失）、候选召回（正确根因不在候选）、候选排序（在候选但未进 Top-3）、报告生成（结论/引用/单位错）。</p>
+<p>数据正常时，正确根因应进 Top-3，引用应准确。缺数据时降低结论强度并列出下一步。晚到的数据按截止时间过滤。误判时检查采集是否缺字段或覆盖不足、候选是否漏掉正确根因、排序是否把正确根因排在 Top-3 外，以及报告有无结论、引用或单位错误。</p>
 <h2 id="2-华为-dme-解剖练习答案">2. 华为 DME 解剖练习答案</h2>
 <h3 id="21-第-0-环节资源图与路径查询">2.1 第 0 环节：资源图与路径查询</h3>
-<p>最小属性图：</p>
+<p>先选下表中的节点、最少属性和证据出处。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -580,7 +582,7 @@ get_topology_at(entity, as_of, cutoff) → nodes, edges, valid_from/to, observed
 <tr>
 <td>PG/OSD/Disk</td>
 <td>id, pool, host, uuid, epoch</td>
-<td>Ceph 侧；DME 公开字段需探测</td>
+<td>Ceph 侧可查，DME 公开字段需探测</td>
 </tr>
 <tr>
 <td>Workload/VM/Pod</td>
@@ -589,16 +591,16 @@ get_topology_at(entity, as_of, cutoff) → nodes, edges, valid_from/to, observed
 </tr>
 </tbody>
 </table></div>
-<p>边：<code>runs_on</code>、<code>hosted_by</code>、<code>maps_to</code>、<code>member_of</code>、<code>replicates_to</code>、<code>depends_on</code>、<code>protects</code>。每条边的修订保留 <code>valid_from/valid_to/known_from/known_to/observed_at/source/confidence</code>。</p>
-<p>路径查询（Cypher 示例）：</p>
+<p>关系类型用 <code>runs_on</code>、<code>hosted_by</code>、<code>maps_to</code>、<code>member_of</code>、<code>replicates_to</code>、<code>depends_on</code>、<code>protects</code>。每条关系的修订保留 <code>valid_from/valid_to/known_from/known_to/observed_at/source/confidence</code>。</p>
+<p>下方 Cypher 示例按事发时间和知识截止查询路径。</p>
 <pre><code class="language-cypher">MATCH p = (w:Workload {id:$w})-[:RUNS_ON|MAPS_TO|MEMBER_OF*1..6]-&gt;(d:Disk)
 WHERE all(r IN relationships(p)
       WHERE r.valid_from &lt;= $t AND (r.valid_to IS NULL OR $t &lt; r.valid_to)
         AND r.known_from &lt;= $cutoff AND (r.known_to IS NULL OR $cutoff &lt; r.known_to))
 RETURN p LIMIT 100
 </code></pre>
-<p>标注：Site/Rack/Host/Array/Pool/LUN/FS/VM/Pod 有公开依据；PG/OSD/CRUSH epoch 在 DME 公开材料中没有明确字段，需现场 API 探测或从 Ceph 侧补。</p>
-<p>评分：节点/边 2 分；时态 2 分；公开/待探测标注 1 分。</p>
+<p>Site、Rack、Host、Array、Pool、LUN、FS、VM、Pod 有公开依据。DME 公开材料未明确 PG、OSD 和 CRUSH epoch 字段，需到现场探测 API 或从 Ceph 侧补齐。</p>
+<p>节点和关系 2 分，时间区间 2 分，区分公开依据和待探测项 1 分。</p>
 <h3 id="22-第-1-环节应用侧与-dme-侧时间线">2.2 第 1 环节：应用侧与 DME 侧时间线</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -612,12 +614,12 @@ RETURN p LIMIT 100
 <tr>
 <td>02:10:30</td>
 <td>未见异常</td>
-<td>维护 CHG-18 生效；HostLink/PG 重映射（若可见）</td>
+<td>维护 CHG-18 生效。记录可见的 HostLink/PG 重映射</td>
 </tr>
 <tr>
 <td>02:11</td>
 <td>未见异常</td>
-<td>backfill 开始；OSD 队列上升</td>
+<td>backfill 开始，OSD 队列上升</td>
 </tr>
 <tr>
 <td>02:12:30</td>
@@ -636,54 +638,55 @@ RETURN p LIMIT 100
 </tr>
 </tbody>
 </table></div>
-<p>关联点：首个观测到 P99 上升的窗口于 02:14 结束。复盘时可补上 02:12:30 的积压日志，这个时间晚于维护和 backfill。缺口包括应用内部队列、客户端重试、交换机端口丢包及控制器内部队列。DME 的观测范围取决于纳管网元与可用指标。</p>
-<p>评分：两条线 2 分；关联/缺口 2 分。</p>
+<p>首个观测到 P99 上升的窗口在 02:14 结束。复盘可补上 02:12:30 的积压日志，积压晚于维护和 backfill。还缺应用内部队列、客户端重试、交换机端口丢包和控制器内部队列。DME 能看到哪些数据，取决于接入了哪些设备、能采到哪些指标。</p>
+<p>应用和 DME 两条时间线 2 分，关联及缺口 2 分。</p>
 <h3 id="23-第-2-环节100-万序列的成本">2.3 第 2 环节：100 万序列的成本</h3>
 <pre><code class="language-text">分钟级 7 天 = 1,000,000 × 1,440 × 7 = 100.8 亿点
 天级 2 年（每年 365 天）= 1,000,000 × 730 = 7.3 亿点
 合计 = 108.1 亿点
 2–8 字节/点（估算）= 21.62–86.48 GB 单副本，三副本 64.86–259.44 GB
 </code></pre>
-<p>估算沿用题目的两层保留范围。完整 DME 方案还需计算 30 分钟聚合层，并单独估计索引、元数据、压缩和实际副本开销。</p>
-<p>混合方案：</p>
+<p>上面的估算只算题目指定的两层保留。完整 DME 方案还要算 30 分钟聚合层，并单独估计索引、元数据、压缩和副本开销。</p>
+<p>设备和应用数据可分别留存。</p>
 <ul>
-<li>DME 保留设备侧聚合/告警/拓扑（7 天原始 + 6 个月 30 分钟 + 2 年天级）。</li>
-<li>自建 OTel/应用侧原始层（Kafka → 对象存储/ClickHouse），只存需要的指标/追踪。</li>
-<li>边缘缓冲 + 区域聚合；全局只存目录/索引/粗指标。</li>
-<li>查询路由：设备事实查 DME；应用/跨域/历史查自建层；结果统一成证据对象。</li>
+<li>DME 存设备聚合数据、告警和拓扑（7 天原始数据、6 个月的 30 分钟聚合、2 年天级数据）。</li>
+<li>用 OTel 采集应用原始数据，经 Kafka 写对象存储或 ClickHouse，只存要用的指标和追踪。</li>
+<li>边缘缓冲，区域聚合。全局仅保留目录、索引和粗粒度指标。</li>
+<li>设备事实查 DME，应用、跨域和历史数据查自建层。用统一格式返回证据。</li>
 </ul>
-<p>评分：样本/存储 3 分；混合方案 2 分。</p>
+<p>样本量和存储成本 3 分，混合方案 2 分。</p>
 <h3 id="24-第-3-环节三个问题与补偿">2.4 第 3 环节：三个问题与补偿</h3>
-<p>问题：</p>
+<p>先向厂商确认以下三项。</p>
 <ol>
-<li>能否按任意时间点查询拓扑（as-of）？返回的边是否带有效期/观测时间/来源？</li>
-<li>能否导出拓扑快照/变更事件？频率、格式、鉴权、限流？</li>
-<li>能否给出 LUN/FS 到物理盘/控制器的完整路径及映射版本（PG/CRUSH epoch）？</li>
+<li>能否查询任意时点的拓扑（as-of）？关系是否带有效期、观测时间和来源？</li>
+<li>能否导出拓扑快照和变更事件？支持什么频率、格式、鉴权和限流？</li>
+<li>能否查到从 LUN/FS 到物理盘和控制器的完整路径及映射版本（PG/CRUSH epoch）？</li>
 </ol>
-<p>补偿：</p>
+<p>若接口有缺口，按下面的方法补。</p>
 <ul>
-<li>定时（如 5 分钟）拉取拓扑快照，存对象存储 + 图库；变更事件从 DME 告警/API/ITSM 补。</li>
-<li>用实体 UUID/序列号做稳定 ID；别名表处理改名。</li>
-<li>对快照做 diff，生成边新增、失效和修订事件。回放按有效区间与知识区间查询，原始快照保留来源和采集时间。</li>
+<li>定时拉取拓扑快照，例如每 5 分钟一次。存到对象存储和图库，另从 DME 告警、API 或 ITSM 补变更事件。</li>
+<li>用实体 UUID 或序列号作稳定 ID。设备改名时更新别名表。</li>
+<li>比较快照，生成关系新增、失效和修订事件。回放按有效区间和知识区间查询。原始快照保留来源和采集时间。</li>
 <li>对 DME 不提供的 PG/CRUSH 字段，从 Ceph/存储侧补，或明确标注“未知”。</li>
 </ul>
-<p>评分：问题 2 分；补偿 2 分；未知标注 1 分。</p>
+<p>问题 2 分，补偿 2 分，标出未知项 1 分。</p>
 <h3 id="25-第-4-环节告警与-slo-对照">2.5 第 4 环节：告警与 SLO 对照</h3>
-<p>示例告警：<code>存储池容量利用率 &gt; 85%</code>。</p>
+<p>以 <code>存储池容量利用率 &gt; 85%</code> 为例。</p>
 <pre><code class="language-text">检查项：容量利用率
 阈值：85%（连续 3 次检查）
 恢复动作：扩容/分层/清理（需审批）
 SLO 对应：容量不是请求 SLO，但可定义“容量风险 SLI”= 预计到 90% 的天数
 燃烧率类比：剩余天数 &lt; 30 → P2；&lt; 7 → P1
 </code></pre>
-<p>再示例：<code>LUN 性能阈值</code>。</p>
+<p>再看 <code>LUN 性能阈值</code>。</p>
 <pre><code class="language-text">检查项：LUN P99 &gt; 20ms 连续 3 个采样
 恢复动作：变更服务等级（A2，需批准）
-SLO：好请求比例 &lt; 99.9% 持续 1h → 燃烧率 &gt; 14.4 → P1
+SLO 目标为 99.9%。1 小时和 5 分钟窗口的好请求比例都 &lt; 98.56%（各自燃烧率 &gt; 14.4 倍）时发 P1。
 </code></pre>
-<p>评分：检查项/阈值/恢复 2 分；SLO 映射 1 分；审批/边界 1 分。</p>
+<p>业务侧按 SLO 定义统计好请求。99.9% SLO 允许 0.1% 坏请求，14.4 倍燃烧率对应 14.4 × 0.1% = 1.44% 坏请求，换成好请求阈值就是 98.56%。 <a href="https://sre.google/workbook/alerting-on-slos/">Google SRE 多窗口燃烧率告警</a></p>
+<p>检查项、阈值和恢复动作共 2 分，SLO 对应关系 1 分，审批和限制 1 分。</p>
 <h3 id="26-第-5-环节三张表与基线">2.6 第 5 环节：三张表与基线</h3>
-<p>向厂商索要：</p>
+<p>向厂商索要下表中的三份结果。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -710,10 +713,10 @@ SLO：好请求比例 &lt; 99.9% 持续 1h → 燃烧率 &gt; 14.4 → P1
 </tr>
 </tbody>
 </table></div>
-<p>自建基线：滚动中位数 + 线性趋势/季节项；分位区间；按时间切分；报告覆盖率/误报。先证明基线，再评估厂商模型增益。</p>
-<p>评分：三张表 3 分；基线 2 分。</p>
+<p>自建基线可用滚动中位数，加线性趋势或季节项，并给出分位数区间。按时间切分数据，报告覆盖率和误报。先测基线，再看厂商模型带来多少改进。</p>
+<p>三张表 3 分，基线 2 分。</p>
 <h3 id="27-第-6-环节故障树与证据表">2.7 第 6 环节：故障树与证据表</h3>
-<p>故障树（实验室事故）：</p>
+<p>把实验事故的查证顺序画成故障树。</p>
 <pre><code class="language-text">订单写 P99 升高
 ├─ 前台负载增加？ → IOPS 990（基线 1000）→ 请求数激增的证据较弱；继续核对块大小、并发与突发
 ├─ 网络故障？ → 重传 0.3 持平 → 证据弱
@@ -723,7 +726,7 @@ SLO：好请求比例 &lt; 99.9% 持续 1h → 燃烧率 &gt; 14.4 → P1
 │  └─ 介质故障？ → 无错误/队列高但 IOPS 稳 → 可能否
 └─ 备份干扰？ → E03 另一站点/T03 无共享 → 否
 </code></pre>
-<p>证据/反证：</p>
+<p>逐条对照支持证据、反证和缺口。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -766,24 +769,24 @@ SLO：好请求比例 &lt; 99.9% 持续 1h → 燃烧率 &gt; 14.4 → P1
 </tr>
 </tbody>
 </table></div>
-<p>评分：故障树 2 分；支持/反证/缺口 3 分。</p>
+<p>故障树 2 分，支持证据、反证和缺口共 3 分。</p>
 <h3 id="28-第-7-环节dme-restmcp-的-10-个只读工具">2.8 第 7 环节：DME REST→MCP 的 10 个只读工具</h3>
-<p>建议工具：</p>
+<p>可提供以下工具。</p>
 <ol>
-<li><code>get_sites</code>：站点/数据中心列表。</li>
-<li><code>get_assets</code>：按类型/型号/标签查资产。</li>
-<li><code>get_topology_at</code>：实体在某一时刻的邻域。</li>
-<li><code>query_metric</code>：实体/指标/时间窗。</li>
-<li><code>query_alarms</code>：当前/历史告警。</li>
-<li><code>get_health</code>：健康评分与扣分项。</li>
-<li><code>get_collection_status</code>：采集覆盖/水位/断连。</li>
-<li><code>list_changes</code>：变更/维护/工单。</li>
-<li><code>run_smart_analysis</code>：只读触发智能分析，返回报告 ID（注意：它可能消耗产品资源，标 <code>readOnlyHint=false</code> 或单独预算）。</li>
-<li><code>search_runbooks</code>：按产品/版本/故障码检索。</li>
+<li><code>get_sites</code> 列出站点和数据中心。</li>
+<li><code>get_assets</code> 按类型、型号或标签查资产。</li>
+<li><code>get_topology_at</code> 查指定时点与该实体相邻的拓扑。</li>
+<li><code>query_metric</code> 按实体、指标和时间窗查数据。</li>
+<li><code>query_alarms</code> 查当前和历史告警。</li>
+<li><code>get_health</code> 查健康评分和扣分项。</li>
+<li><code>get_collection_status</code> 查采集覆盖、数据水位和断连。</li>
+<li><code>list_changes</code> 查变更、维护和工单。</li>
+<li><code>run_smart_analysis</code> 触发只读智能分析，返回报告 ID。该操作仍可能消耗产品资源，标 <code>readOnlyHint=false</code> 或设单独预算。</li>
+<li><code>search_runbooks</code> 按产品、版本和故障码查操作手册。</li>
 </ol>
-<p>权限：OAuth2/RBAC + 租户/实体范围；每次调用注入 <code>principal</code>；返回 <code>query_id</code>；错误分 <code>unauthorized/not_found/no_data/timeout/backend_error</code>。</p>
-<p>对比：DME 助手是产品内闭环、意图库有限；通用 Agent + MCP 可跨 DME/OTel/CMDB，但需要自己补 schema/权限/证据。DME 助手的优势是设备知识和预置动作；通用 Agent 的优势是开放组合和可替换模型。</p>
-<p>评分：10 个工具 3 分；权限/错误 2 分；对比 1 分。</p>
+<p>用 OAuth2/RBAC 限定租户和实体范围。每次调用注入 <code>principal</code>，并返回 <code>query_id</code>。错误分 <code>unauthorized/not_found/no_data/timeout/backend_error</code>。</p>
+<p>DME 助手在产品内完成操作，有设备知识和预置动作，能处理的请求受意图库限制。Agent 加 MCP 可跨 DME、OTel 和 CMDB，工具可组合、模型可更换。接入方需定义 schema、权限和证据格式。</p>
+<p>10 个工具 3 分，权限和错误 2 分，对比 1 分。</p>
 <h3 id="29-第-8-环节隔离风险盘的变更契约">2.9 第 8 环节：隔离风险盘的变更契约</h3>
 <pre><code class="language-text">目标：隔离 ceph-a/osd.17 上的风险盘
 前置：副本/EC 完整；有热备/可重建；不在重建高峰；已确认盘位/序列号；审批 A/B
@@ -795,18 +798,18 @@ SLO：好请求比例 &lt; 99.9% 持续 1h → 燃烧率 &gt; 14.4 → P1
 成功：业务 P99 不升、degraded PG 可恢复、重建速率 &gt;0、无新错误
 失败：停止隔离、升级、检查是否误判盘
 </code></pre>
-<p>DME 覆盖：工作台有“隔离硬盘/端口”动作，但由华为服务人员定义/执行；客户侧需要工作流+审批。自建：幂等键、回滚、双验收、审计。</p>
-<p>评分：前置/幂等/回滚/观察窗/双验收各 1 分。</p>
+<p>DME 工作台提供“隔离硬盘/端口”动作，由华为服务人员定义并执行。客户侧需配置工作流和审批。自建方案需落实幂等键、回滚、业务与保护验收和审计。</p>
+<p>前置条件、幂等、回滚、观察窗及业务与保护验收各 1 分。</p>
 <h3 id="210-第-9-环节30-个事故的回放集">2.10 第 9 环节：30 个事故的回放集</h3>
-<p>构成：</p>
+<p>按四种场景选用例。</p>
 <ul>
-<li>10 个正常窗口（负对照）：不应报事故；检查误报。</li>
-<li>10 个真实事故：覆盖 Ceph/文件/对象/控制器/磁盘/网络/变更。</li>
-<li>5 个缺数据：隐藏关键指标/拓扑/日志；检查是否降级结论。</li>
-<li>5 个晚到：关键日志在截止后才可见；检查是否使用未来数据。</li>
+<li>10 个正常窗口作负对照，检查是否误报事故。</li>
+<li>10 个真实事故，覆盖 Ceph、文件、对象、控制器、磁盘、网络和变更。</li>
+<li>5 个缺数据案例，隐藏关键指标、拓扑或日志，检查结论是否降级。</li>
+<li>5 个晚到案例，关键日志到截止后才可见，检查是否被提前引用。</li>
 </ul>
-<p>每个用例：快照 ID、知识截止、症状、隐藏答案、必须引用/禁止引用、评分表、成本记录。评分：检测 2、根因 3、证据 3、时间 1、缺数据 1、双验收 2。先跑规则基线，再跑 DME 助手/自建 Agent，做消融。</p>
-<p>评分：构成 2 分；评分/消融 2 分；防泄漏 1 分。</p>
+<p>每例记录快照 ID、知识截止、症状、隐藏答案、必须引用和禁止引用的证据、评分表和成本。检测 2 分、根因 3 分、证据 3 分、时间 1 分、缺数据 1 分、业务与保护验收 2 分。先跑规则基线，再跑 DME 助手或自建 Agent。逐项去掉组件或数据再跑，比较变化。</p>
+<p>场景构成 2 分，评分和消融对照 2 分，防止答案或未来数据泄漏 1 分。</p>
 <h2 id="3-进阶篇各章练习答案">3. 进阶篇各章练习答案</h2>
 <h3 id="31-第-1-章介质与控制器">3.1 第 1 章：介质与控制器</h3>
 <p><strong>1. 旋转延迟与 IOPS</strong></p>
@@ -815,7 +818,7 @@ SLO：好请求比例 &lt; 99.9% 持续 1h → 燃烧率 &gt; 14.4 → P1
 4 KiB 随机读（寻道 6ms、旋转 4.17ms、传输 0.02ms）：
 IOPS = 1 / (6 + 4.17 + 0.02) ms = 1 / 10.19ms ≈ 98 IOPS
 </code></pre>
-<p>这是单队列、无缓存的上限；企业盘靠缓存/队列可到 150–200，但量级不变。</p>
+<p>单队列、无缓存时，上限约 98 IOPS。企业盘利用缓存和请求队列可到 150–200 IOPS，仍在同一数量级。</p>
 <p><strong>2. DWPD 与寿命</strong></p>
 <pre><code class="language-text">DWPD = 14,000 / (3.84 × 365 × 5) = 14,000 / 7,008 ≈ 2.0
 每天 3 次全盘：14,000 / (3.84×3) = 1,215 天 ≈ 3.33 年
@@ -829,7 +832,7 @@ OP 7% → 28%： spare 块更多，GC 更少、WA 通常下降，稳态性能/�
 <pre><code class="language-text">90%: 0.9×0.1 + 0.1×4 = 0.49 ms
 70%: 0.7×0.1 + 0.3×4 = 1.27 ms
 </code></pre>
-<p>命中率降 20 个点，平均延迟涨约 2.6 倍；尾延迟更敏感。</p>
+<p>命中率降 20 个百分点，平均延迟涨到约 2.6 倍。尾延迟对命中率变化更敏感。</p>
 <h3 id="32-第-2-章数据保护">3.2 第 2 章：数据保护</h3>
 <p><strong>1. 容量与重建</strong></p>
 <pre><code class="language-text">raw = 12×20 = 240 TB
@@ -838,29 +841,29 @@ EC 8+2 = 240×8/10 = 192 TB（80%）
 3 副本 = 240/3 = 80 TB（33.3%）
 重建：15 TB / 150 MB/s = 100,000 s ≈ 27.8 h
 </code></pre>
-<p>若按 20 TB 全盘重建：20 TB/150MB/s ≈ 37.0 h（十进 TB）或 40.7 h（20 TiB）；重建时间取决于“已用/需重建的数据量”，不是标称容量。</p>
+<p>按全盘 20 TB 重建，20 TB / 150 MB/s 约 37.0 小时（十进制 TB）。若为 20 TiB，约 40.7 小时。排期按实际需重建的数据量计算。</p>
 <p><strong>2. 快照空间与一致性</strong></p>
 <pre><code class="language-text">10 TB × 25% × 5 = 12.5 TB（上限，未计共享折扣）
 </code></pre>
-<p>应用一致快照：quiesce 数据库/文件系统 → flush 缓存 → 触发 VSS/agent/脚本 → 确认快照完成 → 恢复业务；多卷要一致性组；恢复后校验日志/一致性。</p>
+<p>做应用一致快照时，先让数据库或文件系统暂停写入（quiesce），刷写缓存，再用 VSS、agent 或脚本触发快照。确认快照完成后恢复业务。涉及多个卷时使用一致性组。恢复后查日志并验证一致性。</p>
 <p><strong>3. 同步复制</strong></p>
-<pre><code class="language-text">带宽 = 10,000 × 8 KiB × 40% = 32 MB/s（单向，未计开销）
+<pre><code class="language-text">带宽 = 10,000 × 8 KiB × 40% = 32.768 MB/s（31.25 MiB/s，单向，未计开销）
 RTT 3 ms → 写延迟至少 +3 ms（加远端处理）
 SLO 1 ms：不可行；改异步/同城更短 RTT/放宽 SLO。
 </code></pre>
 <p><strong>4. 为什么快照+同阵列复制不是防勒索备份</strong></p>
 <ul>
-<li>同一管理员/凭据域：攻击者/误操作可一起删。</li>
-<li>同一阵列/固件/漏洞：勒索软件可加密快照/副本。</li>
-<li>没有离线/不可变/空气隙：删除即永久。</li>
-<li>没有恢复演练：备份成功率 ≠ 可恢复率。
-控制：对象锁/WORM、离线副本、AirGap、分离凭据/MFA、不可变保留、定期恢复演练。</li>
+<li>攻击者或误操作可用同一管理员权限或凭据删除快照和副本。</li>
+<li>快照和副本共用阵列、固件和漏洞，勒索软件可能同时加密两份数据。</li>
+<li>缺少离线、不可变或隔离副本时，删除可能无法恢复。</li>
+<li>用恢复演练测实际可恢复率。备份成功率只反映备份任务是否完成。
+可用对象锁或 WORM、离线副本、AirGap、独立凭据和 MFA、不可变保留，并定期做恢复演练。</li>
 </ul>
 <h3 id="33-第-3-章协议与网络">3.3 第 3 章：协议与网络</h3>
 <p><strong>1. Zoning vs LUN Masking</strong></p>
-<p>Zoning 是交换机侧“端口能否互相看到”；LUN Masking 是阵列侧“主机 WWN 能看哪个 LUN”。只配 Zoning：主机能登录 target，但看不到 LUN；只配 Masking：没有 fabric 路径，链路不通。两者都要。</p>
+<p>Zoning 控制交换机上哪些端口能相互发现。LUN Masking 控制阵列让每个主机 WWN 看见哪些 LUN。只配置 Zoning 时，主机能登录 target，但看不到 LUN。只配置 Masking 时，缺 fabric 路径，链路不通。两项都要配置。</p>
 <p><strong>2. PFC 暂停帧扩散</strong></p>
-<p>PFC 按优先级暂停上游；如果配置/优先级映射不当，暂停帧会扩散到整个端口，造成队头阻塞、所有流量停顿、延迟尖峰/丢包。定位：交换机 PFC/ECN 计数、队列水位、丢弃计数；主机 RDMA 重传/CNP；检查 DSCP→TC 映射和 PFC 配置。</p>
+<p>PFC 按优先级暂停上游发送。配置或优先级映射不当时，暂停帧可能扩散到整个端口，引起队头阻塞，其他流量也会停顿、延迟变高或丢包。查交换机 PFC/ECN 计数、队列水位和丢弃计数，再查主机 RDMA 重传、CNP，并核对 DSCP→TC 映射和 PFC 配置。</p>
 <p><strong>3. S3 multipart</strong></p>
 <pre><code class="language-text">十进制最小固定 part = 1 TB / 10,000 = 100 MB（约 95.37 MiB）
 128 MB part：向上取整(1,000,000 MB / 128 MB) = 7,813 个 part
@@ -870,7 +873,7 @@ SLO 1 ms：不可行；改异步/同城更短 RTT/放宽 SLO。
 <pre><code class="language-text">1,000,000 / 8,000 = 125 s
 数据量 = 1,000,000 × 4 KiB ≈ 3.815 GiB
 </code></pre>
-<p>瓶颈更可能在元数据（MDS/目录锁/元数据池），因为数据量只有 4 GiB，而 125s 的元数据操作是主要时间；需看 metadata op latency、MDS CPU、目录分片。</p>
+<p>数据量只有约 4 GiB，125s 主要花在元数据操作上。优先查 MDS、目录锁和元数据池。核对元数据操作延迟（metadata op latency）、MDS CPU 和目录分片。</p>
 <h3 id="34-第-4-章文件对象与-ceph">3.4 第 4 章：文件、对象与 Ceph</h3>
 <p><strong>1. PG 数</strong></p>
 <pre><code class="language-text">pg_num ≈ 100 × 100 / 3 = 3,333 → 取 2 的幂 4,096
@@ -878,7 +881,7 @@ SLO 1 ms：不可行；改异步/同城更短 RTT/放宽 SLO。
 若取 2,048：61.4/OSD；两者都可，按容量/负载/autoscaler 调。
 </code></pre>
 <p><strong>2. 故障域</strong></p>
-<p>3 副本同机柜：机柜断电/交换机故障会同时失去所有副本。EC 8+2 在 5 个 host 上，如果每个 host 放 2 个块，坏 2 个 host 丢 4 块 &gt; m=2，数据不可用；如果 10 个 host 各 1 块，坏 2 个 host 只丢 2 块，可恢复。条件：<strong>任一故障域内失效的块数 ≤ m</strong>。</p>
+<p>3 副本同机柜时，机柜断电或交换机故障可能让所有副本一起不可用。EC 8+2 若放在 5 个 host，每个 host 放 2 个块，坏 2 个 host 就会丢 4 块，超过 m=2，无法重建。若放在 10 个 host，每个 host 放 1 块，坏 2 个 host 只丢 2 块，可重建。评估故障域时，所有同时失效的故障域合计丢失的块数须 ≤ m。</p>
 <p><strong>3. PG 排障命令</strong></p>
 <pre><code class="language-text">ceph health detail
 ceph osd tree
@@ -888,7 +891,7 @@ ceph osd metadata / ceph osd perf
 （再查主机网络/OSD 日志/磁盘 SMART）
 </code></pre>
 <p><strong>4. EC 8+2 条带</strong></p>
-<p>每个条带 8 个数据块 + 2 个校验块；1 TB 对象原始占用约 1 TB × 10/8 = 1.25 TB（加元数据/开销）。同 PG 坏 2 块盘：仍可读（EC 8+2 容忍 2）；坏 3 块：受影响条带不可读/数据丢失（若无其他副本/备份）。</p>
+<p>每个条带有 8 个数据块和 2 个校验块。1 TB 对象原始占用约 1 TB × 10/8 = 1.25 TB，另计元数据和开销。同一 PG 若坏 2 块盘并丢 2 片，剩下 8 片仍可重建。能否继续读写取决于池的 <code>min_size</code> 和 PG 状态。若坏 3 块盘并丢 3 片，受影响条带无法重建，无其他副本或备份时会丢数据。 <a href="https://docs.ceph.com/en/tentacle/architecture/">Ceph 纠删码架构</a></p>
 <h3 id="35-第-5-章性能与容量">3.5 第 5 章：性能与容量</h3>
 <p><strong>1. USL（α=0.05，β=0.02）</strong></p>
 <pre><code class="language-text">N=4:  4 / (1 + 0.15 + 0.24) = 2.878（71.9%）
@@ -916,10 +919,10 @@ RAID 6 单块读改写：每次前台写对应 3 次后端读、3 次后端写
 25 TB/天 → 85.5 天
 75 TB/天 → 28.5 天
 </code></pre>
-<p>还要考虑采购/上架/布线/初始化/重平衡（数天到数周）、N+1、重建预留、快照/克隆增长、业务峰值。</p>
+<p>排期还要留出采购、上架、布线、初始化、重平衡的时间（数天到数周），并计入 N+1、重建预留、快照和克隆增长、业务峰值。</p>
 <h3 id="36-第-6-章算法">3.6 第 6 章：算法</h3>
 <p><strong>1. 日周期 + 周末低峰</strong></p>
-<p>用 STL/Holt-Winters 按“星期几 + 时段”建基线，残差做稳健 z；或用同工作负载/同时段历史分位。固定阈值会被峰谷差打败；全局 MAD 会把季节性当异常/把异常当正常。加最小样本量、连续窗口、效应量。</p>
+<p>可用 STL/Holt-Winters 按星期几和时段建基线，对残差算稳健 z 分数。也可用相同负载和时段的历史分位数。固定阈值会受峰谷差影响。全局 MAD 可能误报正常的季节性波动，也可能漏掉异常。再设最小样本量、连续窗口数和最小变化幅度。</p>
 <p><strong>2. 硬盘标签</strong></p>
 <pre><code class="language-text">真实故障：H 天内故障 → 正例
 主动更换：单独标签/竞争风险，不能当正例或负例
@@ -928,15 +931,15 @@ RAID 6 单块读改写：每次前台写对应 3 次后端读、3 次后端写
 随机切分：同盘/同时间段泄漏；按时间 + 按设备分组切分
 </code></pre>
 <p><strong>3. DAG 与控制变量</strong></p>
-<p>DAG：<code>维护 → backfill → 队列 → 延迟</code>；<code>业务峰值 → IOPS</code>、<code>业务峰值 → 延迟</code>；backfill 也可能影响 IOPS。若 IOPS 是“业务峰值 → IOPS → 延迟”的中介，控制它会挡住部分效应；若它是“backfill 和业务峰值共同导致”的对撞，控制它会引入对撞偏差。<strong>不要盲目控制 IOPS</strong>；用 backfill 速率、队列、时间窗对照，按 DAG 选调整集。</p>
+<p>在因果图中画出 <code>维护 → backfill → 队列 → 延迟</code>、<code>业务峰值 → IOPS</code> 和 <code>业务峰值 → 延迟</code>。backfill 也可能影响 IOPS。若 IOPS 在“业务峰值 → IOPS → 延迟”中传递影响，控制它会挡住一部分效应。若 backfill 和业务峰值共同影响 IOPS，按 IOPS 分组或控制它会引入对撞偏差。对照 backfill 速率、队列和时间窗，按因果图决定控制哪些变量。</p>
 <p><strong>4. PG 扩缩</strong></p>
 <pre><code class="language-text">100 OSD：100×100/3 = 3,333 → 4,096
 200 OSD：200×100/3 = 6,667 → 8,192
 </code></pre>
-<p>但 PG 数不是必须随 OSD 线性增加：如果每 OSD PG 数已足够、autoscaler 正常，可以保持不变；PG 太多会增加 peering/内存/恢复开销。用 <code>pg_autoscaler</code> 和实际负载决定。</p>
+<p>若每个 OSD 的 PG 数已经足够且 autoscaler 正常，可以保持 PG 数。PG 太多会增加 peering、内存和恢复开销。用 <code>pg_autoscaler</code> 和实际负载决定是否调整。</p>
 <h3 id="37-第-7-章实现">3.7 第 7 章：实现</h3>
 <p><strong>1. DDL + as-of SQL</strong></p>
-<p>见进阶篇 7.1/7.2。<code>entity</code> 使用稳定 ID 和别名，<code>edge</code> 保留有效区间、知识区间与来源观测时间。用两组半开区间查询。</p>
+<p>见进阶篇 7.1/7.2。<code>entity</code> 使用稳定 ID 和别名。<code>edge</code> 保存有效区间、知识区间及来源观测时间。查询同时匹配两组左闭右开的区间。</p>
 <pre><code class="language-sql">SELECT *
 FROM edge
 WHERE src_id = :id
@@ -993,22 +996,41 @@ sum(rate(req_duration_seconds_count{op=&quot;write&quot;}[5m]))
 <pre><code class="language-json">{
   &quot;incident_id&quot;: &quot;INC-001&quot;,
   &quot;variants&quot;: [
-    {&quot;id&quot;:&quot;normal&quot;,&quot;snapshot&quot;:&quot;snap-0216&quot;,&quot;hide&quot;:[],&quot;late&quot;:[]},
-    {&quot;id&quot;:&quot;missing&quot;,&quot;snapshot&quot;:&quot;snap-0216-missing&quot;,&quot;hide&quot;:[&quot;M06&quot;,&quot;M07&quot;,&quot;T02&quot;],&quot;late&quot;:[]},
-    {&quot;id&quot;:&quot;late&quot;,&quot;snapshot&quot;:&quot;snap-0216&quot;,&quot;hide&quot;:[],&quot;late&quot;:[&quot;M06&quot;]}
+    {
+      &quot;id&quot;: &quot;normal&quot;,
+      &quot;snapshot&quot;: &quot;snap-0216&quot;,
+      &quot;hide&quot;: [],
+      &quot;late&quot;: [],
+      &quot;must_cite&quot;: [&quot;M06&quot;, &quot;M07&quot;, &quot;E01&quot;, &quot;E02&quot;, &quot;T02&quot;],
+      &quot;must_not_cite&quot;: [&quot;E04&quot;]
+    },
+    {
+      &quot;id&quot;: &quot;missing&quot;,
+      &quot;snapshot&quot;: &quot;snap-0216-missing&quot;,
+      &quot;hide&quot;: [&quot;M06&quot;, &quot;M07&quot;, &quot;T02&quot;],
+      &quot;late&quot;: [],
+      &quot;must_cite&quot;: [&quot;E01&quot;, &quot;E02&quot;],
+      &quot;must_not_cite&quot;: [&quot;E04&quot;, &quot;M06&quot;, &quot;M07&quot;, &quot;T02&quot;]
+    },
+    {
+      &quot;id&quot;: &quot;late&quot;,
+      &quot;snapshot&quot;: &quot;snap-0216&quot;,
+      &quot;hide&quot;: [],
+      &quot;late&quot;: [&quot;M06&quot;],
+      &quot;must_cite&quot;: [&quot;M07&quot;, &quot;E01&quot;, &quot;E02&quot;, &quot;T02&quot;],
+      &quot;must_not_cite&quot;: [&quot;E04&quot;, &quot;M06&quot;]
+    }
   ],
   &quot;knowledge_cutoff&quot;: &quot;2026-11-10T02:16:00Z&quot;,
   &quot;ground_truth&quot;: {&quot;root_cause&quot;:&quot;backfill_contention&quot;,&quot;entity&quot;:&quot;ceph-a/hot&quot;},
-  &quot;must_cite&quot;: [&quot;M06&quot;,&quot;M07&quot;,&quot;E01&quot;,&quot;E02&quot;,&quot;T02&quot;],
-  &quot;must_not_cite&quot;: [&quot;E04&quot;,&quot;M06&quot;],
   &quot;negative_control&quot;: [&quot;audit&quot;],
   &quot;scoring&quot;: {&quot;detection&quot;:2,&quot;root_cause&quot;:3,&quot;evidence&quot;:3,&quot;time&quot;:1,&quot;missing&quot;:1,&quot;durability&quot;:2}
 }
 </code></pre>
-<p>防泄漏：变体用独立快照/独立密钥；模型上下文不含答案；评分由独立裁定；记录 <code>must_not_cite</code> 的命中；对晚到数据检查 <code>knowledge_time</code>。</p>
+<p>按各变体自己的 <code>must_cite</code> 和 <code>must_not_cite</code> 评分。缺数据时，检查报告是否指出缺口并暂缓根因结论。用独立快照和密钥隔离变体，确保模型看不到答案，由独立评审评分。记录命中禁引列表的引用，按 <code>knowledge_time</code> 检查晚到数据。</p>
 <h2 id="4-综合自测-30-题答案">4. 综合自测 30 题答案</h2>
 <blockquote>
-<p>计算题给步骤，设计与案例题给要点；展开推导见<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a>对应章节。</p>
+<p>计算题给出步骤，设计和案例题给出参考要点。详细推导见<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a>对应章节。</p>
 </blockquote>
 <h3 id="a-计算题">A. 计算题</h3>
 <p><strong>A1. 旋转延迟</strong></p>
@@ -1025,14 +1047,14 @@ EC 8+2: 192 TB (80%)
 <pre><code class="language-text">20 TB / 150 MB/s = 133,333 s ≈ 37.0 h
 20 TB / 50 MB/s  = 400,000 s ≈ 111.1 h
 </code></pre>
-<p>（按 TiB 会略长；重建速率受前台负载/限速影响。）</p>
+<p>若按 TiB 计算，时间更长。实际重建速率受前台负载和限速影响。</p>
 <p><strong>A4. DWPD 与寿命</strong></p>
 <pre><code class="language-text">DWPD = 7,000/(3.84×365×5) = 7,000/7,008 ≈ 1.0
 每天 3 次全盘：7,000/(3.84×3) = 607.6 天 ≈ 1.67 年
 </code></pre>
-<p>如果题目把 TBW 换成 14,000，则 DWPD=2.0，3 次/天约 3.33 年。<strong>先看清 TBW 再算。</strong></p>
+<p>若题目把 TBW 换成 14,000，则 DWPD 为 2.0，每天 3 次全盘写入约能用 3.33 年。先核对题目的 TBW。</p>
 <p><strong>A5. 同步复制</strong></p>
-<pre><code class="language-text">带宽 = 10,000×8 KiB×40% = 32 MB/s
+<pre><code class="language-text">带宽 = 10,000 × 8 KiB × 40% = 32.768 MB/s（31.25 MiB/s，单向，未计开销）
 RTT 3 ms → 写延迟至少 +3 ms（加远端处理）
 SLO 1 ms 不可行；用异步/更短 RTT/放宽 SLO。
 </code></pre>
@@ -1065,27 +1087,27 @@ TP = 0.548×0.8 = 0.438
 <h3 id="b-设计题">B. 设计题</h3>
 <p><strong>B11. 稳定身份</strong></p>
 <ul>
-<li><code>entity_id = tenant/cluster/type/uuid</code>，不含可变名。</li>
-<li>别名表：hostname、WWN、serial、IP、K8s UID，带有效期。</li>
-<li>OSD 数字编号只作为别名，必须带 UUID + 生命周期区间；重建后是新实体。</li>
-<li>主机改名/换 HBA：新增别名/新实体，保留旧边有效期。</li>
-<li>K8s Pod 重建：以 workload/controller 为稳定实体，Pod 用 UID + 生命周期。</li>
+<li><code>entity_id = tenant/cluster/type/uuid</code>。可变名称放别名表。</li>
+<li>在别名表保存 hostname、WWN、serial、IP、K8s UID 和有效期。</li>
+<li>把 OSD 数字编号当别名，并记录 UUID 和生命周期区间。重建后登记为新实体。</li>
+<li>主机改名时新增别名，换 HBA 时登记新实体，保留旧关系的有效期。</li>
+<li>K8s Pod 重建时，以 workload/controller 为稳定实体，单个 Pod 用 UID 和生命周期标识。</li>
 </ul>
 <p><strong>B12. 时态拓扑</strong></p>
 <ul>
-<li><code>valid_from/valid_to</code>：现实中关系何时有效；防“用维护后拓扑解释维护前”。</li>
-<li><code>observed_at</code>：何时被采集；防“回放使用事故后才可见的数据”。</li>
-<li>半开区间 <code>[valid_from, valid_to)</code>；<code>valid_to NULL</code> 表示仍有效。</li>
+<li><code>valid_from/valid_to</code> 记录关系实际何时有效，用它还原维护前或维护后的拓扑。</li>
+<li><code>observed_at</code> 记录采集时间，回放时按调查截止过滤晚到数据。</li>
+<li>使用半开区间 <code>[valid_from, valid_to)</code>。<code>valid_to NULL</code> 表示仍有效。</li>
 <li>查询 <code>valid_range @&gt; t AND knowledge_range @&gt; cutoff</code>。晚到修订保留旧有效区间，仅关闭旧知识区间并新增修订。</li>
-<li>还要 <code>source/confidence</code>，支持多源冲突。</li>
+<li>用 <code>source/confidence</code> 标注来源和置信度，以便处理多源冲突。</li>
 </ul>
 <p><strong>B13. query_metric 契约</strong></p>
-<p>输入：<code>entity_id, metric enum, start, end, step, aggregation</code>；输出：<code>unit, samples, missing_intervals, coverage, query_id, source, error</code>；约束：只读、最大时间窗/样本数、超时、租户权限。错误分 <code>unauthorized/not_found/no_data/timeout/backend_error</code>。</p>
+<p>输入为 <code>entity_id, metric enum, start, end, step, aggregation</code>。输出为 <code>unit, samples, missing_intervals, coverage, query_id, source, error</code>。工具只读，设最大时间窗、样本数、超时和租户权限。错误分 <code>unauthorized/not_found/no_data/timeout/backend_error</code>。</p>
 <p><strong>B14. RAG</strong></p>
 <pre><code class="language-text">ACL/租户 → 产品/型号 → 版本区间 → 故障码/症状 → 审批/生效时间
 → 关键词+向量混合召回 → 重排 → 冲突检测 → 返回 doc_id/section/version/effective_at/引用
 </code></pre>
-<p>冲突文档返回多个候选 + 差异 + 适用范围；不要强行合并。故障码精确匹配，工单语义召回。</p>
+<p>文档冲突时返回多个候选，并写出差异和适用范围。故障码用精确匹配，工单用语义检索。</p>
 <p><strong>B15. 动作矩阵</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -1130,41 +1152,41 @@ TP = 0.548×0.8 = 0.438
 </tbody>
 </table></div>
 <p><strong>B16. 硬盘标签</strong></p>
-<p>真实故障 = H 天内故障；主动更换 = 单独竞争风险/干预标签；迁移/退役 = 删失或排除；观测结束 = 删失。按时间 + 按设备分组切分；训练/测试不共享同盘同次故障；校准 + PR-AUC + 告警预算。</p>
+<p>H 天内故障标为真实故障。主动更换单列为竞争风险或干预。迁移、退役记为删失或排除，观测结束记为删失。按时间和设备分组切分，避免训练集和测试集出现同一块盘的同次故障。检查校准和 PR-AUC，用告警预算选阈值。</p>
 <p><strong>B17. 缺数据变体</strong></p>
-<p>隐藏元数据 IOPS、控制器 CPU、backfill 日志；保留业务 P99、磁盘/网络正常、对照正常。期望输出：“业务影响真实；介质/网络不支持；疑似控制器/元数据，但缺直接证据；下一步查 metadata op latency/控制器队列/备份扫描”。评分：是否降级、是否列缺口、是否不用隐藏字段做反证。</p>
+<p>隐藏元数据 IOPS、控制器 CPU 和 backfill 日志。保留业务 P99、磁盘与网络正常的信号，以及正常对照。报告应确认业务影响，并说明现有介质和网络信号未见异常。控制器或元数据仍是候选，需补查 metadata op latency、控制器队列和备份扫描。评分看结论是否降级、是否列出缺口、是否避免用隐藏字段当反证。</p>
 <p><strong>B18. 多集群分层</strong></p>
 <ul>
-<li>边缘：原始采集、缓冲、脱敏、粗聚合、断链续传。</li>
-<li>区域：跨站资产目录、拓扑快照、证据索引、查询路由。</li>
-<li>全局：策略、模型、评测、审计；不存明细。</li>
-<li>查询下推；按需回查明细；数据驻留/租户隔离在采集层设计。</li>
+<li>边缘采集原始数据、缓冲、脱敏和粗聚合，断链后续传。</li>
+<li>区域保存跨站资产目录、拓扑快照和证据索引，负责路由查询。</li>
+<li>全局管理策略、模型、评测和审计，明细留在站点或区域。</li>
+<li>把查询下推到数据所在层，按需回查明细。在采集层落实数据驻留和租户隔离。</li>
 </ul>
 <p><strong>B19. 告警聚合</strong></p>
-<p>按拓扑（同故障域/共享依赖）、时间（窗口重叠/传播延迟）、因果（父/子、上下游）分组；保留原始告警 ID、聚合规则版本、合并理由；如果两个根因独立，拆开；用 SLO 影响分级；避免“一个大桶”。</p>
+<p>按拓扑、时间和因果关系聚合告警。拓扑看故障域和共享依赖，时间看窗口重叠和传播延迟，因果看父子或上下游关系。保留原始告警 ID、规则版本和合并原因。根因独立时分开，按 SLO 影响定级。</p>
 <p><strong>B20. DME MCP 适配</strong></p>
-<p>10 个只读工具：sites、assets、topology_at、query_metric、query_alarms、health、collection_status、changes、smart_analysis（预算/只读标记）、search_runbooks。权限：OAuth2/RBAC + 租户/实体范围；错误分类；每次返回 <code>query_id</code>；写工具默认不暴露。</p>
+<p>提供 10 个只读工具，分别为 sites、assets、topology_at、query_metric、query_alarms、health、collection_status、changes、smart_analysis（设预算并标明读写性质）和 search_runbooks。OAuth2/RBAC 限定租户和实体范围。分类返回错误，每次附 <code>query_id</code>。写工具默认不暴露。</p>
 <h3 id="c-案例题">C. 案例题</h3>
 <p><strong>C21. Ceph 维护后 P99 升高</strong></p>
-<p>假设：H1 backfill 争用；H2 网络/交换机；H3 业务负载增加。鉴别：限速 backfill 看 P99/队列；查交换机端口丢包/重传；查业务 IOPS/队列。当前 IOPS 不变、backfill 升、重传平 → H1 最强，H2 需端口证据，H3 弱。</p>
+<p>H1 是 backfill 争用，H2 是网络或交换机问题，H3 是业务负载增加。分别限速 backfill 后观察 P99 和队列、查交换机端口丢包和重传、查业务 IOPS 和队列。当前 IOPS 不变、backfill 上升、重传持平，H1 排第一。H2 需补端口证据，H3 的支持较弱。</p>
 <p><strong>C22. NFS P99 高、磁盘 15%、控制器 CPU 90%、元数据 IOPS 5×</strong></p>
-<p>最可能：元数据热点/控制器 CPU 饱和（小文件 create、目录扫描、锁）。还缺：metadata op latency 分解（create/stat/readdir）、控制器内部队列、MDS/文件系统 CPU、备份扫描并发、客户端重试。不要先怀疑磁盘。</p>
+<p>优先查元数据热点和控制器 CPU 饱和，例如小文件 create、目录扫描或锁。还需分开看 create/stat/readdir 的 metadata op latency，并查控制器内部队列、MDS 或文件系统 CPU、备份扫描并发和客户端重试。</p>
 <p><strong>C23. 对象 PUT 慢、GET 正常、网关 CPU 高</strong></p>
-<p>排查：1) 网关 CPU/队列/限流；2) 桶索引/热前缀/分片；3) multipart part 大小/并发/未完成分片；4) 后端 EC/池写入；5) 客户端重试/签名。GET 正常说明读路径/后端大体健康，优先网关/索引/写入路径。</p>
+<p>GET 正常说明已观测的读路径未见异常。先查网关 CPU、队列、限流，以及桶索引、热前缀和分片。再查 multipart 的分片大小、并发和未完成分片，以及后端纠删码池的写入。最后核对客户端重试和签名。</p>
 <p><strong>C24. 缓存电池失效切写穿</strong></p>
-<p>这是保护动作，不是“故障”：写穿保证掉电不丢数据，但延迟升。验证：电池/缓存状态、写策略、控制器日志、延迟/IOPS、数据一致性；恢复电池后确认策略回写回、观察延迟；不要强行切回写回。</p>
+<p>切到写穿是掉电保护，代价是写延迟升高。查电池和缓存状态、写策略、控制器日志、延迟、IOPS 和数据一致性。电池恢复后确认策略恢复为写回，再观察延迟。保持自动保护，避免强制开启写回。</p>
 <p><strong>C25. SSD 随机写 P99 周期尖峰</strong></p>
-<p>机制：GC、WA、读干扰、热节流、OP 不足、FTL 映射抖动。指标：GC 次数/时间、WA、OP、温度、写放大、P99/P999、介质错误、队列。对照：稳态 vs 尖峰、不同 OP/温度。</p>
+<p>可能原因有垃圾回收（GC）、写放大（WA）、读干扰、热节流、预留空间（OP）不足和 FTL 映射波动。查 GC 次数和耗时、WA、OP、温度、P99/P999、介质错误和队列。对照稳态与尖峰，也比较不同 OP 和温度条件。</p>
 <p><strong>C26. 双活 RTT 0.5→4ms</strong></p>
-<p>同步复制写延迟至少 +4ms，1ms SLO 不可行。方案：异步复制（RPO&gt;0）、同城缩短 RTT、放宽 SLO、把写本地化 + 异步同步（active-active 的本地提交模式，需产品支持）。</p>
+<p>同步复制使写延迟至少增加 4ms，无法满足 1ms SLO。可改用异步复制（RPO&gt;0）、缩短同城 RTT、放宽 SLO，或用双活本地提交后异步同步。最后一种需要产品支持。</p>
 <p><strong>C27. 备份扫描导致元数据延迟</strong></p>
-<p>限速备份、错峰、避免全目录递归（用快照/索引/增量）、限制并发、把备份流量与业务分离；验证 metadata op p99、控制器 CPU、业务 SLO；观察下一个备份窗口。</p>
+<p>给备份限速并错峰，限制并发，把备份流量和业务分开。可用快照、索引或增量备份避开全目录递归。在下一个备份窗口核对 metadata op p99、控制器 CPU 和业务 SLO。</p>
 <p><strong>C28. 硬盘告警翻倍但故障率不变</strong></p>
-<p>可能：模型/阈值版本变化；新盘型/固件分布漂移；告警重复/聚合变化；标签/反馈变化；采集频率变化。验证：分版本/盘型/站点看 PR/校准/提前量；对照历史同期；检查告警去重；不要只看总数。</p>
+<p>先查模型或阈值版本、盘型与固件分布、重复告警与聚合规则、标签与反馈以及采集频率是否有变化。分版本、盘型和站点比较 PR、校准和提前量，再对照历史同期并查告警去重。</p>
 <p><strong>C29. Agent 说根因是交换机但只引用应用日志+一条拓扑边</strong></p>
-<p>审计：证据是否支持“交换机”实体？是否有交换机端口/丢包/错包/拥塞指标？拓扑边是否事发时有效？是否有反证（其他路径正常）？时间截止？证据覆盖率？结论强度是否过高？大概率是“证据不足/过度推断”，应降级并要求补查。</p>
+<p>先核对引用能否指向交换机实体，拓扑边在事发时是否有效。再查交换机端口、丢包、错包和拥塞数据，以及正常的对照路径。核对调查截止和覆盖率。若只有应用日志和拓扑边，降低结论强度并要求补查。</p>
 <p><strong>C30. 验证“故障处理周期缩短 90%”</strong></p>
-<p>定义指标：MTTD/MTTA/MTTR 或“从告警到关闭”的时间；分母（事故类型/严重级别）；对照（同一事故集、人工/旧系统）；盲评；时间切分；控制混杂（人员/流程/设备变化）；统计显著性；成本/误报；负对照。要求厂商给出测试条件、样本量、失败案例；否则只能当营销口径。</p>
+<p>先确定指标是 MTTD、MTTA、MTTR，还是从告警到关闭的时间。按事故类型和严重级别划定分母。用同一事故集与人工或旧系统对照，做盲评、按时间切分，控制人员、流程和设备变化。记录统计显著性、成本、误报和负对照。向厂商索要测试条件、样本量和失败案例，材料不足时将 90% 标为厂商宣传值。</p>
 <h2 id="5-评分表与常见失分">5. 评分表与常见失分</h2>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -1179,30 +1201,30 @@ TP = 0.548×0.8 = 0.438
 <tr>
 <td>事实/计算</td>
 <td>4</td>
-<td>数字对、单位对、公式对</td>
-<td>单位混用、分母错、平均分位</td>
+<td>数字、单位和公式正确</td>
+<td>混用单位、选错分母、对分位数取平均</td>
 </tr>
 <tr>
 <td>机制/推理</td>
 <td>3</td>
-<td>说清传播链、竞争假设</td>
-<td>只给结论、把相关当因果</td>
+<td>说明故障如何传播，比较候选原因</td>
+<td>只给结论或把相关当因果</td>
 </tr>
 <tr>
 <td>证据/时间</td>
 <td>2</td>
-<td>引用 ID、知识截止、缺口</td>
-<td>用未来数据、编造证据</td>
+<td>引用证据 ID，写明调查截止和缺口</td>
+<td>提前引用晚到数据、编造证据</td>
 </tr>
 <tr>
 <td>边界/表达</td>
 <td>1</td>
-<td>缺数据会沉默、建议可执行</td>
-<td>过度自信、动作无回滚</td>
+<td>缺数据时暂缓结论，给出可执行建议</td>
+<td>结论过强，动作无回滚</td>
 </tr>
 </tbody>
 </table></div>
-<p><strong>面试/答辩追问</strong>：</p>
+<p>可用下面的问题做面试或答辩追问。</p>
 <ul>
 <li>这个结论如果错了，最可能错在哪一步？</li>
 <li>哪条证据能推翻它？</li>
@@ -1212,13 +1234,12 @@ TP = 0.548×0.8 = 0.438
 </ul>
 <h2 id="6-ceph-实验追加-5-问">6. Ceph 实验追加 5 问</h2>
 <ol>
-<li><strong>M06 的 z=18.21 是否足以报警？</strong> 不够；还要效应量（33−6=27ms）、持续（M07 再次超限）、业务影响（好请求 95.1%）、覆盖率（3/3）。单点 z 只是候选。</li>
-<li><strong>为什么 IOPS 990 很关键？</strong> 它接近基线 1,000，削弱“提交请求数激增”的解释。结合 backfill 与队列信号，更支持争用。窗口平均 IOPS 仍可能掩盖块大小、并发和短时突发。</li>
-<li><strong>重传 0.3/s 持平能否排除网络？</strong> 不能完全排除；只覆盖已观测 TCP 路径，交换机端口丢包/拥塞/ECN 未观测；需要端口计数器。</li>
-<li><strong>M08 audit 正常说明什么？</strong> 对照业务不受影响，降低“全局存储故障/备份共享路径”的解释力；但 audit 走另一组 OSD（T03），不能证明所有备份都无关。</li>
-<li><strong>处置后 02:25 好请求 99.95%，能否结案？</strong> 不能；还要看 degraded PG（11 个）、恢复速率、02:35 是否 0、错误率、是否新故障域压力；业务达标 ≠ 冗余恢复。</li>
+<li><strong>M06 的 z=18.21 是否足以报警？</strong> 单点先列为候选。再查变化幅度（33−6=27ms）、是否持续（M07 再次超限）、业务影响（好请求 95.1%）和覆盖率（3/3）。</li>
+<li><strong>为什么 IOPS 990 很关键？</strong> 990 接近基线 1,000，削弱了提交请求数激增的解释。backfill 和队列的变化更支持后端争用。窗口平均 IOPS 仍可能掩盖块大小、并发和短时突发。</li>
+<li><strong>重传 0.3/s 持平能否排除网络？</strong> 这一数值只覆盖已观测的 TCP 路径。还要查交换机端口计数器，核对丢包、拥塞和 ECN。</li>
+<li><strong>M08 audit 正常说明什么？</strong> 对照业务未受影响，降低了全局存储故障和备份共享路径的可能性。audit 走另一组 OSD（T03），要判断其他备份是否有关，还需检查实际路径。</li>
+<li><strong>处置后 02:25 好请求 99.95%，能否结案？</strong> 先继续观察。此时仍有 11 个 degraded PG，要查恢复速率、02:35 是否降到 0、错误率以及新故障域是否承压。确认业务和冗余都恢复后再结案。</li>
 </ol>
-
   </article>
 </main>
 <footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>

@@ -124,21 +124,19 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><a href="#22-链接索引">22. 链接索引</a></li></ul></nav></details>
   <article>
 <p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">深入篇</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a> · <a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html">答案册</a></p>
-<p>资料核验日期：2026-11-18。这份文档把前面各篇引用过的 42 个外部链接按主题归并成 21 节。每节都按同一顺序写：<strong>它解决什么问题 → 架构/流程图 → 机制拆解 → 例子 → 对存储专家系统的启示 → 原文链接</strong>。正文不靠链接论证；链接只作为出处放在每节最后。</p>
+<p>资料核验日期为 2026-11-18。文中把前几篇的 42 个外部链接按主题归入 21 节。每节有流程图、机制说明、例子和原文链接。</p>
 <blockquote>
-<p>读法：如果你只想知道“这个链接讲什么”，看每节的“一句话”和流程图即可；如果要能自己实现，重点看“机制拆解”和“例子”。</p>
+<p>快速浏览可先看每节开头和流程图。要做实现，再看后面的机制和案例。</p>
 </blockquote>
 <h2 id="0-为什么不能只贴链接">0. 为什么不能只贴链接</h2>
-<p>链接有三个问题：</p>
+<p>链接只能指向一份资料。把能用来做设计的信息记下来。</p>
 <ol>
-<li><strong>它会变</strong>：产品页改版、文档下线、版本更新，结论就失效。</li>
-<li><strong>它不解释上下文</strong>：同一句“支持 MCP”，可能只是博客愿景，也可能是已 GA 的工具；不拆开就会误判。</li>
-<li><strong>它不能直接变成设计</strong>：知道“有故障树”不等于知道故障树怎么建、输入输出是什么、怎么评测。</li>
+<li>记下文档日期和产品版本。产品页改版、文档下线或版本更新后，原结论可能失效。</li>
+<li>核对发布状态。“支持 MCP”可能指博客里的规划，也可能指已正式发布的工具。</li>
+<li>写清机制的输入、输出和验收方法。例如，要用故障树做诊断，就要知道怎么建树、怎么输入症状和怎么评测结果。</li>
 </ol>
-<p>所以本文的写法是：先把链接背后的机制讲成一个可画出来的系统，再用一个具体例子跑一遍，最后才给出处。这样即使链接失效，知识还在。</p>
 <h2 id="1-ceph-的数据放置与健康">1. Ceph 的数据放置与健康</h2>
-<p><strong>一句话</strong>：Ceph 把对象经哈希映射到 PG，再由 CRUSH 把 PG 映射到一组 OSD；PG 的 <code>active/clean/degraded</code> 和 OSD 的 <code>up/in</code> 是两套不同状态。</p>
-<p><strong>流程图</strong>：</p>
+<p>Ceph 先用哈希把对象映射到 PG，再用 CRUSH 把 PG 映射到一组 OSD。PG 的 <code>active/clean/degraded</code> 和 OSD 的 <code>up/in</code> 各有含义。</p>
 <pre><code class="language-text">客户端对象
    │ hash(object)
    ▼
@@ -154,19 +152,17 @@ BlueStore → 块设备 → HDD/SSD
   PG: active / clean / degraded / undersized / peering / stale / inactive
   OSD: up/down（进程可用） × in/out（参与放置）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li><code>active</code> 表示 PG 可以服务；<code>clean</code> 表示所有副本一致。<code>active+clean</code> 才是完全健康。</li>
-<li><code>degraded</code> 表示副本数不足但仍可服务；<code>undersized</code> 表示 acting 集合小于期望；<code>peering</code> 是主从协商数据版本的过程，期间可能不能服务。</li>
-<li>OSD 的 <code>up/down</code> 与 <code>in/out</code> 正交：<code>down+in</code> 表示进程挂了但仍在 CRUSH 里；<code>up+out</code> 表示进程活着但被移出放置。把两者混成一个“健康/不健康”会误判。</li>
-<li>维护让 OSD 下线会触发 PG 重映射，随后 backfill；backfill 与前台 I/O 争用，是“IOPS 不变但延迟升高”的典型机制。</li>
+<li><code>active</code> 表示 PG 能提供服务，<code>clean</code> 表示所有副本一致。两项都满足才算完全健康。</li>
+<li><code>degraded</code> 表示副本不足，PG 处于 <code>active</code> 时仍可服务。<code>undersized</code> 表示 acting 集合大小低于预期。<code>peering</code> 时 PG 的主 OSD 与其他 OSD 协商数据版本，期间可能暂停服务。</li>
+<li><code>up/down</code> 记录 OSD 进程状态，<code>in/out</code> 记录是否参与 CRUSH 放置。<code>down+in</code> 表示进程已停但仍参与放置，<code>up+out</code> 表示进程仍在运行但已移出放置。</li>
+<li>OSD 下线维护可能触发 PG 重映射和 backfill。backfill 与前台 I/O 争用时，IOPS 可能接近原水平，延迟却上升。</li>
 </ul>
-<p><strong>例子</strong>：维护 <code>osd.11</code> 下线，PG 从 <code>osd.11/12/13</code> 重映射到 <code>osd.12/17/18</code>。此时 PG 可能是 <code>active+undersized+degraded+peered</code>：仍能服务，但副本不足；<code>ceph health detail</code> 会给出具体 PG 和原因。不要只看到 <code>active</code> 就认为健康。</p>
-<p><strong>对专家系统的启示</strong>：状态要保留原始枚举和两组正交状态；不要把 <code>degraded</code> 直接映射成“业务故障”。根因分析要沿“维护 → 重映射 → backfill → 前台争用”这条链，而不是只看一个健康分。</p>
-<p>原文：<a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.ceph.com/en/latest/rados/operations/health-checks/">Ceph 健康检查</a> · <a href="https://docs.ceph.com/">Ceph 文档总入口</a></p>
+<p>维护时 <code>osd.11</code> 下线，PG 从 <code>osd.11/12/13</code> 重映射到 <code>osd.12/17/18</code>。即使 PG 有 <code>active</code> 状态，也可能同时标了 <code>undersized</code> 或 <code>degraded</code>。用 <code>ceph health detail</code> 查看具体 PG 和原因。</p>
+<p>保存 PG 和 OSD 的原始状态，另用业务指标判断是否影响请求。调查延迟升高时，依次核对维护、重映射、backfill 和前台 I/O。</p>
+<p>原文见 <a href="https://docs.ceph.com/en/latest/rados/operations/monitoring-osd-pg/">Ceph OSD/PG 监控</a> · <a href="https://docs.ceph.com/en/latest/rados/operations/health-checks/">Ceph 健康检查</a> · <a href="https://docs.ceph.com/">Ceph 文档总入口</a></p>
 <h2 id="2-ceph-prometheus-模块">2. Ceph Prometheus 模块</h2>
-<p><strong>一句话</strong>：<code>ceph-mgr</code> 内置 Prometheus exporter，把集群/OSD/PG/池指标暴露成 <code>/metrics</code>，由 Prometheus 抓取，再用 Grafana/Alertmanager 展示和告警。</p>
-<p><strong>流程图</strong>：</p>
+<p><code>ceph-mgr</code> 内置 Prometheus exporter，通过 <code>/metrics</code> 暴露集群、OSD、PG 和池指标。Prometheus 抓取后，由 Grafana 展示，Alertmanager 发送告警。</p>
 <pre><code class="language-text">ceph-mgr (prometheus module)
    │ HTTP /metrics
    ▼
@@ -175,22 +171,20 @@ Prometheus（scrape、存储、规则）
    ├─ Alertmanager（告警）
    └─ 远程写/长期存储（可选）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>exporter 在 mgr 进程里，不需要额外 agent；指标包括 <code>ceph_osd_*</code>、<code>ceph_pg_*</code>、<code>ceph_pool_*</code> 等。</li>
-<li>抓取间隔决定分辨率；默认 15s/30s 常见，但大规模集群要注意 scrape 超时和序列基数。</li>
-<li>高基数来自每个 OSD/PG 的标签；PG 数很多时，<code>ceph_pg_*</code> 序列会爆炸。要限制导出的指标集/标签，或做 recording rule 聚合。</li>
-<li>mgr 故障会导致指标中断；监控系统本身要监控 mgr 和 scrape 健康。</li>
+<li>exporter 随 mgr 进程运行。常见指标包括 <code>ceph_osd_*</code>、<code>ceph_pg_*</code> 和 <code>ceph_pool_*</code>。</li>
+<li>抓取间隔决定时间分辨率，常见为 15s 或 30s。大集群要核对抓取是否超时，以及产生了多少条序列。</li>
+<li>按 OSD 和 PG 打标签会增加序列数。PG 多时，可限制导出的指标或标签，也可用 recording rule 预聚合。</li>
+<li>mgr 故障可能中断指标上报。监控 mgr 状态和抓取结果。</li>
 </ul>
-<p><strong>例子</strong>：要算“OSD 停报率”，不能只看 <code>ceph_osd_up</code> 的平均值；要拿资产表的期望 OSD 数作分母：</p>
-<pre><code class="language-text">coverage = count(ceph_osd_up == 1) / expected_osd_count
+<p>用资产表里预期上报的 OSD 数作为覆盖率分母，才能发现 OSD 停报。</p>
+<pre><code class="language-text">coverage = 有目标指标新样本的预期 OSD 数 / 预期上报的 OSD 总数
 </code></pre>
 <p>如果一半 OSD 停报，剩余 OSD 的平均延迟可能下降，但覆盖率会暴露问题。</p>
-<p><strong>对专家系统的启示</strong>：指标采集要带“期望数/覆盖率”；不要把 exporter 的 <code>up</code> 当成“所有实体健康”。PG 级指标要么聚合，要么按需查询，不能全量长期保留。</p>
-<p>原文：<a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://docs.ceph.com/en/squid/rados/operations/monitoring/">Ceph 监控（Squid）</a></p>
+<p>每次采集记录预期数和覆盖率。指标 <code>ceph_osd_up</code> 的 0 是已上报的下线状态。Prometheus 的 <code>up</code> 只表示抓取是否成功。两者都需要与目标指标的新样本数量分别核对。PG 级指标可按需查询或聚合后留存。</p>
+<p>原文见 <a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://docs.ceph.com/en/squid/rados/operations/monitoring/">Ceph 监控（Squid）</a></p>
 <h2 id="3-ceph-mclock">3. Ceph mClock</h2>
-<p><strong>一句话</strong>：Ceph Tentacle 的 OSD mClock 用 reservation、limit、weight 分配客户端 I/O、后台 recovery、后台 best-effort 三类资源份额。Backfill、scrub、快照裁剪和 PG 删除属于后台 best-effort。</p>
-<p><strong>流程图</strong>：</p>
+<p>Ceph Tentacle 的 OSD mClock 用 reservation、limit、weight 给客户端 I/O、后台 recovery 和后台 best-effort 分配资源。backfill、scrub、快照裁剪和 PG 删除归入后台 best-effort。</p>
 <pre><code class="language-text">请求 → 分类（client / background recovery / background best-effort）
         │
         ▼
@@ -202,19 +196,17 @@ Prometheus（scrape、存储、规则）
         ▼
    OSD 后端（BlueStore/介质）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li><code>reservation</code> 保证某类请求至少有这么多能力；<code>limit</code> 防止某类请求吃满；<code>weight</code> 在剩余能力里分配。</li>
-<li>选用 profile 时同时考虑客户端延迟、recovery 和 backfill 完成时间。过度压缩后台份额会延长冗余不足的窗口。</li>
-<li>调参前确认 Ceph 版本、OSD 生效 profile 和调度模式。内置 profile 统一应用低层参数，手工修改前要核对支持的方式与参数覆盖条件。</li>
-<li>它不是“魔法 QoS”：如果介质本身饱和，任何调度都只能分配排队，不能创造能力。</li>
+<li><code>reservation</code> 保证最低份额，<code>limit</code> 限制最高份额，<code>weight</code> 决定怎么分剩余份额。</li>
+<li>选 profile 时同时看客户端延迟、recovery 和 backfill 完成时间。后台份额太小，副本不足的时间就会延长。</li>
+<li>调参前查 Ceph 版本、OSD 实际使用的 profile 和调度模式。内置 profile 会设置底层参数。手动改值前，查支持的修改方式和参数会被覆盖的条件。</li>
+<li>介质已饱和时，调度只能调整各类请求的份额。</li>
 </ul>
-<p><strong>例子</strong>：前台 P99 高、backfill 高、磁盘利用率 90%。受控演练可以比较当前 profile 与侧重前台的 profile，并同时观察 backfill 速率、PG 状态和业务 SLO。Backfill 属于 best-effort，单独改变 recovery 类的 <code>limit</code> 无法作为检验 backfill 限速的依据。若 P99 不降，先验证变更已生效且实际改变了 backfill，再检查网络、设备和客户端等路径。</p>
-<p><strong>对专家系统的启示</strong>：处置建议必须带“双向指标”（前台 + 恢复）和回滚条件；不能只优化 P99 而让冗余长期不恢复。</p>
-<p>原文：<a href="https://docs.ceph.com/en/tentacle/rados/configuration/mclock-config-ref/">Ceph mClock 配置</a></p>
+<p>前台 P99 高，backfill 压力大，磁盘利用率为 90%。在演练里比较当前 profile 和优先前台的 profile，同时看 backfill 速率、PG 状态和业务 SLO。backfill 属于 best-effort。检验限速时要确认 backfill 的份额已变。单独改 recovery 的 <code>limit</code> 无法证明 backfill 已限速。若 P99 未下降，先确认变更生效且改变了 backfill 速率，再查网络、设备和客户端。</p>
+<p>写清业务 P99 和恢复进度各自的验收条件，并约定什么时候回滚。</p>
+<p>原文见 <a href="https://docs.ceph.com/en/tentacle/rados/configuration/mclock-config-ref/">Ceph mClock 配置</a></p>
 <h2 id="4-prometheus-直方图与原生直方图">4. Prometheus 直方图与原生直方图</h2>
-<p><strong>一句话</strong>：直方图用一组累计桶记录延迟分布，合并桶后才能算全局分位；原生直方图用稀疏桶/指数桶减少配置和存储成本。</p>
-<p><strong>流程图</strong>：</p>
+<p>直方图按累计桶记录延迟分布。先合并各实例的桶，再算全局分位数。原生直方图使用稀疏桶和指数桶，减少配置和存储开销。</p>
 <pre><code class="language-text">请求延迟
   │ 观察值落入桶
   ▼
@@ -226,19 +218,17 @@ histogram_quantile(0.99, sum by (le) (rate(bucket[5m])))
   ▼
 P99
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>经典直方图的桶边界是固定的；不同客户端/实例必须用相同边界才能合并。</li>
-<li>分位数不能平均：先按 <code>le</code> 求和，再算分位；直接平均各实例 P99 会失真。</li>
-<li>桶内插值假设桶内均匀分布；桶太粗会误差大，桶太细会 cardinality 高。</li>
-<li>原生直方图用稀疏桶/指数桶，减少“每个实例一套桶”的成本，但客户端/服务端支持要确认。</li>
+<li>经典直方图的桶边界固定。各客户端或实例的边界一致时才能合并。</li>
+<li>按 <code>le</code> 汇总桶计数，再算全局 P99。</li>
+<li>线性插值假设桶内均匀分布。桶太粗，估计误差可能较大。桶越细，经典直方图的序列越多。</li>
+<li>启用原生直方图前，确认客户端和服务端都支持。</li>
 </ul>
-<p><strong>例子</strong>：三个客户端共 100 万请求，合并后 ≤20 ms 有 984,000，≤50 ms 有 996,900。P99 秩 990,000 落在 (20,50] ms 桶，按桶内线性插值约 33.95 ms。三个客户端 P99 的算术平均约 41.48 ms。 <a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#11-%E7%AC%AC-1-%E8%8A%82%E7%9B%B4%E6%96%B9%E5%9B%BE%E5%90%88%E5%B9%B6%E4%B8%8E%E5%BB%B6%E8%BF%9F%E5%88%86%E8%A7%A3">原始桶计数与计算</a></p>
-<p><strong>对专家系统的启示</strong>：SLO 计算要用桶合并，不要用预计算分位的平均；低流量窗口要带样本量，否则 P99 只是一个请求的延迟。</p>
-<p>原文：<a href="https://prometheus.io/docs/practices/histograms/">Prometheus 直方图实践</a> · <a href="https://prometheus.io/docs/specs/native_histograms/">原生直方图规范</a> · <a href="https://prometheus.io/docs/">Prometheus 文档</a></p>
+<p>三个客户端共发出 100 万次请求。合并后，984,000 次 ≤20 ms，996,900 次 ≤50 ms。P99 的秩 990,000 落在 (20,50] ms 桶，按桶内线性插值约为 33.95 ms。单独算各客户端的 P99 再取算术平均，结果约为 41.48 ms。<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#11-%E7%AC%AC-1-%E8%8A%82%E7%9B%B4%E6%96%B9%E5%9B%BE%E5%90%88%E5%B9%B6%E4%B8%8E%E5%BB%B6%E8%BF%9F%E5%88%86%E8%A7%A3">原始桶计数与计算</a></p>
+<p>用合并后的桶按 SLO 的延迟阈值统计请求。低流量窗口要报告样本量，因为 P99 可能只由一条请求决定。</p>
+<p>原文见 <a href="https://prometheus.io/docs/practices/histograms/">Prometheus 直方图实践</a> · <a href="https://prometheus.io/docs/specs/native_histograms/">原生直方图规范</a> · <a href="https://prometheus.io/docs/">Prometheus 文档</a></p>
 <h2 id="5-opentelemetry-日志与时间语义">5. OpenTelemetry 日志与时间语义</h2>
-<p><strong>一句话</strong>：OTel 日志模型把日志记录分成 resource（谁产生）、scope（哪个库/模块）、record（事件本身），并区分事件时间与观测时间。</p>
-<p><strong>流程图</strong>：</p>
+<p>OTel 用 resource 记录日志来自哪个资源，用 scope 记录哪个库或模块生成，用 record 记录事件本身。事件发生时间和采集端看到的时间分开记录。</p>
 <pre><code class="language-text">Resource（service.name, host, k8s.pod）
    └─ Scope（instrumentation library）
         └─ LogRecord
@@ -247,19 +237,17 @@ P99
              ├─ severity / body / attributes
              └─ trace_id / span_id（可选关联）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li><code>time_unix_nano</code> 是事件发生时间；<code>observed_time_unix_nano</code> 是采集/写入时间；两者可能相差很大（设备时钟、缓冲、批处理）。</li>
-<li><code>trace_id/span_id</code> 把日志和追踪关联；没有关联时，只能靠实体/时间窗对齐。</li>
-<li>日志是半结构化数据；属性键要统一（服务名、集群、租户、实体 ID），否则无法聚合。</li>
-<li>采集端要处理背压/丢弃；丢弃要记录，不能静默。</li>
+<li><code>time_unix_nano</code> 记录事件发生时间，<code>observed_time_unix_nano</code> 记录采集端看到事件的时间。设备时钟偏差、缓冲和批处理都可能拉大两者的差距。</li>
+<li>用 <code>trace_id/span_id</code> 关联日志和追踪。缺少这些字段时，按实体和时间窗对齐。</li>
+<li>统一日志属性键，如服务名、集群、租户和实体 ID，便于聚合。</li>
+<li>采集端要处理积压，并记录丢弃情况。</li>
 </ul>
-<p><strong>例子</strong>：一条存储告警日志在 02:18 才被采集，但事件时间是 02:10:30。回放 02:16 的事故时，只能使用 <code>observed_time &lt;= 02:16</code> 的记录；否则会用未来数据。报告里要同时保留两个时间。</p>
-<p><strong>对专家系统的启示</strong>：日志证据必须带事件时间、观测时间和来源；时间语义比日志内容更容易出错。</p>
-<p>原文：<a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">OpenTelemetry 日志数据模型</a> · <a href="https://opentelemetry.io/docs/">OpenTelemetry 文档</a></p>
+<p>一条告警发生于 02:10:30，02:18 才被采集。回放 02:16 的事故时，只能使用 <code>observed_time &lt;= 02:16</code> 的记录。报告保留这两个时间。</p>
+<p>为每条日志证据保存事件时间、观测时间和来源。</p>
+<p>原文见 <a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">OpenTelemetry 日志数据模型</a> · <a href="https://opentelemetry.io/docs/">OpenTelemetry 文档</a></p>
 <h2 id="6-everpure-pure1--fusion设备群遥测与工具化调查">6. Everpure Pure1 + Fusion：设备群遥测与工具化调查</h2>
-<p><strong>一句话</strong>：Pure1 是设备群管理面，收集阵列遥测并提供健康/容量/性能视图；Fusion 提供阵列内部关系与工作负载拓扑；两者通过 MCP 把查询暴露给 Copilot/Agent，写工具默认隐藏、需显式配置。</p>
-<p><strong>流程图</strong>：</p>
+<p>Pure1 收集多台阵列的遥测，提供健康、容量和性能视图。Fusion 查询阵列内部关系和工作负载拓扑。Copilot 或 Agent 可通过 MCP 查询，写工具默认隐藏，需要显式配置。</p>
 <pre><code class="language-text">阵列（Pure Storage FlashArray/FlashBlade）
    │ 遥测/健康/容量/性能
    ▼
@@ -274,26 +262,24 @@ Fusion（阵列、卷、文件系统、工作负载、预设、拓扑）
    ├─ 部分性能查询（依赖直连令牌）
    └─ 可选受监督写工具（默认隐藏，需配置）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li><strong>设备群视角</strong>：Pure1 把多阵列的遥测集中，回答“哪个站点/租户/设备不健康”。它不直接进入阵列内部拓扑。</li>
-<li><strong>拓扑视角</strong>：Fusion 回答“这个卷在哪个阵列、属于哪个工作负载、和谁共享”。调查时先用 Pure1 找异常设备群，再用 Fusion 缩小到卷/工作负载。</li>
-<li><strong>工具视角</strong>：MCP 把查询变成有 schema 的工具；Copilot/Agent 通过工具拿事实，而不是靠模型记忆。</li>
-<li><strong>写权限</strong>：Fusion 文档记载写工具默认隐藏，需要显式配置并受令牌权限约束。这意味着“能查”不等于“能改”，调查与处置分开授权。</li>
+<li>用 Pure1 找出异常站点、租户或设备。</li>
+<li>用 Fusion 查卷在哪台阵列、属于哪个工作负载，以及与谁共享资源。</li>
+<li>MCP 为查询工具定义输入格式，Copilot 或 Agent 从工具输出读取事实。</li>
+<li>Fusion 的写工具默认隐藏。配置后，调用仍受令牌权限约束。调查和处置分别授权。</li>
 </ul>
-<p><strong>例子</strong>：值班收到“订单库延迟升高”。</p>
+<p>值班收到“订单库延迟升高”的报告。</p>
 <pre><code class="language-text">1) Pure1 MCP: 查设备群健康/性能 → 发现 site-a 的 array-3 前端延迟升高
 2) Fusion MCP: 查 array-3 上的卷/工作负载 → 定位 orders-vol
 3) Fusion MCP: 查卷的拓扑/共享依赖 → 发现同阵列的 backup-vol 在同一池
 4) 查变更：备份作业在 02:12 启动
 5) 结论：备份与订单卷共享池/后端，可能是争用；列出反证（网络/磁盘/负载）
 </code></pre>
-<p>这个流程的关键不是“Copilot 很聪明”，而是<strong>每一步都有工具、实体、时间窗和返回数据</strong>。</p>
-<p><strong>对专家系统的启示</strong>：先管理面、再拓扑、再变更、再证据；读工具和写工具分开；工具返回要能落到实体和时间窗。</p>
-<p>原文：<a href="https://blog.everpuredata.com/products/pure1-now-agentic/">Everpure Pure1 Agentic 说明</a> · <a href="https://www.everpuredata.com/au/video/webinars/ask-us-everything-about-pure1-ai-copilot-mcp-server-fusion/6405406488112.html">2026-09 官方演示</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 用户指南</a> · <a href="https://blog.everpuredata.com/purely-technical/mcp-across-everpure-nutanix-kubernetes/">跨栈 MCP 案例</a></p>
+<p>每一步都记录用过的工具、查询的实体和时间窗，以及返回结果。</p>
+<p>先找异常设备，再拉拓扑、查变更和取证。读写工具分别授权，查询结果带实体和时间窗。</p>
+<p>原文见 <a href="https://blog.everpuredata.com/products/pure1-now-agentic/">Everpure Pure1 Agentic 说明</a> · <a href="https://www.everpuredata.com/au/video/webinars/ask-us-everything-about-pure1-ai-copilot-mcp-server-fusion/6405406488112.html">2026-09 官方演示</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 用户指南</a> · <a href="https://blog.everpuredata.com/purely-technical/mcp-across-everpure-nutanix-kubernetes/">跨栈 MCP 案例</a></p>
 <h2 id="7-netapp-autosupport--digital-advisor遥测资产与风险建议">7. NetApp AutoSupport + Digital Advisor：遥测、资产与风险建议</h2>
-<p><strong>一句话</strong>：ONTAP 的 AutoSupport 把设备遥测/日志/配置发给 NetApp，Active IQ/Digital Advisor 把遥测与资产、软件版本、支持合同关联，输出风险、容量、升级和生命周期建议。</p>
-<p><strong>流程图</strong>：</p>
+<p>ONTAP 的 AutoSupport 把设备遥测、日志和配置发给 NetApp。Active IQ/Digital Advisor 将这些记录与资产、软件版本和支持合同关联，给出风险、容量、升级和生命周期建议。</p>
 <pre><code class="language-text">ONTAP 集群
    │ AutoSupport（遥测/日志/配置，周期或事件触发）
    ▼
@@ -306,19 +292,17 @@ NetApp 支持云（Active IQ）
         ▼
 Digital Advisor（看板/报告/建议）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>AutoSupport 不只是指标，还包括配置、日志、事件；这使“设备型号 + 版本 + 合同 + 风险”能关联。</li>
-<li>风险建议通常来自规则/知识库（已知 bug、EOL、配置最佳实践），不是纯 ML。</li>
-<li>容量趋势是时间序列预测；升级建议要结合版本兼容矩阵和合同。</li>
-<li>数据在厂商云；客户侧看到的是建议/报告，原始数据不一定可导出。</li>
+<li>AutoSupport 上报指标、配置、日志和事件，便于按型号、版本和合同判断风险。</li>
+<li>风险建议通常来自规则和知识库，例如已知 bug、终止支持（EOL）和配置最佳实践。</li>
+<li>用时间序列估算容量趋势。给出升级建议前，还要核对版本兼容矩阵和合同。</li>
+<li>数据保存在厂商云。客户可查看建议和报告，原始数据能否导出需另行确认。</li>
 </ul>
-<p><strong>例子</strong>：某卷容量以 5%/周增长，当前 80%，合同还有 8 个月到期。Digital Advisor 输出“预计 6 周到达 90%，建议扩容/分层；当前版本接近 EOL，建议升级到 X”。这不是“预测未来”单一模型，而是<strong>容量 + 资产 + 合同 + 版本</strong>的联合判断。</p>
-<p><strong>对专家系统的启示</strong>：预测必须和设备清单、版本、合同、生命周期关联；否则只会给出“容量快满了”，无法变成可执行动作。</p>
-<p>原文：<a href="https://docs.netapp.com/us-en/ontap/system-admin/autosupport-active-iq-digital-advisor-concept.html">AutoSupport / Digital Advisor 概念</a> · <a href="https://docs.netapp.com/us-en/active-iq/reference_new_activeiq.html">Active IQ 发布记录</a></p>
+<p>教学算例。某卷当前使用率为 80%，合同还有 8 个月到期。如果每周增加 5 个百分点，两周到 90%。如果每周按 5% 复利增长，约 2.41 周达到 90%，按周采样会在第 3 周观察到越线。按容量趋势评估扩容或分层，并结合合同和当前版本的 EOL 时间判断是否升级到 X。</p>
+<p>把容量预测关联到设备清单、版本、合同和生命周期，再据此给出执行建议。</p>
+<p>原文见 <a href="https://docs.netapp.com/us-en/ontap/system-admin/autosupport-active-iq-digital-advisor-concept.html">AutoSupport / Digital Advisor 概念</a> · <a href="https://docs.netapp.com/us-en/active-iq/reference_new_activeiq.html">Active IQ 发布记录</a></p>
 <h2 id="8-netapp-dii--mcp先验证采集再查容量性能">8. NetApp DII + MCP：先验证采集，再查容量/性能</h2>
-<p><strong>一句话</strong>：Data Infrastructure Insights（DII）从多源采集资产/性能/容量/日志，先提供“采集健康/资产身份”，再提供 Monitor 和 MCP 只读查询。</p>
-<p><strong>流程图</strong>：</p>
+<p>Data Infrastructure Insights（DII）采集资产、性能、容量和日志。先用它核对采集健康和资产身份，再查 Monitor 告警或用 MCP 读取数据。</p>
 <pre><code class="language-text">数据源（ONTAP、E-Series、StorageGRID、交换机、VMware、云）
    │ 采集器
    ▼
@@ -327,18 +311,16 @@ DII 数据层（资产、性能、容量、日志、告警、采集健康）
    ├─ 看板/报告
    └─ MCP（Preview，租户内只读：性能/容量/日志/告警/采集健康）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>DII 的价值不只是“有指标”，而是把<strong>采集覆盖/采集健康</strong>作为可查询对象。调查前先问“数据齐不齐”，再问“数值是多少”。</li>
-<li>Monitor 支持阈值/异常/容量等类型；不同 Monitor 的输出是事件/告警，不是自动根因。</li>
-<li>MCP 当前是 Preview，工具范围是租户内只读；这意味着它能做调查，不能做处置。</li>
+<li>查询指标前，先查采集器是否在线、应采的数据是否到齐。</li>
+<li>Monitor 能按阈值、异常或容量规则生成事件和告警。根因需要另行调查。</li>
+<li>截至文中核验日期，MCP 仍是 Preview，工具只读且限于当前租户。</li>
 </ul>
-<p><strong>例子</strong>：应用 P99 升高，DII 显示某阵列性能异常。先查采集健康：该阵列 3 个采集器有 1 个断连，覆盖率 67%。此时不能直接用平均延迟下结论；应标注“数据缺口”，先恢复采集或只使用已覆盖子集。</p>
-<p><strong>对专家系统的启示</strong>：把 <code>collection_status</code> 作为第一个工具；覆盖率不足时，任何全局结论都要降级。</p>
-<p>原文：<a href="https://docs.netapp.com/us-en/data-infrastructure-insights/concept_whats_new.html">DII 发布记录</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">DII Monitor</a></p>
+<p>应用 P99 升高，DII 显示某阵列性能异常。3 个采集器有 1 个断连，采集器在线率是 67%。再用资产清单查哪些设备缺样本，才能算资产覆盖率。暂时只报告已收到的数据。</p>
+<p>先调用 <code>collection_status</code>。覆盖率不足时，缩小结论的适用范围。</p>
+<p>原文见 <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/concept_whats_new.html">DII 发布记录</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">DII Monitor</a></p>
 <h2 id="9-dell-aiops--powerstore健康评分预测与来源保留">9. Dell AIOps / PowerStore：健康评分、预测与来源保留</h2>
-<p><strong>一句话</strong>：Dell AIOps 把健康评分、预测分析和生成式助手组合；PowerStore 侧提供性能历史基线、资源争用和容量突增检测。</p>
-<p><strong>流程图</strong>：</p>
+<p>Dell AIOps 提供健康评分、预测分析和生成式助手。PowerStore 提供性能历史基线，并检测资源争用和容量突增。</p>
 <pre><code class="language-text">PowerStore / 其他基础设施
    │ 遥测/性能/容量/告警
    ▼
@@ -351,18 +333,16 @@ Dell AIOps（CloudIQ 类）
         ▼
 分级响应/工单/报告
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>健康评分通常是多指标加权/扣分，不是概率；不同型号/版本的分数可比性要确认。</li>
-<li>性能分析会把历史基线、资源争用、容量突增分开；这比单一“健康分”更有诊断价值。</li>
-<li>GenAI Assistant 负责解释和建议；关键是能否引用底层指标/来源，否则只是“会说话的看板”。</li>
+<li>健康分通常由多项指标加权或扣分得出。比较型号或版本前，核对计分口径。</li>
+<li>分开查性能基线、资源争用和容量突增，便于定位问题。</li>
+<li>检查 GenAI Assistant 的解释和建议能否追溯到底层指标和来源。</li>
 </ul>
-<p><strong>例子</strong>：PowerStore 检测到某卷容量 24 小时突增 20%，同时性能基线显示 IOPS 未变。AIOps 可能给出“容量异常增长，建议检查快照/克隆/日志”；但“为什么增长”仍要查快照/备份/应用变更。</p>
-<p><strong>对专家系统的启示</strong>：健康分只能作为入口，不能作为根因；每个结论要能下钻到指标/事件/变更。</p>
-<p>原文：<a href="https://www.dell.com/en-us/infohub/articles/dell-aiops-assure-infrastructure-integrity-with-ease">Dell AIOps</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">PowerStore 可观测性</a></p>
+<p>PowerStore 检测到某卷容量在 24 小时内突增 20%，性能基线显示 IOPS 未变。AIOps 可能建议查快照、克隆或日志。要找增长原因，再查快照、备份和应用变更。</p>
+<p>从健康分进入调查，每条结论能追溯到指标、事件或变更记录。</p>
+<p>原文见 <a href="https://www.dell.com/en-us/infohub/articles/dell-aiops-assure-infrastructure-integrity-with-ease">Dell AIOps</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">PowerStore 可观测性</a></p>
 <h2 id="10-aws-devops-agent跨栈调查与沙箱">10. AWS DevOps Agent：跨栈调查与沙箱</h2>
-<p><strong>一句话</strong>：AWS DevOps Agent 把应用拓扑、告警、日志、变更和工具放进一个受控的 Agent Space，用只读沙箱和网络白名单做跨栈调查。</p>
-<p><strong>流程图</strong>：</p>
+<p>AWS DevOps Agent 在 Agent Space 内关联拓扑、告警、日志和变更。调查工具在只读沙箱内运行，网络访问受白名单限制。</p>
 <pre><code class="language-text">Agent Space
    ├─ 应用拓扑（服务/资源/依赖）
    ├─ 告警/日志/指标/变更
@@ -372,19 +352,17 @@ Dell AIOps（CloudIQ 类）
         ▼
    调查结论/证据/建议
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>Agent Space 是调查的边界：哪些应用、哪些账号、哪些数据可见。</li>
-<li>跨源调查把“应用症状”与“基础设施/变更/日志”放在同一时间线。</li>
-<li>沙箱只读 + 网络白名单限制爆炸半径；这是 Agent 安全的关键设计。</li>
-<li>服务卡会说明评估口径、用户角色和限制；读的时候要区分“能力”和“保证”。</li>
+<li>Agent Space 决定哪些应用、账号和数据对 Agent 可见。</li>
+<li>将应用症状、基础设施事件、变更和日志按时间排列。</li>
+<li>用只读沙箱和网络白名单限制 Agent 的操作范围。</li>
+<li>从服务卡核对评估口径、用户角色、支持的能力及限制。</li>
 </ul>
-<p><strong>例子</strong>：部署后 5 分钟错误率上升。Agent 查部署事件、服务拓扑、下游依赖、日志异常，形成“部署 → 配置变更 → 下游超时”的时间线；它不能直接改生产，只能给建议/在沙箱验证。</p>
-<p><strong>对专家系统的启示</strong>：先定义 Agent 的可见范围和动作边界，再谈模型能力；跨栈调查的核心是时间线和证据，不是聊天。</p>
-<p>原文：<a href="https://aws.amazon.com/blogs/mt/announcing-general-availability-of-aws-devops-agent/">AWS DevOps Agent GA</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">服务卡</a> · <a href="https://docs.aws.amazon.com/devopsagent/latest/userguide/whats-new.html">更新记录</a></p>
+<p>部署后 5 分钟，错误率上升。Agent 查部署事件、服务拓扑、下游依赖和日志异常，再按时间列出部署、配置变更和下游超时。它可以给出建议并在沙箱验证，生产变更另走审批流程。</p>
+<p>配置 Agent 的可见范围和动作权限，再让它按时间和证据关联跨栈事件。</p>
+<p>原文见 <a href="https://aws.amazon.com/blogs/mt/announcing-general-availability-of-aws-devops-agent/">AWS DevOps Agent GA</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">服务卡</a> · <a href="https://docs.aws.amazon.com/devopsagent/latest/userguide/whats-new.html">更新记录</a></p>
 <h2 id="11-华为-dme设备侧管理面的完整数据通路">11. 华为 DME：设备侧管理面的完整数据通路</h2>
-<p><strong>一句话</strong>：iMaster DME 在数据中心内通过南向 REST/SNMP/SSH/CSI 纳管华为/三方存储、交换机、服务器、虚拟化和容器，提供资源、监控、诊断、自动化、数据目录；DME IQ 是云端版本。</p>
-<p><strong>流程图</strong>：</p>
+<p>iMaster DME 部署在数据中心，通过 REST、SNMP、SSH 和 CSI 纳管华为与第三方存储，以及交换机、服务器、虚拟化和容器。它提供资源管理、监控、诊断、自动化和数据目录。DME IQ 部署在云端。</p>
 <pre><code class="language-text">设备/主机/交换机/虚拟化/容器
    │ 南向：REST / SNMP / SSH / CSI / 平台 API
    ▼
@@ -400,26 +378,24 @@ Dell AIOps（CloudIQ 类）
    │
    └─ iMasterCloud DME IQ（云端 SaaS：移动 APP、Call Home、工单、在线客服）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li><strong>南向采集</strong>：华为存储用 RESTful 纳管资源/性能，SNMP Trap 上报事件，少量指标（端口光功率）走 SSH；第三方设备按各自接口。资源同步每 6 小时，性能粒度 1/5 分钟。</li>
-<li><strong>数据分层</strong>：配置库存当前属性，历史库存性能，OpenSearch 存可搜索资源和关系；分钟级数据 7 天、30 分钟聚合 6 个月、天级 2 年；5 秒历史按需从 Dorado V6+ 设备读，最长一周。</li>
-<li><strong>分析层</strong>：拓扑（SAN WWN+HostLink、NAS IO trace、容器 CSI）、性能分析、智能分析（I/O 路径/首错/故障树）、健康评分、故障智能体（场景匹配/思维链/工具）。</li>
-<li><strong>动作层</strong>：资源发放、待办任务、业务编排（Ansible/API Explorer）、工作台（诊断/巡检/信息收集/自定义动作）。</li>
-<li><strong>云侧</strong>：DME IQ 用云端算力做模型训练/预测，提供移动运维、Call Home、工单、在线客服。</li>
+<li>华为存储通过 RESTful 接口同步资源和性能数据，用 SNMP Trap 上报事件。端口光功率等少量指标走 SSH。第三方设备用各自接口。资源每 6 小时同步，性能粒度为 1 或 5 分钟。</li>
+<li>配置库存当前属性，历史库存性能，OpenSearch 存可搜索的资源和关系。分钟级数据保留 7 天，30 分钟聚合数据保留 6 个月，天级数据保留 2 年。5 秒历史按需读取 Dorado V6+ 设备，最长一周。</li>
+<li>SAN 按 WWN 和 HostLink 建拓扑，NAS 用 IO trace，容器用 CSI。分析功能包括性能分析、I/O 路径、首错、故障树和健康评分。故障智能体使用场景匹配、思维链和工具。</li>
+<li>DME 提供资源发放和待办任务。可用 Ansible 或 API Explorer 编排业务，在工作台运行诊断、巡检、信息收集和自定义动作。</li>
+<li>DME IQ 在云端训练模型并做预测，提供移动运维、Call Home、工单和在线客服。</li>
 </ul>
-<p><strong>例子</strong>：容量告警的完整链路。</p>
+<p>看容量告警从采集到验收经过哪些组件。</p>
 <pre><code class="language-text">设备上报容量 → DME 配置库/历史库 → 容量检查策略触发事件
 → 健康评分扣分 → 容量预测（过去 180 天 → 未来 1 年）
 → 生成扩容建议/工单 → DME IQ/ITSM 通知
 → 管理员审批 → 资源发放/扩容 → 验证水位/业务
 </code></pre>
-<p>这条链路里，<strong>设备事实→检测→预测→建议→动作→验证</strong>每一段都有产品组件，但公开材料没有给出每段的证据 ID、模型指标和动作授权细节。</p>
-<p><strong>对专家系统的启示</strong>：DME 适合做“设备侧事实源 + 动作执行器”；要补的是业务 SLO、时态证据、开放工具契约、处置治理和评测。逐环节见 <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a>。</p>
-<p>原文：<a href="https://e.huawei.com/cn/products/storage/data-management">DME 数据管理产品页</a> · <a href="https://e.huawei.com/cn/products/storage/data-management/data-management-engine">DME 产品页</a> · <a href="https://e.huawei.com/cn/products/storage/data-management/eservice">DME IQ 产品页</a> · <a href="https://e.huawei.com/cn/documents/products/storage/113fc2f4d1f54670942dd224c8060d62">DME 25.1.0 白皮书</a> · <a href="https://e.huawei.com/cn/documents/products/storage/69ddfac82b98443aa070ae54adda1edd">DME 彩页</a> · <a href="https://e.huawei.com/cn/documents/products/storage/2dc27b1210404a5580f802575653910e">DME IQ 彩页</a></p>
+<p>公开材料列出了从设备事实到验证的产品组件。证据 ID、模型指标和动作授权细节仍需核验。</p>
+<p>可用 DME 读取设备数据并执行动作。业务 SLO、历史证据、工具契约、处置审批和评测需要另建。各环节见 <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a>。</p>
+<p>原文见 <a href="https://e.huawei.com/cn/products/storage/data-management">DME 数据管理产品页</a> · <a href="https://e.huawei.com/cn/products/storage/data-management/data-management-engine">DME 产品页</a> · <a href="https://e.huawei.com/cn/products/storage/data-management/eservice">DME IQ 产品页</a> · <a href="https://e.huawei.com/cn/documents/products/storage/113fc2f4d1f54670942dd224c8060d62">DME 25.1.0 白皮书</a> · <a href="https://e.huawei.com/cn/documents/products/storage/69ddfac82b98443aa070ae54adda1edd">DME 彩页</a> · <a href="https://e.huawei.com/cn/documents/products/storage/2dc27b1210404a5580f802575653910e">DME IQ 彩页</a></p>
 <h2 id="12-华为-agenticops--datamasterllm--知识--技能--工具">12. 华为 AgenticOps / DataMaster：LLM + 知识 + 技能 + 工具</h2>
-<p><strong>一句话</strong>：华为在 AgenticOps 博客中描述 LLM 规划、知识库、Skill 库和工具库，并用 DataMaster 举例。DME 产品页确认对话式运维、故障 Agent 与模型对接。博客所述优化 Agent 和 MaaS 的 25.1.0 交付范围仍需核实。</p>
-<p><strong>流程图</strong>：</p>
+<p>华为在 AgenticOps 博客里用 DataMaster 举例，说明 LLM 如何调用知识库、Skill 库和工具库来规划任务。DME 产品页确认了对话式运维、故障 Agent 和模型对接。优化 Agent 和 MaaS 在 25.1.0 的交付范围待核实。</p>
 <pre><code class="language-text">用户目标/告警
    │
    ▼
@@ -434,23 +410,21 @@ LLM（意图理解/规划/报告）
         ▼
 诊断/优化方案 → 管理员确认 → 执行/验证
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>Copilot 负责自然语言交互、任务编排、结果汇总；故障 Agent 负责告警监控、场景匹配、资源关联、排查工具调用；优化 Agent 按 SLO 找方案。</li>
-<li>云地协同：模型/知识/技能在云端迭代，本地只调用 MaaS + 本地工具，兼顾迭代速度与数据主权（具体数据边界需确认）。</li>
-<li>博客明确列出挑战：幻觉、权限围栏、爆炸半径、数字孪生、跨域协同。这些是方向，不是已交付能力。</li>
+<li>Copilot 接收自然语言请求、安排任务并汇总结果。故障 Agent 监控告警、匹配场景、关联资源并调用排查工具。优化 Agent 按 SLO 找方案。</li>
+<li>模型、知识和技能在云端更新，本地调用 MaaS 和本地工具。哪些数据能出站点仍需核对。</li>
+<li>博客列出的待解决问题包括幻觉、权限范围、变更影响范围、数字孪生和跨域协同。</li>
 </ul>
-<p><strong>例子</strong>：管理员说“分析 A 虚拟机性能下降的原因”。</p>
+<p>管理员问“分析 A 虚拟机性能下降的原因”。</p>
 <pre><code class="language-text">意图：性能诊断 → 场景匹配：VM 性能 → 查 VM/数据存储/阵列拓扑
 → 查最近变更/告警 → 查性能基线/瓶颈 → 调用故障树/智能分析
 → 输出：可能根因、影响范围、建议、缺失证据
 </code></pre>
-<p>如果 Agent 只给“存储慢”，没有工具轨迹/证据 ID，就不是可审计的诊断。</p>
-<p><strong>对专家系统的启示</strong>：LLM 负责“提问和解释”，确定性工具/故障树负责“事实和约束”；没有证据层的 Agent 只是聊天机器人。</p>
-<p>原文：<a href="https://e.huawei.com/cn/blogs/2026/solutions/storage/agenticops">迈向 AgenticOps（2026-08-18）</a></p>
+<p>审计时要能查到调用过哪些工具、诊断引用哪些证据 ID。</p>
+<p>让 LLM 提出问题和解释结果。用查询工具查事实，用故障树约束诊断。</p>
+<p>原文见 <a href="https://e.huawei.com/cn/blogs/2026/solutions/storage/agenticops">迈向 AgenticOps（2026-08-18）</a></p>
 <h2 id="13-aiopslab把检测定位诊断缓解做成任务">13. AIOpsLab：把检测/定位/诊断/缓解做成任务</h2>
-<p><strong>一句话</strong>：AIOpsLab 把云应用的故障生命周期拆成检测、定位、诊断、缓解四类任务，提供测试环境、故障注入和 Agent 评测框架。</p>
-<p><strong>流程图</strong>：</p>
+<p>AIOpsLab 为云应用提供测试环境和故障注入，把 Agent 的评测分成检测、定位、诊断和缓解四项。</p>
 <pre><code class="language-text">AIOpsLab
    ├─ 应用/云测试环境（微服务、K8s、云资源）
    ├─ 故障注入（网络/资源/配置/代码）
@@ -458,18 +432,16 @@ LLM（意图理解/规划/报告）
    ├─ Agent 接口（工具/观测/动作）
    └─ 评分（时间、准确率、轨迹、成本）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>检测：发现异常；定位：找到故障实体；诊断：给出根因；缓解：执行动作恢复。</li>
-<li>任务化让不同系统可以在同一故障集上比较，而不是各说各话。</li>
-<li>它主要覆盖云应用/微服务，不覆盖存储的物理故障域、后台恢复、介质退化；存储评测要自建案例。</li>
+<li>检测要发现异常，定位要找到故障实体，诊断要给出根因，缓解要执行动作并恢复服务。</li>
+<li>用同一批故障案例和同一套任务比较不同系统。</li>
+<li>AIOpsLab 主要覆盖云应用和微服务。评测存储系统时，要补物理故障域、后台恢复和介质退化案例。</li>
 </ul>
-<p><strong>例子</strong>：注入“服务 B 的 CPU 压力”故障。检测任务看告警时间；定位任务看是否找到 Pod/服务；诊断任务看是否识别 CPU 压力；缓解任务看是否扩容/限流并恢复 SLO。</p>
-<p><strong>对专家系统的启示</strong>：评测要分阶段，不能只看“最后答案对不对”；存储版要补 PG/磁盘/容量/协议/故障域案例。</p>
-<p>原文：<a href="https://www.microsoft.com/en-us/research/publication/aiopslab-a-holistic-framework-for-evaluating-ai-agents-for-enabling-autonomous-cloud/">AIOpsLab 论文页</a> · <a href="https://arxiv.org/abs/2501.06706">arXiv 2501.06706</a></p>
+<p>向服务 B 注入 CPU 压力。检测看何时告警，定位看是否找到 Pod 或服务，诊断看是否识别 CPU 压力，缓解看扩容或限流后 SLO 是否恢复。</p>
+<p>分别给四个阶段打分。存储版还要覆盖 PG、磁盘、容量、协议和故障域。</p>
+<p>原文见 <a href="https://www.microsoft.com/en-us/research/publication/aiopslab-a-holistic-framework-for-evaluating-ai-agents-for-enabling-autonomous-cloud/">AIOpsLab 论文页</a> · <a href="https://arxiv.org/abs/2501.06706">arXiv 2501.06706</a></p>
 <h2 id="14-rcaeval候选召回与重排的分解">14. RCAEval：候选召回与重排的分解</h2>
-<p><strong>一句话</strong>：RCAEval 提供根因分析的评测数据和框架，把 RCA 拆成“候选召回”和“候选重排”，避免只用一个 Top-1 指标掩盖问题。</p>
-<p><strong>流程图</strong>：</p>
+<p>RCAEval 提供根因分析的评测数据和框架，分别评估是否找到正确候选、是否把它排在前面。</p>
 <pre><code class="language-text">故障数据/拓扑/指标/日志
    │
    ├─ 候选生成（拓扑/异常/变更/历史）
@@ -482,18 +454,16 @@ Top-1/Top-3 根因
    │
    └─ 指标：召回率、重排准确率、MRR、证据
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>如果正确根因不在候选集合里，重排再强也没用；所以要分别评“召回”和“排序”。</li>
+<li>先统计正确根因有没有进入候选集，再看它排第几。</li>
 <li>候选生成可以来自拓扑邻域、异常共现、变更、故障树、历史工单。</li>
-<li>重排可以用规则/统计/因果/LLM，但要有证据和校准。</li>
+<li>重排可用规则、统计、因果模型或 LLM。保留排序证据，并检验置信度是否与实际命中率相符。</li>
 </ul>
-<p><strong>例子</strong>：候选有 20 个实体，正确根因排第 7。召回率可能是 100%（在候选里），但 Top-1 准确率是 0；改进方向是重排，而不是扩大候选。</p>
-<p><strong>对专家系统的启示</strong>：报告里要写“候选怎么来的、正确根因是否在候选、排序依据是什么”，否则无法定位失败环节。</p>
-<p>原文：<a href="https://github.com/phamquiluan/RCAEval">RCAEval 仓库</a></p>
+<p>候选有 20 个实体，正确根因排第 7。单看这一案例，召回是 100%，Top-1 命中是 0。应先改重排。</p>
+<p>评测报告写明候选来源、正确根因是否入选和排序依据，便于查出哪个环节出错。</p>
+<p>原文见 <a href="https://github.com/phamquiluan/RCAEval">RCAEval 仓库</a></p>
 <h2 id="15-orca-bench从模糊报障出发的多源调查">15. ORCA-bench：从模糊报障出发的多源调查</h2>
-<p><strong>一句话</strong>：ORCA-bench 用“模糊的 on-call 报障”作为起点，考查 Agent 主动收集多源证据、形成调查结论的能力，而不是给一个已清洗好的故障数据集。</p>
-<p><strong>流程图</strong>：</p>
+<p>ORCA-bench 从描述含糊的值班报障开始，评估 Agent 能否主动查询多种数据、收集证据并给出结论。</p>
 <pre><code class="language-text">模糊报障（“系统变慢了”）
    │
    ├─ 澄清问题/确定范围
@@ -501,18 +471,16 @@ Top-1/Top-3 根因
    ├─ 形成假设/反证
    └─ 结论/下一步
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>真实 on-call 的输入往往不完整、有歧义；Agent 要会问、会查、会排除。</li>
-<li>评分不只看答案，还看调查路径、证据、是否问了关键问题。</li>
-<li>它主要覆盖云/微服务；存储场景要补设备/协议/故障域。</li>
+<li>报障信息不完整时，先问清症状和范围，再查证据排除候选。</li>
+<li>评测检查结论、查询步骤、证据和有无漏问关键问题。</li>
+<li>评测主要覆盖云和微服务。存储场景要补设备、协议和故障域。</li>
 </ul>
-<p><strong>例子</strong>：用户说“报表打不开”。Agent 先确认是登录、权限、网络还是存储；再查应用错误码、NFS 延迟、文件系统容量、最近变更；而不是直接猜“存储坏了”。</p>
-<p><strong>对专家系统的启示</strong>：先澄清症状和范围，再查证据；不要把模糊输入强行映射到一个已知故障。</p>
-<p>原文：<a href="https://arxiv.org/abs/2607.28545">ORCA-bench 预印本</a></p>
+<p>用户说“报表打不开”。先查登录、权限、网络和存储，再核对应用错误码、NFS 延迟、文件系统容量和最近的变更。</p>
+<p>调查从症状和影响范围开始，证据足够后再判断故障类型。</p>
+<p>原文见 <a href="https://arxiv.org/abs/2607.28545">ORCA-bench 预印本</a></p>
 <h2 id="16-fast-20-硬盘故障预测标签特征与评测">16. FAST ’20 硬盘故障预测：标签、特征与评测</h2>
-<p><strong>一句话</strong>：论文用 38 万块盘、64 个站点、两个月的数据，基于 SMART 时序特征预测未来 10 天是否故障，报告平均 F-measure/MCC 约 0.95。</p>
-<p><strong>流程图</strong>：</p>
+<p>论文用了 64 个站点约 38 万块盘的两个月数据，从 SMART 时序特征预测未来 10 天的故障，报告平均 F-measure/MCC 约为 0.95。</p>
 <pre><code class="language-text">每块盘每天的特征（SMART/型号/年龄/变化率）
    │
    ├─ 标签：未来 H 天内是否故障
@@ -524,19 +492,17 @@ Top-1/Top-3 根因
    ├─ 提前量分布
    └─ 校准/误报
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>样本是“盘-日”，不是“盘”；同一块盘多天样本高度相关，随机切分会泄漏。</li>
-<li>标签要定义“故障窗口 H”；H 越长，越早预警但越难准。</li>
-<li>特征包括 SMART 原始值、变化率、型号/固件/年龄；不同厂商 SMART 属性不一致。</li>
-<li>评测要看 PR-AUC/召回@告警预算/提前量/校准，不只看准确率；故障是极少数类。</li>
+<li>每块盘每天是一条样本。同一块盘的样本高度相关，随机切分可能让同一块盘同时进入训练集和测试集。</li>
+<li>标签定义里写清故障窗口 H。窗口越长，可以更早预警，预测也更难做准。</li>
+<li>特征包括 SMART 原始值和变化率，以及型号、固件和年龄。不同厂商的 SMART 属性可能不同。</li>
+<li>故障样本占比很低。评估 PR-AUC、告警预算下的召回率、提前量和概率校准。</li>
 </ul>
-<p><strong>例子</strong>：一块盘今天 SMART 出现待定扇区，模型输出“未来 10 天故障概率 0.3”。如果告警预算允许，运维可以提前换盘；如果概率校准不好，0.3 可能实际只有 0.05，告警就会泛滥。</p>
-<p><strong>对专家系统的启示</strong>：硬盘预测的难点是标签和切分，不是模型；没有校准和告警预算，准确率没有意义。</p>
-<p>原文：<a href="https://www.usenix.org/conference/fast20/presentation/lu">FAST ’20 论文</a></p>
+<p>某块盘今天出现 SMART 待定扇区，模型给出未来 10 天故障概率 0.3。若在告警预算内，可安排提前换盘。校准差时，报 0.3 的这一批盘实际故障率可能只有 0.05，会多报很多告警。</p>
+<p>先核对故障标签和切分方式，再检查预测概率是否可靠、告警量是否超出预算。</p>
+<p>原文见 <a href="https://www.usenix.org/conference/fast20/presentation/lu">FAST ’20 论文</a></p>
 <h2 id="17-backblaze-drive-stats公开的盘级数据">17. Backblaze Drive Stats：公开的盘级数据</h2>
-<p><strong>一句话</strong>：Backblaze 定期公开其数据中心的硬盘型号、数量、故障数和 SMART 统计，适合做可复现的故障率/生存分析。</p>
-<p><strong>流程图</strong>：</p>
+<p>Backblaze 定期公开其数据中心的硬盘型号、数量、故障数和 SMART 统计，可用来复现故障率和生存分析。</p>
 <pre><code class="language-text">Backblaze 数据中心
    │ 每日盘级统计
    ▼
@@ -546,18 +512,16 @@ Top-1/Top-3 根因
    ├─ 生存分析/特征分析
    └─ 复现实验
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>数据是“运营数据”，不是受控实验；型号/批次/工况会混杂。</li>
-<li>优点是大规模、长期、公开；缺点是只代表 Backblaze 的负载和环境。</li>
-<li>适合做基线、特征筛选、复现论文；迁移到 SSD/企业阵列要重新校准。</li>
+<li>数据来自实际运行。型号、批次和工况可能同时变化。</li>
+<li>数据量大、覆盖时间长、可公开复算，适用范围仍是 Backblaze 的负载和环境。</li>
+<li>可用于建立基线、筛选特征和复现论文。用于 SSD 或企业阵列前，需要重新校准。</li>
 </ul>
-<p><strong>例子</strong>：某型号 AFR 从 1% 升到 3%，同时平均年龄上升；不能直接说“型号变差”，要控制年龄/批次/负载。可以用分层/生存分析。</p>
-<p><strong>对专家系统的启示</strong>：公开数据适合验证方法，不适合直接当客户模型；客户侧要重新收集标签和校准。</p>
-<p>原文：<a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a></p>
+<p>某型号 AFR 从 1% 升到 3%，盘的平均年龄也在上升。用分层或生存分析控制年龄、批次和负载，再判断型号是否有影响。</p>
+<p>用公开数据验证方法。给客户预测前，要重新收集客户环境的故障标签并校准。</p>
+<p>原文见 <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a></p>
 <h2 id="18-mcp把工具变成可发现可调用的协议">18. MCP：把工具变成可发现、可调用的协议</h2>
-<p><strong>一句话</strong>：Model Context Protocol 用 JSON-RPC 连接客户端和服务端，服务端暴露 tools/resources/prompts，客户端把工具描述给模型，模型选择调用。</p>
-<p><strong>流程图</strong>：</p>
+<p>Model Context Protocol 用 JSON-RPC 连接客户端和服务端。服务端提供 tools、resources 和 prompts。客户端把工具描述传给模型，由模型选择调用。</p>
 <pre><code class="language-text">Host（Claude/IDE/Agent）
    │ MCP Client
    ▼ JSON-RPC
@@ -567,26 +531,23 @@ MCP Server（存储/监控/知识库）
    ├─ resources/list/read → 资源
    └─ prompts/list/get → 提示模板
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>工具是“有名字、有描述、有输入/输出 schema”的可调用单元；模型根据描述选择工具。</li>
-<li>资源是只读上下文；prompts 是预置模板。</li>
-<li>权限在传输层（stdio/HTTP+auth）和工具层（租户/实体范围）双重控制；写工具要单独授权。</li>
-<li>MCP 不规定业务语义；存储工具仍要自己定义实体、时间窗、单位、证据 ID。</li>
+<li>工具声明名称和输入格式，可补描述和输出格式。模型根据工具说明选择调用。</li>
+<li>resources 提供只读上下文，prompts 提供预置模板。</li>
+<li>在连接和工具两层控制访问。连接层按 stdio 或带认证的 HTTP 配置。工具层限制租户和实体范围，写工具单独授权。</li>
+<li>存储团队要定义工具的实体、时间窗、单位和证据 ID。</li>
 </ul>
-<p><strong>例子</strong>：</p>
-<pre><code class="language-json">// tools/call
-{&quot;name&quot;:&quot;query_metric&quot;,&quot;arguments&quot;:{&quot;entity_id&quot;:&quot;ceph-a/hot&quot;,&quot;metric&quot;:&quot;p99_ms&quot;,&quot;start&quot;:&quot;2026-11-10T02:00:00Z&quot;,&quot;end&quot;:&quot;2026-11-10T02:16:00Z&quot;,&quot;step&quot;:&quot;1m&quot;}}
+<p>下面是 <code>tools/call</code> 请求的 <code>params</code> 示例。</p>
+<pre><code class="language-json">{&quot;name&quot;:&quot;query_metric&quot;,&quot;arguments&quot;:{&quot;entity_id&quot;:&quot;ceph-a/hot&quot;,&quot;metric&quot;:&quot;p99_ms&quot;,&quot;start&quot;:&quot;2026-11-10T02:00:00Z&quot;,&quot;end&quot;:&quot;2026-11-10T02:16:00Z&quot;,&quot;step&quot;:&quot;1m&quot;}}
 </code></pre>
-<p>服务端返回样本、缺失区间、覆盖率和 <code>query_id</code>；模型把 <code>query_id</code> 写进证据。</p>
-<p><strong>对专家系统的启示</strong>：MCP 解决“怎么接工具”，不解决“工具是否可信”；schema/权限/证据要自己设计。</p>
-<p>原文：<a href="https://modelcontextprotocol.io/">MCP 规范</a></p>
+<p>服务端返回样本、缺失区间、覆盖率和 <code>query_id</code>。模型把 <code>query_id</code> 写入证据。</p>
+<p>通过 MCP 接入工具时，仍需设计 schema、权限和证据字段。</p>
+<p>原文见 <a href="https://modelcontextprotocol.io/">MCP 规范</a></p>
 <h2 id="19-nvme-规范队列命令与命名空间">19. NVMe 规范：队列、命令与命名空间</h2>
-<p><strong>一句话</strong>：NVMe 用多对提交/完成队列、doorbell 和命名空间，把存储命令从 SAS/SATA 的单队列解放出来，降低延迟、提高并发。</p>
-<p><strong>流程图</strong>：</p>
+<p>NVMe 通过多对提交和完成队列、doorbell 和命名空间组织命令。多队列可提高并发并降低共享队列带来的延迟。</p>
 <pre><code class="language-text">主机
  ├─ Admin 队列（创建/管理）
- └─ I/O 队列对（每核一对）
+ └─ I/O 队列（常见为每核一组）
       │ 提交命令 → SQ tail doorbell
       ▼
    NVMe 控制器
@@ -594,18 +555,16 @@ MCP Server（存储/监控/知识库）
       ▼
    命名空间（Namespace）→ NAND/介质
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>队列深度大、每核独立队列，减少锁竞争；轮询/中断模式影响延迟。</li>
-<li>命名空间是逻辑块设备；多路径/多控制器（NVMe-oF）要处理路径故障。</li>
-<li>NVMe-oF 把命令放到 TCP/RoCE/FC；网络拥塞/PFC/ECN 会引入尾延迟。</li>
+<li>较深的队列可容纳更多并发请求。每核独立队列可减少锁竞争。轮询和中断模式也会影响延迟。</li>
+<li>命名空间是逻辑块设备。NVMe-oF 使用多路径或多个控制器时，要处理路径故障。</li>
+<li>NVMe-oF 可通过 TCP、RoCE 或 FC 传命令。排查尾延迟时先看网络拥塞。使用 RoCE 时，再按组网方案检查 PFC 或 ECN 配置。</li>
 </ul>
-<p><strong>例子</strong>：4 KiB 随机读，队列深度 64，单盘 500k IOPS；如果只开队列深度 1，IOPS 会低很多。延迟不是单命令服务时间，而是排队 + 服务。</p>
-<p><strong>对专家系统的启示</strong>：看到 IOPS 高但延迟高，要查队列深度/拥塞；不要只用“盘慢”解释。</p>
-<p>原文：<a href="https://nvmexpress.org/specifications/">NVMe 规范</a></p>
+<p>4 KiB 随机读、队列深度 64 时，单盘可达 500k IOPS。改为队列深度 1 后，IOPS 会低很多。观测到的延迟包括排队和服务两部分。</p>
+<p>IOPS 高且延迟高时，先查队列深度和拥塞位置，再判断介质是否慢。</p>
+<p>原文见 <a href="https://nvmexpress.org/specifications/">NVMe 规范</a></p>
 <h2 id="20-snia存储标准与互操作">20. SNIA：存储标准与互操作</h2>
-<p><strong>一句话</strong>：SNIA 维护存储网络、管理接口（如 SMI-S）、云数据管理（CDMI）、持久内存等标准/教程，目标是多厂商互操作。</p>
-<p><strong>流程图</strong>：</p>
+<p>SNIA 维护存储网络、管理接口（如 SMI-S）、云数据管理（CDMI）和持久内存等标准及教程，帮助不同厂商的设备互操作。</p>
 <pre><code class="language-text">应用/管理平台
    │ 标准接口（SMI-S/CDMI/...）
    ▼
@@ -613,18 +572,16 @@ MCP Server（存储/监控/知识库）
    │
    └─ 互操作测试/规范
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>标准接口让管理平台不必为每个厂商写私有适配；但厂商私有 API 往往功能更全、更新更快。</li>
-<li>SMI-S 偏块/文件/网络管理；CDMI 偏云对象数据管理；具体使用要看版本和厂商支持。</li>
-<li>标准不是“自动兼容”：实现差异、可选特性、版本扩展都会导致坑。</li>
+<li>先用标准接口减少私有适配。厂商私有 API 通常覆盖更多功能，更新也更快。</li>
+<li>SMI-S 侧重块、文件和网络管理。CDMI 侧重云对象数据管理。接入前查版本和厂商支持情况。</li>
+<li>验证具体设备的实现、可选特性和版本扩展。</li>
 </ul>
-<p><strong>例子</strong>：一个多云管理平台用 SMI-S 发现异构阵列，但性能/故障树仍要厂商私有接口；标准负责“看见”，私有接口负责“看懂”。</p>
-<p><strong>对专家系统的启示</strong>：标准适合做资产/拓扑的公共层，深度诊断仍要厂商接口 + 领域知识。</p>
-<p>原文：<a href="https://www.snia.org/tech_activities">SNIA 技术活动</a></p>
+<p>多云管理平台可用 SMI-S 发现异构阵列。要取性能数据或故障树，可能还要调用厂商私有接口。</p>
+<p>用标准接口维护资产和拓扑。需要深查故障时，结合厂商接口和设备知识。</p>
+<p>原文见 <a href="https://www.snia.org/tech_activities">SNIA 技术活动</a></p>
 <h2 id="21-google-sre-workbookslislo错误预算与燃烧率">21. Google SRE Workbook：SLI、SLO、错误预算与燃烧率</h2>
-<p><strong>一句话</strong>：SRE 用 SLI（指标）、SLO（目标）、错误预算（1−SLO）和燃烧率（错误率/预算率）把“可靠性”变成可运营的数值。</p>
-<p><strong>流程图</strong>：</p>
+<p>用 SLI 衡量可靠性，用 SLO 定义目标。错误预算率为 1−SLO，燃烧率为错误率除以错误预算率。</p>
 <pre><code class="language-text">SLI（好请求/总请求）
    │
    ▼
@@ -634,16 +591,15 @@ SLO（如 99.9%/30 天）
    ├─ 燃烧率 = 实际错误率 / 0.1%
    └─ 多窗口告警（1h/5m）
 </code></pre>
-<p><strong>机制拆解</strong>：</p>
 <ul>
-<li>SLI 要定义测量点、好事件、分母；SLO 是内部目标，SLA 常带商务后果。</li>
-<li>错误预算让“可靠性”和“发布速度”可权衡；预算烧完就冻结变更。</li>
-<li>多窗口燃烧率兼顾快发现和少误报；单阈值容易翻页或漏报。</li>
-<li>存储 SLO 要加冗余/耐久性指标，不能只看请求成功率。</li>
+<li>SLI 要写清在哪测、哪些事件算好、哪些计入分母。SLO 是内部目标，SLA 通常约定商务后果。</li>
+<li>团队按剩余错误预算决定是否继续发布。预算用完后冻结变更。</li>
+<li>用长、短窗口共同判断燃烧率，兼顾快速发现和控制误报。只有一个阈值时，容易频繁通知值班人员或漏报。</li>
+<li>除请求成功率外，还要为存储定义冗余和耐久性指标。</li>
 </ul>
-<p><strong>例子</strong>：请求型 SLO 为 30 天内 99.9% 好请求，预算为全周期请求数的 0.1%。请求量近似均匀时，相当于 43 分 12 秒完全不可用。1 小时坏请求率 1.44% 对应燃烧率 14.4，同一流量假设下用掉周期预算的 2%。多窗口告警可要求 1 小时和 5 分钟都超过阈值，通知级别由团队定义。</p>
-<p><strong>对专家系统的启示</strong>：告警级别应由 SLO 燃烧率决定，而不是设备型号；处置验收要同时看业务 SLO 和冗余。</p>
-<p>原文：<a href="https://sre.google/workbook/">Google SRE Workbook</a></p>
+<p>30 天请求型 SLO 要求 99.9% 的请求为好请求，错误预算为全周期请求数的 0.1%。流量近似均匀时，相当于完全不可用 43 分 12 秒。1 小时坏请求率为 1.44% 时，燃烧率为 14.4，消耗周期预算的 2%。可要求 1 小时和 5 分钟窗口都超过阈值再告警，由团队定义通知级别。</p>
+<p>按业务 SLO 燃烧率定告警级别。处置后同时验收业务 SLO 和冗余。</p>
+<p>原文见 <a href="https://sre.google/workbook/">Google SRE Workbook</a></p>
 <h2 id="22-链接索引">22. 链接索引</h2>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -762,9 +718,8 @@ SLO（如 99.9%/30 天）
 </tbody>
 </table></div>
 <blockquote>
-<p>合计 42 个唯一链接。正文已经按“问题 → 架构图 → 机制 → 例子 → 启示”拆开；链接只保留在每节末尾和本索引里。产品能力、版本和指标以原文与现场版本为准。</p>
+<p>合计 42 个唯一链接。核对产品能力、版本和指标时，以原文和现场版本为准。</p>
 </blockquote>
-
   </article>
 </main>
 <footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>

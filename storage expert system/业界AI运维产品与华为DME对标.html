@@ -132,7 +132,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <main id="main" class="page-width layout">
   <details class="toc" open><summary>本页目录</summary><nav aria-label="本页目录"><ul><li><a href="#1-先看同一条业务告警">1. 先看同一条业务告警</a></li>
 <li><a href="#2-六套体系的设计拆解">2. 六套体系的设计拆解</a></li>
-<li class="sub"><a href="#同层架构图">同层架构图</a></li>
+<li class="sub"><a href="#同层架构图">六套产品的采集、调查和执行架构</a></li>
 <li class="sub"><a href="#同一条告警为何走出六条调查路径">同一条告警为何走出六条调查路径</a></li>
 <li class="sub"><a href="#华为-dme-与-datamaster">华为 DME 与 DataMaster</a></li>
 <li class="sub"><a href="#everpure-pure1-与-fusion-20">Everpure Pure1 与 Fusion 2.0</a></li>
@@ -172,21 +172,21 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li class="sub"><a href="#v--诊断契约与作业验证">V · 诊断契约与作业验证</a></li></ul></nav></details>
   <article>
 <p><a href="./index.html">资料目录</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 全链路解剖</a> · <a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a> · <a href="#%E9%99%84%E5%BD%95-%E5%8E%82%E5%95%86%E5%8E%9F%E5%A7%8B%E8%B5%84%E6%96%99">原始资料附录</a></p>
-<p><a href="#%E5%90%8C%E5%B1%82%E6%9E%B6%E6%9E%84%E5%9B%BE">同层架构图</a> · <a href="#%E6%8E%A5%E5%85%A5%E8%A7%82%E6%B5%8B%E4%B8%8E%E8%AE%BE%E5%A4%87%E5%88%86%E6%9E%90">设备分析功能表</a> · <a href="#%E8%B0%83%E6%9F%A5%E9%9B%86%E6%88%90%E5%8F%98%E6%9B%B4%E5%92%8C%E9%AA%8C%E6%94%B6">调查与处置功能表</a> · <a href="#%E5%9C%BA%E6%99%AF%E9%80%89%E5%9E%8B%E4%B8%8E-dme-%E8%A1%A5%E5%BC%BA%E6%B8%85%E5%8D%95">场景选型与 DME 补强</a></p>
+<p><a href="#%E5%90%8C%E5%B1%82%E6%9E%B6%E6%9E%84%E5%9B%BE">六套产品架构</a> · <a href="#%E6%8E%A5%E5%85%A5%E8%A7%82%E6%B5%8B%E4%B8%8E%E8%AE%BE%E5%A4%87%E5%88%86%E6%9E%90">设备分析功能表</a> · <a href="#%E8%B0%83%E6%9F%A5%E9%9B%86%E6%88%90%E5%8F%98%E6%9B%B4%E5%92%8C%E9%AA%8C%E6%94%B6">调查与处置功能表</a> · <a href="#%E5%9C%BA%E6%99%AF%E9%80%89%E5%9E%8B%E4%B8%8E-dme-%E8%A1%A5%E5%BC%BA%E6%B8%85%E5%8D%95">选型与 DME 补强</a></p>
 <p><a href="#%E5%90%8C%E4%B8%80%E6%9D%A1%E5%91%8A%E8%AD%A6%E4%B8%BA%E4%BD%95%E8%B5%B0%E5%87%BA%E5%85%AD%E6%9D%A1%E8%B0%83%E6%9F%A5%E8%B7%AF%E5%BE%84">告警流程差异</a> · <a href="#6-%E8%AF%8A%E6%96%AD%E5%BC%95%E6%93%8E%E4%B8%8E-agent-%E5%A6%82%E4%BD%95%E5%88%86%E5%B7%A5">诊断与 Agent</a> · <a href="#7-%E6%9C%AC%E5%9C%B0-qwen3-32b-%E8%83%BD%E6%89%BF%E6%8B%85%E4%BB%80%E4%B9%88">Qwen3-32B 本地评估</a> · <a href="#8-%E5%8F%AA%E6%9C%89-rag-%E6%97%B6%E6%80%8E%E6%A0%B7%E6%8E%A7%E5%88%B6%E5%87%86%E7%A1%AE%E7%8E%87">只用 RAG 的准确率</a></p>
 <p><a href="#%E7%BA%B5%E5%90%91%E8%B5%B0%E5%AE%8C%E4%B8%80%E6%AC%A1%E6%85%A2%E5%86%99%E6%95%85%E9%9A%9C">纵向看六套产品怎么走完故障</a> · <a href="#%E6%A8%AA%E5%90%91%E6%AF%94%E8%BE%83%E5%85%AD%E4%B8%AA%E9%98%B6%E6%AE%B5">横向逐阶段对标</a></p>
 <h2 id="1-先看同一条业务告警">1. 先看同一条业务告警</h2>
 <p>凌晨 02:16，订单写入变慢。值班工程师要先回答三个问题。受影响的是哪些应用和卷？几种可能原因中哪一种最符合证据？现在可以做什么，怎么确认做完有效？</p>
-<p>如果只接了阵列数据，系统可以检查存储路径和后台活动。要判断一次应用发布是否改变了写入方式，还要拿到发布记录和请求数据。两边都接上之后，Agent 仍要识别数据断点、区分同一时间出现的事件与真正有解释力的证据，并把处置交给有权限的执行方。<strong>这些设计比“是否带 AI 助手”更能区分产品。</strong></p>
+<p>阵列数据能用来查存储路径和后台活动。要判断应用发布是否改变了写入方式，还需发布记录和请求数据。Agent 要标出缺失的数据，再用对照检查判断原因。需要改配置时，交给有权限的角色处理。</p>
 <ul>
-<li><strong>DME 的长项在设备侧。</strong> 对受支持的 OceanStor 环境，DME 能把资源、I/O 路径、设备状态、告警、故障树和恢复工作台连起来。看闪存路径、控制器或后端异常时，这些是通用 SRE Agent 必须额外接入的信号。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></li>
-<li><strong>同类存储产品提供了三个可直接拆解的设计。</strong> Everpure 展示如何开放细粒度工具和读写控制，NetApp 展示如何先验证证据覆盖再调查，Dell 展示如何把预期区间和异常偏差交给值班员判断。 <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a></li>
-<li><strong>跨域平台把调查和动作组织成可检查的过程。</strong> AWS 可查看调查轨迹并比较重放结果，Datadog 将动作限定到具体资源，记录批准和执行，再触发恢复复查。移植到存储时还需设备作业对账和数据保护验收。 <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></li>
+<li>在受支持的 OceanStor 上，DME 可查资源、I/O 路径、设备状态和告警，再按故障树排查，在工作台处理。通用 SRE Agent 要查闪存路径、控制器或后端异常，需要接入这些设备数据。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></li>
+<li>Everpure 按工具控制读写权限。NetApp 可先查哪些对象有数据。Dell 把历史正常范围和偏离点放在同一张图上，供值班员判断。 <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a></li>
+<li>AWS 可回看调查步骤并比较重放结果。Datadog 按资源限制操作，记录批准和执行，支持操作员发起恢复复查。用于存储时，还需核对设备作业和数据保护状态。 <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></li>
 </ul>
-<p>产品能力以 2026-11-21 核验的公开版本为对比基准，本地模型与诊断专题于 2026-11-22 补充，并按交叉审核校正了产品边界、回放与验收口径。下文以公开文档能观察到的产品行为为依据。故障场景和数值均为教学示例。DME 对照以 25.1.0 容器化白皮书为基准，联合项目、云服务和预览能力分别注明。准确率、速度与成本需要在同一套现场数据和权限下测试。</p>
+<p>产品资料核验于 2026-11-21，本地模型和诊断于 2026-11-22 补充。DME 以 25.1.0 容器化白皮书为准。联合项目、云服务和预览功能在对应处注明。故障和数值均为教学示例。比较准确率、速度和成本时，需用同一套现场数据和权限测试。</p>
 <h2 id="2-六套体系的设计拆解">2. 六套体系的设计拆解</h2>
-<h3 id="同层架构图">同层架构图</h3>
-<p>图从左到右对应采集、数据、诊断、动作与验收。每一行把各家公开接口与组件放在同一运维链条里。连接线表示职责和信息流，产品内部服务、数据存储和默认启用范围以相应版本文档为准。窄屏可横向查看同一行，功能表也可横向滚动。</p>
+<h3 id="同层架构图">六套产品的采集、调查和执行架构</h3>
+<p>每行从左到右是采集、数据、诊断、执行和复查。内部服务、数据存储和默认开关以对应版本文档为准。窄屏可横向滚动架构图和功能表。</p>
 <figure class="arch-diagram" aria-labelledby="arch-overview">
 <figcaption id="arch-overview">六套产品的运维链路</figcaption>
 <div class="arch-scroller" role="region" aria-label="六套产品架构图，可横向滚动" tabindex="0">
@@ -196,27 +196,27 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <ol class="arch-flow">
 <li><strong>信号入口</strong>受支持的存储、主机、SAN 与虚拟化<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>数据与关系</strong>设备 API、告警、对象、I/O 路径<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>诊断与 Agent</strong>阈值、基线、预测、故障树；DataMaster 查证<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>诊断与 Agent</strong>阈值、基线、预测、故障树，DataMaster 调查<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>执行与授权</strong>原厂作业、待办审核和工作流<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>结果与复查</strong>结构化报告与工作台；业务证据可外接</li>
+<li><strong>结果与复查</strong>诊断报告和工作台，可接入业务数据</li>
 </ol>
 </section>
 <section class="arch-lane" aria-label="Everpure Pure1 / Fusion">
 <p class="arch-label"><strong>Everpure Pure1 / Fusion</strong></p>
 <ol class="arch-flow">
 <li><strong>信号入口</strong>FlashArray、FlashBlade 的设备遥测<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>数据与关系</strong>Pure1 管理遥测；Fusion 获得阵列对象和配置<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>诊断与 Agent</strong>Pure1 内置 Copilot；外部 Agent 可分别连接两套 MCP<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>执行与授权</strong>Fusion 使用阵列令牌；可选写工具再核对角色和确认<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>结果与复查</strong>管理数据或工具结果；作业对账及业务复查由工作流接入</li>
+<li><strong>数据与关系</strong>Pure1 查设备群遥测，Fusion 查阵列对象和配置<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>诊断与 Agent</strong>Pure1 内置 Copilot。外部 Agent 可分别接两套 MCP<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>执行与授权</strong>Fusion 使用阵列令牌。启用写工具后核对角色和确认<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>结果与复查</strong>返回数据或工具结果。工作流核对作业和业务状态</li>
 </ol>
 </section>
 <section class="arch-lane" aria-label="NetApp DII / Digital Advisor">
 <p class="arch-label"><strong>NetApp DII / Digital Advisor</strong></p>
 <ol class="arch-flow">
-<li><strong>信号入口</strong>多源采集器；ONTAP AutoSupport 单独供 Advisor<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>数据与关系</strong>DII 资产、指标、日志、告警及采集健康<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>诊断与 Agent</strong>DII Assistant 或只读 MCP；Advisor 风险规划<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>信号入口</strong>DII 接多源采集器，Advisor 接 ONTAP AutoSupport<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>数据与关系</strong>DII 查资产、指标、日志、告警和采集状态<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>诊断与 Agent</strong>DII Assistant 或只读 MCP 调查，Advisor 提供风险建议<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>执行与授权</strong>调查转交设备或审批平台<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>结果与复查</strong>按租户复核指标、采集范围和计划</li>
 </ol>
@@ -225,9 +225,9 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <p class="arch-label"><strong>Dell PowerStore / Dell AIOps</strong></p>
 <ol class="arch-flow">
 <li><strong>信号入口</strong>PowerStore 设备遥测、配置、事件<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>数据与关系</strong>本地 Manager；配置连接后另接云端<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>数据与关系</strong>本地 Manager，配置连接后接云端<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>诊断与 Agent</strong>本地异常视图、云端上下文助手、设备 Health Checks 三条路径<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>执行与授权</strong>助手给建议；Health Checks 对指定已知问题可按设置自动修复<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>执行与授权</strong>助手给建议。Health Checks 可按设置修复指定问题<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>结果与复查</strong>回查曲线、异常时间和设备状态</li>
 </ol>
 </section>
@@ -237,27 +237,27 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><strong>信号入口</strong>监控、代码库、部署事件、外部工具<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>数据与关系</strong>Agent Space 汇聚可用集成、应用/流水线关系<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>诊断与 Agent</strong>时间线、调查技能、版本化记忆与相关证据<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>执行与授权</strong>操作者在对话中请求处置；另开定向动作，校验角色、工具和批准<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>结果与复查</strong>CloudTrail 查动作；应用指标查恢复。调查重放单用于复盘</li>
+<li><strong>执行与授权</strong>操作者在对话中请求处置。定向动作需另开并核对权限<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>结果与复查</strong>CloudTrail 查操作，应用指标查恢复，调查重放用于复盘</li>
 </ol>
 </section>
 <section class="arch-lane" aria-label="Datadog Bits">
 <p class="arch-label"><strong>Datadog Bits</strong></p>
 <ol class="arch-flow">
 <li><strong>信号入口</strong>Monitor、链路、日志及相关应用信号<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>数据与关系</strong>Datadog 可观测数据与对象关系<span class="arch-arrow" aria-hidden="true">→</span></li>
+<li><strong>数据与关系</strong>监控数据和资源关系<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>诊断与 Agent</strong>Bits Investigation 查证、给结论或保持未决<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>执行与授权</strong>目标 Guardrails，批准后由 Runner 或角色执行<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>结果与复查</strong>动作历史；操作员触发 Verify Resolution</li>
+<li><strong>结果与复查</strong>保留操作历史。操作员发起 Verify Resolution</li>
 </ol>
 </section>
 </div>
 </div>
 </figure>
-<p><strong>从图读优劣。</strong> DME、Everpure 和 Dell 能下钻到各自原厂设备的不同证据点。DII 把异构采集状态也暴露出来，便于确定结论覆盖范围。AWS 和 Datadog 接近业务告警和发布现场，通过接入的存储查询扩展设备视角。独立栈的强项来自它站在哪一侧、能看到什么，以及有哪些操作入口。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a> · <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a> · <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></p>
+<p>DME、Everpure 和 Dell 可查各自的原厂设备数据。DII 还能查不同设备的采集状态。AWS 和 Datadog 可从业务告警和发布记录开始调查，设备细节由接入的存储工具提供。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a> · <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a> · <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></p>
 <h3 id="同一条告警为何走出六条调查路径">同一条告警为何走出六条调查路径</h3>
-<p>用一个固定问题看差异。<strong>02:16，订单写入 P99 到 46 ms。请给出最可能的原因和下一步。</strong> 这一行告警只能触发调查。系统还得知道哪个租户、哪个服务、哪些实例和卷，并找到能区分后台活动争用、网络退化、写入变化的证据。下表是按公开能力推导的排查路线，假设对应集成和角色已启用。实验数据来自 Ceph 合成回放，原厂设备用其同类观测点类比，表内步骤不是厂商模型的内部调用轨迹。</p>
-<p class="product-matrix">从左到右读一个产品，再逐列比较各家拿什么作判断、在哪一步需要外部系统。</p>
+<p><strong>02:16，订单写入 P99 到 46 ms。最可能的原因是什么，接下来查什么？</strong> 先确定租户、服务、实例和卷，再找出能区分后台争用、网络退化和写入变化的证据。下表按公开功能设计路线，假定相关集成和角色已启用。示例来自 Ceph 合成回放，用各厂商对应的设备指标做类比。</p>
+<p class="product-matrix">逐列看各家用哪些数据判断，哪一步要接外部系统。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -275,7 +275,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>华为 DME / DataMaster</td>
 <td>设备告警或值班员给出卷、主机、I/O 问题。应用投诉需要先取得到存储的对象映射</td>
 <td>以可查的卷、设备和路径限定影响，查看相邻端口、控制器与兼容 SAN 设备</td>
-<td>慢写查分段时延、瓶颈、关联告警和配置。发生 I/O 错误且符合支持条件的中断再查首错；发布证据另接</td>
+<td>慢写查分段时延、瓶颈、关联告警和配置。符合条件的 I/O 错误中断查首错。发布记录另接</td>
 <td>形成诊断报告和处置建议。受支持的动作走设备工作台、原厂工作流与角色审批</td>
 <td>查设备作业和原厂指标。订单 SLO、外部工单和灾备目标按接入回查</td>
 <td>用原厂诊断报告和现场快照复核证据与覆盖</td>
@@ -292,9 +292,9 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>NetApp DII / Digital Advisor</td>
 <td>先问哪部分资产和时段可观测。若目的是升级或设备风险规划，走 Digital Advisor 线</td>
-<td>先查有权查看的采集器，再发现类型、字段和对象；权威台账提供分母</td>
-<td>把“对象缺测”与“指标正常”分开。结合吞吐、时延、采集健康、告警和日志判断；具体深度依采集器</td>
-<td>DII MCP 为只读 Preview，输出证据与建议；批准和设备写操作另外接入</td>
+<td>先查授权范围内的采集器，再查对象类型和字段。覆盖率以范围内台账为分母</td>
+<td>把“对象缺测”与“指标正常”分开。结合吞吐、时延、采集状态、告警和日志判断。可查字段取决于采集器</td>
+<td>DII MCP 是只读 Preview，提供证据和建议。审批和设备写操作另行接入</td>
 <td>重查同对象、同粒度指标和采集状态，作业记录需要执行方给出</td>
 <td>记录查询范围、缺测与已观察或推断的证据</td>
 </tr>
@@ -302,14 +302,14 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>Dell PowerStore / Dell AIOps</td>
 <td>从本地历史区间的偏离点，或已接入云端的健康风险开始</td>
 <td>用设备级视图定位偏离点；另查卷曲线，高精度和覆盖按接口核对</td>
-<td>结合 I/O 大小、字节吞吐、IOPS 与时延。可以识别“请求数近似稳定、写入字节显著变化”；应用触发需变更证据</td>
+<td>结合 I/O 大小、字节吞吐、IOPS 与时延。可发现请求数近似稳定、写入字节显著变化。应用是否触发需查变更</td>
 <td>云端助手给建议。指定健康检查可按配置 Auto-Repair，其余走人工或支持流程</td>
 <td>已有检查核对修复结果和告警状态，应用与存储保护另取证</td>
 <td>区分本地趋势、云端对话和健康检查记录</td>
 </tr>
 <tr>
 <td>AWS DevOps Agent</td>
-<td>应用告警、事件关联或人工调查；先确认 Agent Space 具备相关账号和集成</td>
+<td>从应用告警、关联事件或人工调查开始。先核对 Agent Space 的账号和集成</td>
 <td>从服务拓扑和发布范围找受影响实例，按应用→资源→外部存储工具查</td>
 <td>对比发布前后、旧版或其他服务，增查日志和链路，再用设备证据验证应用假设</td>
 <td>后台调查形成建议；操作者在对话中请求处置。执行时校验覆盖操作和目标的有效批准，设备动作需相应执行器</td>
@@ -327,16 +327,16 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p>有五处差异会改变工程结果。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a> · <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a> · <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></p>
+<p>排查同一条告警时，重点核对这五处。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a> · <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a> · <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></p>
 <ol>
-<li><strong>采集链决定系统有权说什么。</strong> DII 能从源级状态说明数据缺在哪。Fusion 要先分清设备群成员与性能覆盖。DME 有设备秒级证据，但能回查的粒度与时间受设备侧留存制约。每种限制都会改变根因报告的有效范围。</li>
-<li><strong>资产关联决定能否把业务问题连到同一设备。</strong> 假设新版本只有半数实例，且凌晨有卷迁移。依照当前拓扑查旧告警，可能查到迁移后的卷。DME 供原厂对象和路径，AWS/Datadog 供已接入服务和变更。合并两边时要给映射加时间、来源和缺失标记。</li>
-<li><strong>分析器与 Agent 的判断不同。</strong> Dell 算一条序列是否偏离历史；DME 可用路径和故障树给出设备域候选；通用 Agent 决定接下来去哪里取证。看到时延偏离只能确认一处异常。定位发布、后台争用还是网络，还要看有区分力的证据与对照。</li>
-<li><strong>查询权限、调查权限和写入权限是三件事。</strong> NetApp DII MCP 的调用可以完全只读；Datadog 发起调查不代表获批修改资源；DME 设备审核有自己的角色；Fusion 的 MCP 写入确认也要受阵列权限约束。组合架构要明确哪个系统是最终执行权威。</li>
-<li><strong>系统关单条件不同。</strong> 云平台验证业务信号，设备平台验证实际配置和保护状态。一次处置可能让 P99 回落，但原厂任务未结束或复制仍滞后。把两路验证记录回同一工单才能给出业务已缓解、保护待恢复的明确状态。</li>
+<li>DII 可按数据源检查缺测。Fusion 要分别查设备群成员和能查性能的成员。DME 能查设备秒级数据，可回查的粒度和窗口取决于设备留存。报告要写明这些范围。</li>
+<li>假设只有半数实例上了新版本，凌晨还迁了卷。用当前拓扑查旧告警，可能查到迁移后的卷。DME 提供设备对象和路径，AWS 和 Datadog 提供已接入的服务及变更。合并两边的数据时，记录映射的生效时间和来源，标出缺失关系。</li>
+<li>Dell 可查指标是否偏离历史水平。DME 可用路径和故障树列出设备侧候选。通用 Agent 据此选下一项查询。例如要区分发布、后台争用和网络退化，就查新旧实例、共享后端和备用路径。</li>
+<li>查询、发起调查、写入应分别检查权限。NetApp DII MCP 只读。Datadog 调查和资源修改分别授权。DME 设备操作按角色审核。Fusion 写入确认还须符合阵列权限。组合使用时，明确由哪个系统执行作业。</li>
+<li>云端监控核查业务，设备平台核查配置和保护。P99 回落时，原厂任务可能还在运行，复制也可能仍滞后。把两路验证写进同一工单，例如记录业务已缓解、保护待恢复。</li>
 </ol>
 <h3 id="华为-dme-与-datamaster">华为 DME 与 DataMaster</h3>
-<p>DME 的起点是已纳管的存储和基础设施。一次订单慢写调查可以从卷、主机或告警入手，沿可见 I/O 路径找到受影响的设备与端口，再由智能分析区分性能、中断或配置问题。关键信号由设备和分析模块提供，DataMaster 负责识别问题、调用工具与汇总结果。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
+<p>订单慢写可从卷、主机或告警查起。沿 DME 可见的 I/O 路径找受影响的设备和端口，再用智能分析检查性能、中断和配置。设备与分析模块返回指标和结果，DataMaster 调用工具并整理报告。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
 <figure class="arch-diagram arch-mini" aria-labelledby="arch-dme">
 <figcaption id="arch-dme">DME 标准功能链</figcaption>
 <ol class="arch-flow">
@@ -352,23 +352,23 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><strong>输入</strong>业务问题、告警或故障信号<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>决策</strong>1 个决策引擎使用知识图谱与 RAG<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>编排与协同</strong>1 个编排中枢调度计算、存储等 N 个域 Agent<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>诊断</strong>分场景运行规则快路径或统计、LLM 和图谱的深度路径</li>
+<li><strong>诊断</strong>常见故障匹配规则，复杂故障结合统计、大模型和图谱</li>
 </ol>
 </figure>
 <h4 id="dme-2510-容器版已公开功能">DME 25.1.0 容器版已公开功能</h4>
 <ol>
 <li><strong>资源纳管。</strong> 登记阵列与资源关系。通过受支持的 REST、SNMP 等采集库存、性能与告警。按兼容清单连接 SAN 交换机、主机、虚拟化和 Kubernetes 等环境。验收时分别记录可发现、可监控、可诊断和可操作的型号范围。</li>
 <li><strong>设备性能。</strong> 可从存储设备、池、LUN、磁盘、前端端口等对象查看相应性能。支持历史曲线和两个时间窗对比。受支持的 Dorado V6 及后续系列可按需回取设备侧留存的 5 秒数据，白皮书所述最大查看周期为一周。设备侧需要先开启相应留存，秒级历史视图与平台长期库的留存分别核对。</li>
-<li><strong>告警与预警。</strong> 检查策略、性能阈值、巡检、健康、历史基线和预测承担不同职责。判断是告警触发、趋势异常还是容量风险时，记录具体对象、计算窗和适用设备。白皮书披露的 64% 是故障智能体对所述闪存故障场景的覆盖口径。白皮书另列不覆盖的相关主机、交换机等资源，不能与 DME 全部纳管或性能分析范围合并。</li>
-<li><strong>智能分析。</strong> 性能问题可沿路径结合时延、瓶颈、亚健康或配置，推荐原因与修复；涉及 OceanStor A 系列或分布式存储且发生 I/O 错误的受支持业务中断，可用首错模块定界。故障树适合把若干关联告警组织成具体传播候选。报告可给出关联根因、传播和处置建议，逐结论样本引用的接口字段待验。</li>
+<li><strong>告警与预警。</strong> 查告警、趋势异常或容量风险时，记录对象、计算窗口和适用设备。白皮书所说的 64% 指故障智能体覆盖的闪存故障场景。相关主机和交换机等资源在该能力的覆盖范围之外。DME 能纳管、能做性能分析的设备范围需另查。</li>
+<li><strong>智能分析。</strong> 慢写沿 I/O 路径查时延、瓶颈、设备异常和配置。OceanStor A 系列或分布式存储的受支持场景中，发生 I/O 错误并导致业务中断时，可用首错模块缩小范围。故障树用关联告警推断故障怎样传播。报告可给出候选根因、传播路径和处置建议。每个结论是否能通过接口追到原始样本，需现场验证。</li>
 <li><strong>对话和告警调查。</strong> 运维助手支持对象及时间窗的指标查询、健康诊断和智能分析入口。故障智能体按已匹配场景调用健康、关联告警、瓶颈、风险和故障树等工具。白皮书描述通过北向 API 对接用户侧跨域智能体。需要现场看 API 返回粒度、角色限制、可见范围和任务跟踪。</li>
-<li><strong>作业与审批。</strong> 资源发放覆盖受支持的块和文件场景。待办任务支持分组、参数预检、权限化审核与条件下定期执行。工作流可定义预检、主流程和异常流程，提供执行跟踪。问题处理工作台有诊断与恢复入口，特定自定义动作按规定角色执行。审批者如何绑定跨系统计划、超时如何找回原生作业，应以使用的接口或 ITSM 实测。</li>
+<li><strong>作业与审批。</strong> 资源发放覆盖受支持的块和文件场景。待办任务可分组、预检参数、按角色审核，也可在满足条件时定期执行。工作流可跟踪预检、主流程和异常流程。工作台可做诊断和恢复，部分自定义动作限指定角色。测试接口或 ITSM 时，核对审批能否绑定跨系统计划，以及超时后能否找回原厂作业。</li>
 </ol>
 <h4 id="联合项目的另一条跨域链">联合项目的另一条跨域链</h4>
-<p>交通银行联合项目披露的 <strong>1+1+N</strong> 由知识图谱与 RAG 决策、流程编排、计算/存储/基础设施域 Agent 组成。常见模式走规则匹配，复杂故障结合统计特征、语义编码、LLM 和故障知识图谱。例如果异常先被某条存储规则命中，站点编排可把只读观察任务发到相关域，再由值班流程审核处置。这种分工是可借鉴的联合架构，具体任务契约、知识库与设备能力需对应拟部署版本。DME IQ 的云运维、Call Home 和支持能力属于另有说明的产品链。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
-<p><strong>适用位置。</strong> OceanStor 为主时，优先让 DME 回答哪条设备路径异常、哪些原厂证据支持、可走哪个设备流程。业务 SLO、部署与跨站旧拓扑可由总控接入，按数据实际覆盖组合。</p>
+<p>交通银行联合项目披露了 <strong>1+1+N</strong>。一个决策引擎使用知识图谱和检索增强生成（RAG），一个编排服务调度计算、存储和基础设施等 Agent。常见问题匹配规则，复杂故障结合统计特征、语义编码、大模型和故障知识图谱。例如某条存储规则触发后，编排服务可向相关系统分发只读查询，再按值班流程审核处置。任务接口、知识库和设备能力以目标部署为准。DME IQ 的资料另有云运维、Call Home 和远程支持说明。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
+<p>OceanStor 为主时，先用 DME 查哪条路径异常、有哪些设备证据、可走哪个工作流。业务 SLO、部署记录和各站点的历史拓扑可由总控接入。</p>
 <h3 id="everpure-pure1-与-fusion-20">Everpure Pure1 与 Fusion 2.0</h3>
-<p>这里有两个可以分别接入的查询面。Pure1 Manage MCP 给设备群管理视角，Fusion MCP 给可连接阵列的对象及配置视角。一个 AI 客户端能分别接入这两套工具，设备和授权范围各自计算。内置 Copilot 有自己的调查入口。 <a href="#e--everpure">E</a></p>
+<p>Pure1 Manage MCP 查设备群，Fusion MCP 查已连接阵列的对象和配置。同一个 AI 客户端可分别接入两套工具。设备覆盖和权限各自核对。内置 Copilot 可单独发起调查。 <a href="#e--everpure">E</a></p>
 <figure class="arch-diagram arch-mini" aria-labelledby="arch-everpure-options">
 <figcaption id="arch-everpure-options">Everpure 三条接入路径</figcaption>
 <div class="arch-lane">
@@ -402,23 +402,23 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <ol>
 <li><strong>管理面盘点。</strong> Pure1 Manage MCP 正式可用，开放受支持的只读 Pure1 Manage API。适于先找告警、容量风险和异常设备群。Pure1 自带 Copilot 另有性能异常调查功能。</li>
 <li><strong>发现应用关系。</strong> 厂商介绍 Purity 6.10.0 在适用阵列上发现支持的数据库应用与文件上下文，可补充应用、工作负载与存储的关联。事故中的实际发布、业务请求或远端调用还需相应应用观测。</li>
-<li><strong>阵列层工具。</strong> Fusion 提供设备群、阵列、FlashArray 卷、文件系统、工作负载和预设查询。可用专用工具查 IOPS、吞吐及时延，也有通用只读配置查询。设备群总览能列出的成员范围可能比直接配置的性能查询范围大。</li>
+<li><strong>阵列层工具。</strong> Fusion 提供设备群、阵列、FlashArray 卷、文件系统、工作负载和预设查询。可用专用工具查 IOPS、吞吐及时延，也有通用只读配置查询。设备群总览列得出的成员，可能多于已配置性能查询的成员。</li>
 <li><strong>配置与工作负载操作。</strong> Fusion 2.0 区分精选写工具与通用写工具，两类默认关闭。精选工具覆盖文档列出的放置建议、预设、部署、卷、主机及快照等操作，具体支持按阵列类型确认。</li>
 <li><strong>确认与记录。</strong> 启用写工具后，保留默认服务端确认时，客户端必须支持 MCP 询问交互，否则服务端拒绝运行。阵列令牌、工具开关和客户端确认共同约束操作。该版本还用会话标识、工具来源帮助关联服务端与阵列请求记录。企业工单和业务验收还要接入各自的流程。</li>
 </ol>
 <p><strong>与 DME 对照。</strong> Fusion 给出了版本固定的工具和参数，可以直接验证“八台可见，哪五台能查性能”“没有确认功能的客户端会如何失败”。代价是 Token 覆盖、版本与 Agent 集成需要维护。DME 在 OceanStor 的 I/O 路径、故障树、受支持中断的首错和工作台更接近存储值班端。可对照 Fusion 的能力测试方法验收 DME API，保留 DME 原厂诊断深度。 <a href="#e--everpure">E</a> · <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
 <h3 id="netapp-dii-与-digital-advisor">NetApp DII 与 Digital Advisor</h3>
-<p>DII 负责把多源对象和基础设施指标组成调查视图。Digital Advisor 主要消费受支持 ONTAP 的 AutoSupport 遥测，提供风险与生命周期建议。两条线可同时使用，证据来源和许可分别检查。 <a href="#n--netapp">N</a></p>
+<p>DII 把多个来源的资源和指标放在一起查。Digital Advisor 使用受支持的 ONTAP AutoSupport 遥测，给出风险、扩容和升级建议。两者可同时使用，数据源和许可分别核对。 <a href="#n--netapp">N</a></p>
 <ol>
 <li><strong>Digital Advisor 规划。</strong> 将设备遥测与诊断信息用于健康、风险、容量、性能和升级规划。适合评估某设备是否有已知风险，以及怎样安排升级或扩容。</li>
 <li><strong>DII 异构接入。</strong> 通过受支持的采集单元及采集器获取存储、交换机、虚拟化、容器等对象。先核对型号和实际字段。带有 GPU 或 HPC 需求时，可查看 11 月更新记录中 NVIDIA Base Command Manager 采集器的预览范围。</li>
-<li><strong>采集事实优先。</strong> 可查采集单元连接状态、数据源状态、最后上报或采集结果、对象类型和 Collector 版本。用有权访问的资产台账与调用身份的授权范围交集作预期对象分母，再核对数据源的最近成功采集时间。可见清单与授权边界未知时报告 <code>unknown_coverage</code>，不从空查询枚举账号外资产。</li>
-<li><strong>查询约束。</strong> DII 配方先发现对象类型、读取字段元数据，再精确定位对象。按支持的指标和单位查事故窗和健康对照窗，核对粒度；该配方单次所述窗口不超过 30 天。再查告警和日志，并区分观察、相关、推断和未知。历史对象关系需要相应历史数据。</li>
+<li><strong>采集事实优先。</strong> 可查采集单元连接状态、数据源状态、最后上报或采集结果、对象类型和 Collector 版本。用资产台账中本次有权限查询的对象数做分母，再核对数据源最近一次采集成功的时间。清单或权限范围不明确时，返回 <code>unknown_coverage</code>。只在账号授权范围内查资产。</li>
+<li><strong>查询约束。</strong> DII 配方先查对象类型和字段，再定位对象。用相同单位和粒度比较事故窗口与健康窗口。该配方单次窗口不超过 30 天。然后查告警和日志，分别记下观察结果、相关事件、推断和未知项。事发时的对象关系需要历史记录。</li>
 <li><strong>两个 AI 入口。</strong> DII Assistant 在所述 AWS 托管站点正式可用，发布记录披露按问题生成可视化。面向外部 Agent 的 DII MCP 仍为租户内只读 Preview。调查完成后把设备写操作交给具有目标设备权限的工作流。</li>
 </ol>
 <p><strong>与 DME 对照。</strong> 对一套混合阵列和交换机环境，DII 提供了从采集单元、字段到实体查询的公开验证流程。DME 也纳管受支持的异构资产，在 OceanStor 上另具路径诊断和设备作业。用同一个租户制造一次源失联，再看各自是否能报告具体缺测卷、最后采集时间和缺失字段。两个采集器在线只能算采集器在线比例，资产覆盖率要按实际采集到的期望对象计算。 <a href="#n--netapp">N</a> · <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
 <h3 id="dell-powerstore-与-dell-aiops">Dell PowerStore 与 Dell AIOps</h3>
-<p>PowerStoreOS 4.2 的本地异常视图、Dell 云端分析和设备 Health Checks 形成三条路径。部署时分别验证可见指标、建议范围，以及自动修复支持清单。 <a href="#l--dell">L</a></p>
+<p>PowerStoreOS 4.2 有本地异常视图。云端 AIOps 提供分析建议，设备 Health Checks 可处理指定的已知问题。部署时分别核对可查指标、建议范围和自动修复清单。 <a href="#l--dell">L</a></p>
 <figure class="arch-diagram arch-mini" aria-labelledby="arch-dell-paths">
 <figcaption id="arch-dell-paths">PowerStore 的本地观测、云端建议和设备自动修复</figcaption>
 <div class="arch-lane">
@@ -450,26 +450,26 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </div>
 </figure>
 <ol>
-<li><strong>历史区间。</strong> PowerStore Manager 按设备历史行为和季节性形成带状的预期范围。在时延、IOPS、带宽或 I/O 大小超出范围的点上显示偏离值和时间，允许调节灵敏度。该本地功能本身不发直接告警。异常视图针对 appliance，所述 4.2 手册的近 24 小时或一周视图为 5 分钟粒度，近两周或一月为一小时。单卷或较高精度数据另查相应性能视图和留存。</li>
+<li><strong>历史区间。</strong> PowerStore Manager 用设备历史和周期变化计算预期范围。时延、IOPS、带宽或 I/O 大小超出范围时，图上会标出偏离值和时间，可调灵敏度。该视图只标记异常点。4.2 手册中的设备（appliance）视图，近 24 小时或一周按 5 分钟显示，近两周或一月按一小时显示。单卷和高精度数据要查相应性能视图及保留期。</li>
 <li><strong>同一请求数下的负载量。</strong> 例如写 IOPS 近似不变、均写大小从 8 KiB 到 64 KiB，则提交字节量约扩大八倍。再看同设备不同卷是否同步恶化、网络是否拥塞和是否有其他变更，判断是单一负载还是资源争用。设备级聚合可能隐藏单卷尖峰。</li>
 <li><strong>连接云端。</strong> 产品受支持、配置 Support Connectivity 后，可上传相关性能、容量、告警、配置和支持数据。基于上传的数据比较跨设备健康和趋势，接入需要按现场遥测出域要求验证。</li>
 <li><strong>云端分析。</strong> 关注容量突增、性能波动与争用。公开健康评分说明按影响最大问题扣分，风险分用于队列排序，判断原因仍应下钻到具体对象和证据。</li>
 <li><strong>云端助手。</strong> 在适用账号可用 <code>@系统名</code> 指定已接入实例，查健康、异常、IOPS、时延和带宽，并用所述 PowerStore 更新建议能力做计划。按账号、站点、设备和指标验收。云端助手的建议与现场执行记录分别保存。</li>
-<li><strong>已知问题自动修复。</strong> PowerStoreOS 4.2 起通过相应 Health Check 包交付 RxDefinitions。对检查命中的、明确支持修复的问题，按配置走 Alert Only 或 Auto-Repair；部分检查和条件仍需人工。验收可核对一项适用问题的告警与修复记录。普通慢写仍走诊断，不能由此推定云端助手能执行任意阵列变更。</li>
+<li><strong>已知问题自动修复。</strong> PowerStoreOS 4.2 起通过相应 Health Check 包交付 RxDefinitions。命中支持的已知问题后，可按设置只告警（Alert Only）或自动修复（Auto-Repair）。部分问题仍需人工处理。验收时查一项适用问题的告警和修复记录。普通慢写走诊断流程，云端助手按其功能范围提供建议。</li>
 </ol>
 <p><strong>与 DME 对照。</strong> 判定‘哪段路径慢’优先看 DME 的受支持设备诊断，判定‘设备偏离自己的历史有多大’可借鉴 Dell 的区间和 I/O 大小。处置另用一个已知问题验证，比较 DME 的预置作业与 Dell 定域 Health Check 能否给出触发条件、适用对象、结果及人工接管状态。 <a href="#l--dell">L</a> · <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
 <h3 id="aws-devops-agent">AWS DevOps Agent</h3>
-<p>AWS 的调查从应用、告警或部署开始。Agent Space 把账号、可查数据与工具目录限定在范围内。它的价值在于从应用层向下拼装证据，并把过程留到复盘。 <a href="#a--aws">A</a></p>
+<p>AWS 可从应用、告警或部署开始调查。Agent Space 限定账号、数据和工具。调查时可沿应用依赖查日志、部署和设备数据，再回看查询过程。 <a href="#a--aws">A</a></p>
 <ol>
 <li><strong>接入与触发。</strong> 连接监控、日志、链路、代码库、部署流水线、工单等受支持的集成。调查可由告警、Webhook 或操作者发起。能否读某个日志或应用拓扑取决于实际连接和账号权限。</li>
 <li><strong>跨域取证。</strong> 从告警定位服务及依赖，读取变更时间线和关联请求，结合运行手册阶段性验证假设。例如用发布范围与旧实例对照，检验“新版本导致写放大”，同时用额外的存储只读工具核对设备争用。</li>
-<li><strong>工具与经验。</strong> Agent Space 可接外部 MCP 和远程 Agent。AWS 外接 MCP 需使用有认证的 HTTPS Streamable HTTP，并配置工具许可。Fusion 2.0 默认走 stdio，不能把这个本地进程原样注册进去。可由本地总控使用，或实测受控适配器的网络、最小权限和超时。DME 北向 REST 同样需要契约适配。Runbook 与调查技能提供查证步骤，版本化记忆、关系证据和知识图谱帮助复用历史经验，当前事故的证据仍需重新查。</li>
-<li><strong>分层授权。</strong> 默认可用的是只读调查。官方批准交互在对话中出现，后台自动调查直接调用变更工具会失败。变更资源的定向动作默认关闭，启用需配置、账号角色和工具分类，执行时校验操作者批准的范围。官方 API 流程允许批准一次性动作，也可给匹配的操作和目标设置最长四小时的重用窗。记录批准范围、有效期及撤销。通过 API 登记第三方 MCP 时，未分类工具按 READ_ONLY 处理，需显式核对分类、凭据和网关实际权限。受支持的 AWS 操作可在 CloudTrail 关联审核和执行。设备原厂动作还要有独立可调用接口及实际授权。</li>
-<li><strong>报告、评价和回放。</strong> 查看候选根因、证据和时间线，对已完成调查重新执行，比较根因、评分、时间、技能和工具。重放重新查询在线系统。需要严格比较两个版本时，另固定一份含知识截止、资产关系和工具版本的不可变快照。</li>
+<li><strong>工具与经验。</strong> Agent Space 可接外部 MCP 和远程 Agent。AWS 外接 MCP 要用带认证的 HTTPS Streamable HTTP，并配置工具许可。Fusion 2.0 默认用本地标准输入输出（stdio），可在本地总控使用。若从 AWS 接入，需测试适配器的网络、最小权限和超时。DME 北向 REST 也需要封装。运行手册和调查技能提供查询步骤，带版本的记忆和关系图可用于参考旧案。当前事故仍需重新取证。</li>
+<li><strong>分层授权。</strong> 默认调查只读。批准在对话中进行，后台调查直接调用变更工具会失败。定向动作默认关闭。启用时配置账号角色和工具分类，执行时核对批准范围。API 支持批准单次动作，也可对同一操作和目标允许最长四小时的重复使用。记下批准范围、有效期和撤销记录。用 API 注册第三方 MCP 时，未分类工具按 READ_ONLY 处理。还要核对凭据和网关实际权限。受支持的 AWS 操作可在 CloudTrail 关联审核和执行。原厂设备操作需有独立接口和权限。</li>
+<li><strong>报告、评价和回放。</strong> 查看候选根因、证据和时间线。重放已完成的调查可比较根因、评分、耗时、技能和工具。重放会重新查询在线系统。严格比较两个版本时，用同一份固定快照，记录数据可见截止时间、资产关系和工具版本。</li>
 </ol>
 <p><strong>与 DME 对照。</strong> AWS 擅长查应用依赖、代码或发布变更，并留下可比较的调查过程。DME 提供可支持的阵列内部路径、设备原生告警和故障树。一种组合是 AWS 或客户总控将应用影响传给 DME 查询，再用 DME 返回的设备事实验证应用层候选。能否直连、调用哪些工具及可见字段以接入和权限为准。 <a href="#a--aws">A</a> · <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
 <h3 id="datadog-bits">Datadog Bits</h3>
-<p>Bits 的入口围绕监控告警和线上事故。它可以查现有调查，也能把建议、人工批准、受支持的基础设施处置和复查挂在同一次调查上。 <a href="#b--datadog">B</a></p>
+<p>Bits 可从监控告警发起调查，也可查看已有调查。建议、人工批准、受支持的基础设施操作和复查可关联到同一调查。 <a href="#b--datadog">B</a></p>
 <ol>
 <li><strong>调查触发。</strong> 可从受支持的 Monitor 告警自动或手动发起，也可从合成测试、RUM、Error Tracking 或人工问题发起。已有监控指标、日志、链路和相关变更决定调查能看多深。</li>
 <li><strong>证据不足处理。</strong> 跟踪活动和推理结果，必要时结论保持未决。按权限和站点可通过 MCP、Bits API 或 pup CLI 查询和发起调查。MCP investigator 还公开支持为运行中的调查补充上下文。发起调查的权限与批准基础设施动作分别检查。</li>
@@ -477,14 +477,14 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><strong>两条执行路径。</strong> Kubernetes 按 Private Action Runner 的允许清单和集群权限执行；AWS 使用相应集成角色。Guardrails 可限定动作、资源与批准者。当前文档的一键基础设施动作和相关策略有 Preview 或站点边界。</li>
 <li><strong>复查和留痕。</strong> 查询动作记录、状态和关联调查。操作员在调查中点击 Verify Resolution。若时间窗仍包含处置前失败请求，可等待相关 Monitor 恢复后点击 Check Again，记录检查窗口。存储事故的冗余恢复、复制或恢复点校验仍从设备侧和业务验收服务取得。</li>
 </ol>
-<p><strong>与 DME 对照。</strong> Bits 把跨域症状、干预与复查串成一次调查，优势是受支持资源的授权及事后可查。DME 的原厂存储设备作业更贴近 OceanStor。两者合在一起时，用调查 ID、工单、计划版本与原厂任务 ID 关联，并让业务和数据保护各自出具验证结果。 <a href="#b--datadog">B</a> · <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
+<p><strong>与 DME 对照。</strong> Bits 可按资源授权并回看操作。DME 提供 OceanStor 原厂设备作业。两者配合时，关联调查 ID、工单、计划版本和原厂任务 ID，再分别核查业务和数据保护。 <a href="#b--datadog">B</a> · <a href="#h--%E5%8D%8E%E4%B8%BA">H</a></p>
 <h3 id="纵向走完一次慢写故障">纵向走完一次慢写故障</h3>
-<p>沿用 02:16 UTC 订单写入 P99 变为 46 ms 的案例。现场题额外设置三个证据源，分别是订单监控、设备与路径观测、应用发布记录。先按事故时点映射确定受影响主机和卷，再分别比较故障路径与备用路径、新版与旧版实例，以及同阵列未受影响的卷。推荐做两次演练。第一次开放路径切换和重传证据，第二次遮掉这部分数据，只留下业务变慢与相邻变更。六套路线是根据公开能力设计的现场走查，表述涉及的环境、数据和处置均为演练条件，产品版本和实际授权以部署为准。</p>
+<p>沿用 02:16 UTC 订单写入 P99 达到 46 ms 的案例。演练提供订单监控、设备和路径数据、应用发布记录。按事发时的映射找受影响主机和卷，再比较故障与备用路径、新旧实例，以及同阵列的正常卷。跑两次，第二次遮掉路径切换和重传数据，只留业务变慢和时间接近的变更。以下步骤按公开功能设计。实际可查范围和授权按部署核对。</p>
 <h4 id="华为-dme-datamaster-从阵列向上定界">华为 DME / DataMaster 从阵列向上定界</h4>
 <ol>
-<li><strong>接入与覆盖。</strong> 核对目标卷及受支持的主机、阵列和 SAN 设备是否纳管，检查事故历史是否仍在保留期。订单告警需要带上租户、服务、时间窗和当前可验证的卷标识，服务到卷的历史映射由业务或总控补充。</li>
+<li><strong>接入与覆盖。</strong> 确认目标卷、主机、阵列和 SAN 设备是否已纳管，历史数据是否仍保留。订单告警要带租户、服务、时间窗和可验证的卷 ID。事发时服务对应哪个卷，由业务或总控补充。</li>
 <li><strong>触发与定界。</strong> 用订单告警指向卷或主机，或从原厂性能、路径告警切入。沿可见 I/O 路径列出前端端口、控制器和相邻设备，把受影响主机与同设备上的正常对象放在同一时间窗对比。</li>
-<li><strong>诊断与补证。</strong> 查分段时延、瓶颈、配置变动和关联告警。若主要异常集中在共同前端路径，先把它列为候选故障域。由主机或交换侧补链路切换、绝对错误计数和备用路径对照，再判断具体路径是否退化。符合型号和 I/O 错误条件的业务中断可另走首错分析。</li>
+<li><strong>诊断与补证。</strong> 查分段时延、瓶颈、配置变动和关联告警。若异常集中在共用的前端路径，先查这条路径。从主机或交换机取得切换事件、实际错误数和备用路径数据，再判断是哪条路径退化。符合型号和 I/O 错误条件的业务中断可另走首错分析。</li>
 <li><strong>拟案与审批。</strong> 让诊断报告列出候选故障域和建议，分开检查阵列对象与交换端口归属。涉及阵列的适用作业按所用工作流预检与审核，交换机变更提交网络团队审批。</li>
 <li><strong>执行与回执。</strong> 受支持且获批的原厂动作进入工作台或工作流，记录设备任务和目标对象。若最终动作是网络侧恢复路径，保存网络变更单号与现场回执，由总控关联到 DME 诊断报告。</li>
 <li><strong>复查与复盘。</strong> 在 DME 重查受影响卷、路径和设备告警，并由应用监控复查订单。若出现冗余降级，另取设备或网络恢复证据。归档事故窗口、路径映射与分析报告，供下次对照。</li>
@@ -492,29 +492,29 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <p>参考 <a href="#h--%E5%8D%8E%E4%B8%BA">华为资料</a>。</p>
 <h4 id="everpure-pure1-fusion-从设备群下钻到阵列">Everpure Pure1 / Fusion 从设备群下钻到阵列</h4>
 <ol>
-<li><strong>接入与覆盖。</strong> 用 Pure1 Manage 清点可见阵列和群组，在 Fusion 单独核对能直接查性能的阵列。群组里看得到成员、阵列直连性能查询成功，这两项分别记录。外部 Agent 需要分别获得相应账户和阵列权限。</li>
+<li><strong>接入与覆盖。</strong> 用 Pure1 Manage 清点可见阵列和群组，在 Fusion 单独核对能直接查性能的阵列。分别记录哪些成员能在群组看到，哪些阵列能直连查到性能。外部 Agent 需要分别获得相应账户和阵列权限。</li>
 <li><strong>触发与定界。</strong> 从 Pure1 的性能异常或人工报障切入，利用已有对象关系定位可疑工作负载。外部 Agent 继续用 Fusion 选同阵列的目标卷和对照卷。订单身份、主机多路径和交换端口由额外数据源补齐。</li>
 <li><strong>诊断与补证。</strong> 比较卷与阵列的 IOPS、吞吐及时延。若仅目标卷异常，优先缩小到该负载或其路径，并补主机与网络证据。若多个卷同步异常，再查共享阵列或共享端口。未配置直连的成员只列为覆盖缺口。</li>
 <li><strong>拟案与审批。</strong> Pure1 Manage 提供只读查询。若确需修改受支持的阵列对象，在 Fusion 检查版本、写工具开关、目标阵列令牌及客户端确认能力。此次若定界到外部链路，改由网络执行方审阅恢复步骤。</li>
-<li><strong>执行与回执。</strong> 阵列侧获批动作由已配置的 Fusion 工具或原厂流程提交，记录调用来源、会话及返回结果。跨域动作需要相应执行器。响应丢失时先查原任务和对象状态，再按接口的实际幂等能力处理。</li>
+<li><strong>执行与回执。</strong> 阵列侧获批动作由已配置的 Fusion 工具或原厂流程提交，记录调用来源、会话及返回结果。跨域动作需要相应执行器。响应丢失时先查原任务和对象状态，再按接口是否能防重复执行决定如何处理。</li>
 <li><strong>复查与复盘。</strong> 复查同一阵列和卷的事故后曲线，记录原先查不到性能的成员是否已获覆盖。业务侧确认 P99 和错误情况，保护状态从原厂对象补证，汇总到同一事故记录。</li>
 </ol>
 <p>参考 <a href="#e--everpure">Everpure 资料</a>。</p>
 <h4 id="netapp-dii-digital-advisor-先验证哪些数据可信">NetApp DII / Digital Advisor 先验证哪些数据可信</h4>
 <ol>
-<li><strong>接入与覆盖。</strong> DII 先查采集单元、现场数据源和最近成功采集，拿授权范围内的资产台账做分母。Digital Advisor 可提供受支持 ONTAP 的风险和升级上下文，事故时点的逐路径证据仍由匹配的数据源取得。</li>
-<li><strong>触发与定界。</strong> 从已有告警或人工问询进入，通过 DII 发现实际对象类型和字段，定位目标存储、卷与可见交换对象。区分未采集、采集过期、查询身份不可见和符合条件但无样本的情况。</li>
-<li><strong>诊断与补证。</strong> 用同粒度的当前窗与对照窗检查卷性能、告警和可用日志。若交换采集器失联，报告卷慢写已观测，路径候选待补证。若采集器可用，再核对目标路径与独立路径的计数差异。</li>
+<li><strong>接入与覆盖。</strong> DII 先查采集单元、数据源和最近采集成功的时间。计算覆盖率时，以台账里有权查询的资产数为分母。Digital Advisor 提供受支持 ONTAP 的风险和升级建议。事发时每条路径的数据要从对应来源查。</li>
+<li><strong>触发与定界。</strong> 从告警或人工提问开始。先查 DII 实际有哪些对象类型和字段，再找存储、卷和交换设备。分别记录未采集、采集过期、无权查询和有权查询但没有样本。</li>
+<li><strong>诊断与补证。</strong> 用相同粒度检查故障和对照窗口的卷性能、告警与日志。如果交换机采集器断连，只报告已观察到卷慢写，暂缓判断路径。采集器可用时，对比目标路径和独立路径的错误计数。</li>
 <li><strong>拟案与审批。</strong> DII MCP 的只读 Preview 路线可以准备证据和建议。输出目标对象、受影响范围、数据缺口和验收条件，交由运维工单或适用的设备工作流审批。</li>
 <li><strong>执行与回执。</strong> 由获批的网络工具、设备 API 或外部编排器执行，记录相应作业或变更单。DII 查询可以拿来观察执行前后的变化，作业是否受理和完成由执行方证实。</li>
-<li><strong>复查与复盘。</strong> 同时检查原对象性能和采集新鲜度。曲线消失时先判断是采集掉线还是对象变化。保存查询范围、源状态、关键字段与样本引用，供对应版本复核。</li>
+<li><strong>复查与复盘。</strong> 复查同一对象的性能和最后采集时间。曲线消失时先查采集是否掉线、对象是否变更。保存查询范围、数据源状态、关键字段和样本引用。</li>
 </ol>
 <p>参考 <a href="#n--netapp">NetApp 资料</a>。</p>
 <h4 id="dell-powerstore-dell-aiops-从历史偏离找可解释的变化">Dell PowerStore / Dell AIOps 从历史偏离找可解释的变化</h4>
 <ol>
 <li><strong>接入与覆盖。</strong> 先核对 PowerStore 本地曲线的对象层级、保存窗口与粒度。有受支持的云端连接时再使用 AIOps 分析，在记录里注明哪些证据留在设备、哪些已经上云。</li>
-<li><strong>触发与定界。</strong> 从应用报障打开 PowerStore 最近的设备性能视图，定位实际曲线偏离预期区间的时刻，再查目标卷。PowerStoreOS 5.0 将设备级异常视图带到仪表板。这一入口适合先找到可疑 appliance，再回到单卷或路径查证。</li>
-<li><strong>诊断与补证。</strong> 合看 I/O 大小、IOPS、带宽和时延。如果 IOPS 稳定而平均 I/O 大小增大，负载结构变化仍是候选。若事故侧出现路径切换和重传，而容量或负载指标无对应变化，转向网络和主机交叉查证。只有设备级五分钟聚合时，保留短时尖峰可能被平滑的限制。</li>
+<li><strong>触发与定界。</strong> 从应用报障打开 PowerStore 最近的设备性能视图，定位实际曲线偏离预期区间的时刻，再查目标卷。PowerStoreOS 5.0 将设备级异常视图带到仪表板。先用它找可疑设备，再查具体卷或路径。</li>
+<li><strong>诊断与补证。</strong> 合看 I/O 大小、IOPS、带宽和时延。如果 IOPS 稳定而平均 I/O 大小增大，负载结构变化仍是候选。若事故侧出现路径切换和重传，而容量或负载指标无对应变化，转向网络和主机交叉查证。只有设备级五分钟汇总时，报告应注明短时尖峰可能被平均掉。</li>
 <li><strong>拟案与审批。</strong> 用本地与云端证据组织建议。单独核对设备 Health Check 是否实际命中支持矩阵中的已知问题。慢写若缺明确匹配项，按正常变更流程审批。</li>
 <li><strong>执行与回执。</strong> 符合检查项、版本和模式时，按已配置的 Auto-Repair 处理该项已知问题，核查设备侧记录。若查到外部路径退化，由网络团队执行审批过的恢复步骤并写回回执。</li>
 <li><strong>复查与复盘。</strong> 对照相同对象和负载时段，验证偏差是否缩小。Health Check 触发的事件另查检查和修复状态。短时业务恢复从应用监控确认，保护或冗余恢复从对应设备与路径取得证据。</li>
@@ -524,9 +524,9 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <ol>
 <li><strong>接入与覆盖。</strong> 在 Agent Space 界定账号与可用工具，接业务监控、日志、追踪和发布记录。自行接入受控设备与网络查询，事前确认每个工具能访问哪个站点、租户、对象和历史窗。</li>
 <li><strong>触发与定界。</strong> 从订单 SLO 告警或值班员请求发起，沿服务依赖图定位受影响实例。用事故时点映射连到卷和主机，圈出新版与旧版、共享路径与独立路径两个对照组。</li>
-<li><strong>诊断与补证。</strong> 发现邻近发布后，用新版、旧版和路径分组的实际表现检验。新旧实例都受影响且目标路径有同步切换与重传时，优先让设备与网络工具复核。只有发布事件时，把发布保留为候选，标出下一项缺证。</li>
+<li><strong>诊断与补证。</strong> 发现邻近发布后，用新版、旧版和路径分组的实际表现检验。如果新旧实例都受影响，目标路径也同时切换并重传，先用设备和网络工具复核路径。若手头只有发布记录，把发布列为待查原因，并说明接下来缺什么数据。</li>
 <li><strong>拟案与审批。</strong> 自动调查形成证据和处置建议。在对话中由操作者提出受支持的定向动作，核对相应角色、工具类别、资源目标及有效批准。交换机或阵列动作以接入的原厂执行器及现场审批为准。</li>
-<li><strong>执行与回执。</strong> 获批动作照实际目标提交。适用的 AWS 动作查 CloudTrail，外部动作查执行器的任务或变更单。当前状态与动作归属各自核对，超时保留待对账。</li>
+<li><strong>执行与回执。</strong> 获批动作照实际目标提交。适用的 AWS 动作查 CloudTrail，外部动作查执行器的任务或变更单。分别核对目标状态和作业是否由本次请求触发。超时后找不到原任务时，标记待对账。</li>
 <li><strong>复查与复盘。</strong> 用应用与设备两侧重新查询确认恢复，记录之前不可见的信号。调查重放能比较工具、技能、评分和时间线，但会读取在线数据。要评估新旧 Agent 的诊断差异，另准备固定事故快照。</li>
 </ol>
 <p>参考 <a href="#a--aws">AWS 资料</a>。</p>
@@ -534,15 +534,15 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <ol>
 <li><strong>接入与覆盖。</strong> 确认 Monitor、追踪、日志和变更事件都带有可关联的服务标识。安排采集器或适配器补齐阵列和网络证据，并通过值班角色检查是否真的可查询。</li>
 <li><strong>触发与定界。</strong> 让已配置的 Monitor 或人工问题触发调查。首先定位异常请求与关联的服务、部署和资源，再核对是否能映射到故障时点的主机和卷。</li>
-<li><strong>诊断与补证。</strong> 将告警、追踪、部署时间和设备证据对齐。若仅看到延迟上涨与发布时间接近，可补充新旧实例对照和主机多路径数据，或者保留未决。当证据指向共同路径时，把网络恢复交给适用的设备流程。</li>
+<li><strong>诊断与补证。</strong> 将告警、追踪、部署时间和设备证据对齐。若仅看到延迟上涨与发布时间接近，可补充新旧实例对照和主机多路径数据，或者保留未决。当证据指向共同路径时，按网络设备的流程恢复。</li>
 <li><strong>拟案与审批。</strong> 如果证据最终支持应用回滚，目标可以是受支持的 Kubernetes Deployment。通过 Guardrails 核对具体动作、资源和审批人，并确认站点及 Preview 条件。网络恢复走相应的外部审批。</li>
 <li><strong>执行与回执。</strong> 适用 Kubernetes 动作使用允许该动作的 Private Action Runner 和目标集群权限，适用 AWS 动作用集成角色。将原调查与动作历史关联，外部设备作业另存回执。</li>
-<li><strong>复查与复盘。</strong> 操作者发起 Verify Resolution，检查事故后的窗口。如果评价窗仍含处置前失败样本，可等监控窗口更新后复查。阵列复制、冗余或恢复点需设备侧单独证实并写入事故记录。</li>
+<li><strong>复查与复盘。</strong> 操作者发起 Verify Resolution，检查事故后的窗口。如果评价窗仍含处置前失败样本，可等监控窗口更新后复查。在设备侧核对阵列复制、冗余或恢复点，再把结果写进事故记录。</li>
 </ol>
 <p>参考 <a href="#b--datadog">Datadog 资料</a>。</p>
 <h2 id="3-与-dme-对标时具体差在哪">3. 与 DME 对标时具体差在哪</h2>
 <h3 id="接入观测与设备分析">接入、观测与设备分析</h3>
-<p class="product-matrix">每行是一项可现场验证的功能。表内沿用原厂公开模块名，现场应按版本、型号、角色和集成检查实际范围。</p>
+<p class="product-matrix">按版本、型号、角色和集成逐项验证。模块名沿用厂商文档。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -559,45 +559,45 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>设备与资源登记</td>
 <td>OceanStor 及兼容设备，库存可关联主机与 SAN 对象</td>
-<td>Pure1 盘点设备群；Fusion 查 FlashArray、FlashBlade、卷和文件系统</td>
+<td>Pure1 查设备群。Fusion 查 FlashArray、FlashBlade、卷和文件系统</td>
 <td>DII 通过采集器纳管异构阵列、交换机、虚拟化与容器</td>
-<td>PowerStore Manager 管原厂设备；云端需配置相应连接</td>
+<td>PowerStore Manager 管原厂设备。云端需配置连接</td>
 <td>接入账号内的应用和云资源，阵列资产需要外部工具</td>
-<td>以 Datadog 已集成的服务、主机、集群及指标为原料</td>
+<td>读取已接入 Datadog 的服务、主机、集群及指标</td>
 </tr>
 <tr>
 <td>采集质量核对</td>
-<td>有纳管和观测入口，逐源水位与缺测对象的北向契约需验证</td>
+<td>可查看纳管和监控。需验证北向接口能否按源返回采集进度和缺测对象</td>
 <td>区分设备群成员清单和阵列性能可查询子集</td>
-<td>工具可查采集单元、数据源状态、上报新鲜度和版本</td>
+<td>工具可查采集单元、数据源状态、最近上报时间和版本</td>
 <td>区分设备本地视图与连接后上传到云的数据</td>
 <td>可见性随 Agent Space 的身份、数据源和集成变化</td>
-<td>可从已有告警和信号调查，需按现场验证端到端数据覆盖</td>
+<td>可从已有告警和指标调查。数据覆盖按现场验证</td>
 </tr>
 <tr>
 <td>历史性能和粒度</td>
-<td>对象曲线与时间窗比较；条件满足时从设备回取 5 秒历史</td>
+<td>对比对象曲线和时间窗。满足条件时从设备查 5 秒历史</td>
 <td>阵列及部分对象性能，查询范围按所配置的原厂阵列</td>
-<td>对象时序、聚合、分页和字段元数据；按时间窗口与权限返回</td>
-<td>4.2 异常视图是 appliance 级；单卷或秒级曲线须另查适用指标和留存</td>
+<td>按时间和权限查对象时序、汇总值和字段，支持分页</td>
+<td>4.2 异常视图按设备显示。单卷或秒级曲线需另查指标和保留期</td>
 <td>读取接入源的指标和日志，粒度依原数据源及授权</td>
 <td>读取已纳入监控的指标、日志和链路，阵列粒度视数据接入</td>
 </tr>
 <tr>
 <td>路径与依赖</td>
-<td>受支持的 I/O 路径、存储域及基础设施对象关系；首错限于受支持的 I/O 中断</td>
-<td>Fusion 设备群及工作负载对象；应用发现受 Purity 与支持范围限制</td>
+<td>查受支持的 I/O 路径、存储域和设备关系。首错限于受支持的 I/O 中断</td>
+<td>Fusion 查设备群和工作负载。应用发现取决于 Purity 版本和支持范围</td>
 <td>多源资源关系与采集类型，深度依设备和采集器</td>
 <td>PowerStore 原厂设备视角，应用到设备的完整路径需补业务数据</td>
-<td>应用、云资源、流水线的关系；可扩展设备侧查询</td>
+<td>可查应用、云资源和流水线关系，并扩展设备查询</td>
 <td>受集成覆盖的服务与基础设施关系，用于追查应用症状</td>
 </tr>
 <tr>
 <td>健康、异常和预警</td>
 <td>规则、基线、容量和性能预警，各对象有适用范围</td>
-<td>Pure1 设备群健康和风险，Copilot 支持性能异常调查</td>
-<td>DII 可查监控、告警；Advisor 提供 ONTAP 健康和风险建议</td>
-<td>本地趋势偏离及灵敏度；云端健康分、争用、容量突增等</td>
+<td>Pure1 显示设备群健康和风险。Copilot 调查性能异常</td>
+<td>DII 查监控和告警。Advisor 给出 ONTAP 健康和风险建议</td>
+<td>本地可查趋势偏离并调节灵敏度。云端提供健康分、争用和容量突增</td>
 <td>调用监控及变更数据支持诊断与预防建议</td>
 <td>以 Monitor、Synthetics、RUM 等触发调查</td>
 </tr>
@@ -613,7 +613,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tbody>
 </table></div>
 <h3 id="调查集成变更和验收">调查、集成、变更和验收</h3>
-<p class="product-matrix">先分清四种权限。看设备数据、发起调查、批准作业和执行作业可以属于不同角色。开通 AI 对话时应分别验收。</p>
+<p class="product-matrix">看设备数据、发起调查、批准作业和执行作业可能分属不同角色。分别验收权限。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -630,24 +630,24 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>原生 AI 调查入口</td>
 <td>运维助手对话、故障智能体场景化排查</td>
-<td>Pure1 AI Copilot；外部客户端可另接两个 MCP</td>
-<td>DII Assistant；AWS 托管站点正式可用</td>
-<td>Dell AIOps Assistant；PowerStore 本地异常点仍可由人复核</td>
+<td>内置 Pure1 AI Copilot。外部客户端可另接两个 MCP</td>
+<td>DII Assistant 已在对应 AWS 托管站点正式可用</td>
+<td>可用 Dell AIOps Assistant。值班员也可复核 PowerStore 本地异常点</td>
 <td>Agent Space 中的告警、人工或外部事件触发</td>
 <td>Monitor 告警、Synthetics、RUM、Error Tracking 或问题</td>
 </tr>
 <tr>
 <td>外部工具方向</td>
-<td>北向 API，可对接客户总控及跨域智能体；通用工具契约待验</td>
-<td>Pure1 Manage MCP 正式；Fusion 2.0 提供设备工具</td>
+<td>北向 API 可接客户总控和跨系统 Agent。通用工具接口需验证</td>
+<td>Pure1 Manage MCP 已正式发布。Fusion 2.0 提供设备工具</td>
 <td>DII MCP 为租户内只读 Preview</td>
-<td>这里主要比较本地性能和 AIOps 分析；外部 Agent 的工具契约按目标产品核验</td>
+<td>按本地性能视图和云端分析对照。外部 Agent 能调用哪些工具，需核对目标产品</td>
 <td>可接外部 MCP 和远程 Agent，工具按连接及空间授权</td>
-<td>MCP、API、CLI 支持读和发起调查；MCP investigator 另可引导运行中调查</td>
+<td>MCP、API 和 CLI 可查看或发起调查。MCP investigator 还可为进行中的调查补充信息</td>
 </tr>
 <tr>
 <td>根因依据</td>
-<td>慢写查 I/O 路径、瓶颈和配置；受支持的 I/O 中断查首错，分别输出分析报告</td>
+<td>慢写查 I/O 路径、瓶颈和配置。受支持的 I/O 中断查首错。两类分析分别出报告</td>
 <td>工具回传具体阵列、卷与性能；应用假设依客户端和额外上下文</td>
 <td>用采集健康、对象、指标、日志及告警复核候选</td>
 <td>预期区间、实际偏离、共享资源或容量趋势支持复核</td>
@@ -656,8 +656,8 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 <tr>
 <td>知识与经验</td>
-<td>场景知识用于诊断；图谱、RAG 和多 Agent 有联合案例，标准交付单查</td>
-<td>阵列接口说明及 Copilot 可用上下文；外部 Agent 知识由接入方选择</td>
+<td>故障智能体按场景知识排查。联合项目披露图谱、RAG 和多 Agent，标准版需另查</td>
+<td>有阵列接口说明和 Copilot 可用数据。外部 Agent 的知识库由接入方选择</td>
 <td>查询配方、字段元数据、Advisor 风险知识和支持建议</td>
 <td>助手结合产品数据提供解释与建议，按场景确认依据</td>
 <td>调查技能、Runbook、版本化记忆与带证据的关系图</td>
@@ -668,7 +668,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>原厂块/文件资源发放、预置操作、编排与工作台</td>
 <td>Fusion 2.0 可选预设、部署、卷、主机、快照等</td>
 <td>DII MCP 只读取证，作业走受支持的设备 API 或外部平台</td>
-<td>助手可给建议；列入 Health Checks 的已知问题可按模式启用 Auto-Repair</td>
+<td>助手给建议。Health Checks 可对支持的已知问题启用 Auto-Repair</td>
 <td>显式启用定向动作后执行受支持资源的获批变更</td>
 <td>一键基础设施动作 Preview，如受支持的 Kubernetes 回滚或 AWS 动作</td>
 </tr>
@@ -683,10 +683,10 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 <tr>
 <td>工单、对账和效果</td>
-<td>任务与工作流有跟踪入口；原厂异步任务与业务工单关联需验收</td>
-<td>API 结果与工具会话可记录；响应丢失和任务查回需验证</td>
-<td>调查结果可进入外部流程，原厂作业跟踪按接口接入</td>
-<td>回看异常、趋势和设备状态；外部工单闭环需按部署接入</td>
+<td>可跟踪任务和工作流。需验收异步任务能否关联业务工单</td>
+<td>可记录 API 结果和工具会话。需验证响应丢失时能否找回任务</td>
+<td>把调查结果交给外部流程，通过对应接口跟踪原厂作业</td>
+<td>可回看异常、趋势和设备状态。外部工单按部署接入</td>
 <td>按动作审计查实际执行；另查应用 SLO 与保护状态，作业可接外部跟踪</td>
 <td>动作历史与主动发起的 Verify Resolution；存储保护在设备侧验收</td>
 </tr>
@@ -696,14 +696,14 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>固定版本与工具清单适合做权限、覆盖及回归测试</td>
 <td>可按配方重跑查询，固定事故快照由接入方准备</td>
 <td>对照本地和云端异常窗口及告警，效果比较需控制样本</td>
-<td>可重放并比较调查结果、工具、技能和时间；重查在线证据</td>
+<td>重放可比较调查结果、工具、技能和耗时。重放会重新查在线数据</td>
 <td>可回看调查和复查结果；需按实际接口验证离线事故回放</td>
 </tr>
 </tbody>
 </table></div>
-<p>表格按公开资料归纳。写入保护、跨域复查或某项接口未在所查资料中展开的格子，保留待验条件。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a> · <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a> · <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></p>
+<p>表中待验项包括公开资料未说明的写入控制、跨系统复查和接口细节。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a> · <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a> · <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></p>
 <h3 id="横向比较六个阶段">横向比较六个阶段</h3>
-<p>沿用纵向案例，在相同时间窗和授权范围内逐段验收。左侧比较证据或治理能力，右侧给出能让差异暴露的测试。DME 栏描述基准能力与需要现场接入的部分，每个测试记录实际产出、负责人和下一步。</p>
+<p>沿用慢写案例，在相同时间窗和权限下逐步测试。每项记录实际结果、负责人和下一步。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -722,9 +722,9 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 <tr>
 <td>2. 触发与定界</td>
-<td>设备侧沿可见 I/O 路径找到共享故障点，跨域追查需事发时点映射</td>
-<td>AWS、Datadog 更容易从已接业务告警和发布切入。Everpure 从群组和卷向业务查找时取决于已知工作负载关系。Dell 的设备偏离适合找候选 appliance。DII 能用可采对象和关系约束调查范围</td>
-<td>用事故后迁移改变卷映射，再用 02:16 的告警发起调查。必须查到当时的映射版本、目标卷以及受影响和未受影响的对象。只有当前映射时保留未知</td>
+<td>沿可见的 I/O 路径找共同经过的设备或链路，再查设备、主机和网络证据。查业务还要有事发时的映射</td>
+<td>AWS 和 Datadog 可从已接入的业务告警或发布切入。Everpure 依靠已知关系从卷和设备群查业务。Dell 用异常曲线找候选设备。DII 根据已采集的对象和关系缩小范围</td>
+<td>在事故后迁移卷，再用 02:16 的告警回查。核对事发时的映射版本、目标卷，以及受影响和未受影响的对象。只有当前映射时标为未知</td>
 </tr>
 <tr>
 <td>3. 诊断与补证</td>
@@ -752,7 +752,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>DME 的补强顺序。</strong> 先解决阶段 1 和 2，能够按事故时间把应用、主机、卷和路径连起来，并说明缺了哪些数据。其次把阶段 3 的候选和反证结构化，让 Agent 能从 DME 调查结果继续取证。第三步连通阶段 4 至 6，让批准范围、原厂任务、业务复查和保护验收可以对账。先用只读调查验证前两步，再在沙箱中检验写入闭环。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a> · <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a> · <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></p>
+<p>先能按事发时间查应用、主机、卷和路径关系，并标出缺测。然后把候选原因和反证做成字段，供 Agent 接着查。最后关联批准范围、原厂任务、业务复查和保护验收。前两步用只读调查验证，写操作在沙箱中演练。 <a href="#h--%E5%8D%8E%E4%B8%BA">H</a> · <a href="#e--everpure">E</a> · <a href="#n--netapp">N</a> · <a href="#l--dell">L</a> · <a href="#a--aws">A</a> · <a href="#b--datadog">B</a></p>
 <h3 id="场景选型与-dme-补强清单">场景选型与 DME 补强清单</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -796,16 +796,16 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>四个优先核对项。</strong> 先让 DME 现场展示以下链路。每项记录由谁提供、是否属于标准版本、是否可用现有北向接口装配，再决定自建范围。</p>
+<p>现场逐项测试。记录由谁提供、是否随标准版交付、能否走现有北向接口，再决定哪些要自建。</p>
 <ol>
-<li><strong>可被外部 Agent 调用的设备事实。</strong> 清单里至少列 5 类查询：资产身份、选定时间窗的性能、路径、告警和分析报告。对每项实际执行正常、无权限、无数据、历史过期和分页几种请求，记录结构化字段与错误。</li>
-<li><strong>能回到事故当时的跨域证据。</strong> 用应用→主机→卷→路径的事发版本追查，再制造一处晚到映射。让报告标出每条结论的来源、时间、对象、缺测和使用的工具。核对能否导出证据和调用轨迹。</li>
-<li><strong>从计划到设备作业的关联和双验收。</strong> 将审批、请求、原厂任务、实际对象状态、业务与保护的证据关联到同一调查 ID。用超时和拓扑变化测试对账。只有目标状态时保留本次作业的待对账状态。</li>
-<li><strong>同一份事故输入复测。</strong> 冻结事故时点数据和工具版本。将 DME 设备分析与总控 Agent 能力分开计分，保留“没查到”与“查明正常”的区别。可用 A/B/C 合成输入先试记分，再测现场真实事故。</li>
+<li><strong>外部 Agent 能查哪些设备数据。</strong> 至少测试 5 类查询，包括资产、指定时段的性能、路径、告警和分析报告。每项都试正常、无权限、无数据、历史过期和分页，记录字段和错误返回。</li>
+<li><strong>能否查到事发时的数据。</strong> 按事发时的关系从应用查到主机、卷和路径。模拟一条晚到的映射。检查报告能否逐条标出来源、时间、对象、缺测和查询工具，并导出证据和调用记录。</li>
+<li><strong>能否查回作业并验收。</strong> 在同一调查 ID 下记录审批、请求、原厂任务、实际状态、业务和保护证据。测试超时和拓扑变化。只观察到目标状态时，本次作业仍记待对账。</li>
+<li><strong>同一事故复测。</strong> 固定事发数据和工具版本。分别给 DME 设备分析和总控 Agent 评分，区分无数据与已查明正常。先用 A/B/C 示例试评分，再测真实事故。</li>
 </ol>
 <h2 id="4-两道任务跑出优劣">4. 两道任务跑出优劣</h2>
 <h3 id="任务一-从写入延迟查到原因">任务一 从写入延迟查到原因</h3>
-<p>先按<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html#2-%E4%BB%8E%E5%90%8C%E4%B8%80%E4%B8%AA%E7%97%87%E7%8A%B6%E8%AF%86%E5%88%AB%E4%B8%89%E7%A7%8D%E5%8E%9F%E5%9B%A0">跨层回放</a>跑 A、B、C。初始输入统一为订单写入 P99 为 46 ms，截止 02:16 UTC。CSV 没有总请求数、错误数或完整受影响对象清单，首报只能确认已观测的写延迟异常。逐步补查见<a href="#%E4%B8%80%E6%AC%A1%E8%B0%83%E6%9F%A5%E5%A6%82%E4%BD%95%E8%A1%A5%E8%AF%81">一次调查如何补证</a>。</p>
+<p>先按<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html#2-%E4%BB%8E%E5%90%8C%E4%B8%80%E4%B8%AA%E7%97%87%E7%8A%B6%E8%AF%86%E5%88%AB%E4%B8%89%E7%A7%8D%E5%8E%9F%E5%9B%A0">跨层回放</a>跑 A、B、C。初始输入统一为订单写入 P99 为 46 ms，截止 02:16 UTC。CSV 缺总请求数、错误数和完整的受影响对象清单。首报只确认观察到的写延迟异常。逐步补查见<a href="#%E4%B8%80%E6%AC%A1%E8%B0%83%E6%9F%A5%E5%A6%82%E4%BD%95%E8%A1%A5%E8%AF%81">一次调查如何补证</a>。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -832,14 +832,14 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>原生端到端试验。</strong> 让产品用自己的接入、事件和工具查同类现场事故。记录接入前置、实际覆盖、证据取得时间、根因候选、处理结果、不能使用的角色或资源。各方的产品强项和盲区都计入结果。</p>
-<p><strong>固定证据推理试验。</strong> 由评测器向具备该输入接口的模型或代理提供同一份快照、权限和工具回执，冻结文档版本及预算，单独比较推理。无法回放相同输入或无法屏蔽额外在线查证的产品，在这一项标为不适用。AWS 原生调查重放会重查在线系统，仍可用来比较调查流程，但属于另一口径。 <a href="#a--aws">A</a></p>
+<p><strong>原生端到端试验。</strong> 让产品用自己的接入、事件和工具查同类现场事故。记录接入要求、数据覆盖、取得证据的时间、候选原因、处理结果，以及不可用的角色或资源。</p>
+<p><strong>固定证据推理试验。</strong> 给支持该接口的模型或 Agent 相同的快照、权限和工具回执。固定文档版本和预算，只比较推理。产品无法使用相同输入或排除额外在线查询时，本项记为不适用。AWS 的调查重放会重新查在线系统，可用于比较调查流程。 <a href="#a--aws">A</a></p>
 <h3 id="任务二-把一项卷扩容做成可验收作业">任务二 把一项卷扩容做成可验收作业</h3>
 <p>值班员要求给一个订单卷扩容。接到需求后先由 Agent 取证形成计划，再由审批和执行系统处理。</p>
 <ol>
-<li><strong>定对象和容量。</strong> 用租户和稳定对象 ID 明确目标卷，检查池容量、快照与复制预留、配额、故障域及主机端文件系统约束。审批绑定目标、变更后容量和计划版本。池状态或拓扑变化时按策略复审。</li>
-<li><strong>记录提交与归属证据。</strong> 在发出前保存请求 ID、目标、参数、计划和审批版本。若厂商返回作业 ID，用它轮询实际状态，保留受理、完成和错误记录。ONTAP 的异步接口是一个例子。可按客户端键重新查回作业的能力需逐接口验证。</li>
-<li><strong>超时时分别核对两种事实。</strong> <code>execution_status</code> 依据本次请求与厂商作业的关联，可为已受理、已完成、失败或待对账。<code>target_state</code> 由对象实际容量独立记录。若超时后容量已达标，但没有本次作业的可信关联，应记“目标已观测、本次作业待对账”。另一位操作员或 FlexVol 自动增长都可能达到同一容量。未知时挂起交接，按已验证的幂等能力决定是否重试。</li>
+<li><strong>定对象和容量。</strong> 用租户和稳定的对象 ID 定位目标卷。检查池容量、快照与复制预留、配额、故障域及主机文件系统限制。审批绑定目标卷、变更后容量和计划版本。池状态或拓扑变化后按策略复审。</li>
+<li><strong>记录提交与归属证据。</strong> 提交前保存请求 ID、目标、参数、计划和审批版本。有原厂作业 ID 时，用它定期查询状态，保留受理、完成或报错记录。ONTAP 异步接口是一个例子。能否按客户端请求键找回作业，要逐接口验证。</li>
+<li><strong>超时时分别核对两种事实。</strong> <code>execution_status</code> 记录本次作业已受理、完成、失败或待对账。<code>target_state</code> 独立记录卷的实际容量。超时后即使容量达标，也要查原厂作业是否来自本次请求，查不到就记“目标已观测、本次作业待对账”。另一位操作员或 FlexVol 自动增长也可能达到同一容量。查不清时暂停并交接，按接口能否防重复执行决定是否重试。</li>
 <li><strong>验收业务和保护。</strong> 在设备状态之外查主机卷或文件系统、业务延迟、错误和读写，再查冗余、复制滞后与恢复点。业务已缓解、保护尚未验证时保留对应待办。</li>
 </ol>
 <p>已有<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html#3-%E9%AA%8C%E8%AF%81%E4%B8%80%E6%AC%A1%E8%B7%A8%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%8D%B7%E6%89%A9%E5%AE%B9%E4%BB%BB%E5%8A%A1">跨进程作业实操</a>演示了模拟设备按请求键找到原任务，以及只有保护验证通过才转为成功。模拟器使用自己的作业表和预设验证条件。真实接口是否保留请求与作业的关联、现场能否按照同一时点检查目标状态，需用所选平台验证。 <a href="#v--%E8%AF%8A%E6%96%AD%E5%A5%91%E7%BA%A6%E4%B8%8E%E4%BD%9C%E4%B8%9A%E9%AA%8C%E8%AF%81">V</a></p>
@@ -850,15 +850,15 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><strong>触发</strong>应用告警、发布事件、租户与服务目标<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>取证</strong>总控定范围，向 DME 和网络/应用工具分发只读查询<span class="arch-arrow" aria-hidden="true">→</span></li>
 <li><strong>执行</strong>受控提交原厂/编排作业，绑定计划版本和任务 ID<span class="arch-arrow" aria-hidden="true">→</span></li>
-<li><strong>双验收</strong>应用复查 + 设备保护复查，将快照和结果回写工单</li>
+<li><strong>验收</strong>复查应用和数据保护，将快照和结果写入工单</li>
 </ol>
 </figure>
-<p><strong>设备和采集层。</strong> 复用 DME 与其他原厂平台能稳定提供的接口，补应用 SLO、部署、主机多路径、交换网络和工单。维护“资产、支持指标、采集时效”三份清单。在 PB 环境中，采集与推理预算看对象数量、标签基数、频率、保留期和并发调查，与业务存储容量分别估算。例如 2 万个卷、每卷 12 项指标、15 秒一次，在每指标每次一个样本的假设下约 1.6 万样本/秒，还没计入路径标签和日志。常态调查可先用汇总趋势缩小范围，再按需读取特定对象的高精度窗口。</p>
-<p><strong>证据与知识层。</strong> 把设备样本和日志保留在时序及日志系统，事故窗口保留原始引用和实际覆盖。知识图谱存应用到卷到设备的有时间效力的关系，以及型号、固件、已知模式和 Runbook。运行状态和手册分开取证，例如用指标证明何时退化，用手册解释当前设备为什么会呈现这一模式。</p>
-<p><strong>调查和执行层。</strong> 保留规则与统计检测的快速路径，复杂问题由 Agent 选择只读工具、切换调查域、比较假设和整理证据。单独用确定性流程做授权、计划版本、设备任务核对和验收。在第一期让调查输出统一的调查 ID、对象、时间窗、输入覆盖、证据链接和未决项。用它贯通 DME、应用监控和工单之后，再接受监督的设备作业。</p>
-<p><strong>评估。</strong> 每次保存调查截止时间、关键证据、当时拓扑、工具和规则版本、判断与人工复核结论。先用缺采集、共享路径、审批后变化、响应丢失与保护未恢复五类用例做回归，再扩大站点。对于纯 OceanStor 环境，先吃透 DME 的设备能力；对于异构阵列和多业务域，优先确定各产品覆盖与跨域证据契约。建设细节见 <a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a>。</p>
+<p><strong>设备和采集层。</strong> 用 DME 和其他原厂接口查设备，另接应用 SLO、发布记录、主机多路径、交换网络和工单。维护资产清单、支持的指标和最近采集时间。监控与推理的成本要按对象数、标签组合数、采样频率、保留期和并发调查数另算。2 万个卷，每卷 12 项指标，每 15 秒采一个样本，约为每秒 1.6 万样本，还未计入路径标签和日志。平时先看汇总趋势，再按需查特定对象和时间窗口的细数据。</p>
+<p><strong>证据与知识层。</strong> 在时序库和日志库保留样本与日志，并记录事发窗口的覆盖和样本引用。知识图谱保存应用、卷和设备之间的关系及其有效时间，也记录型号、固件、已知故障和运行手册。用现场指标确认何时退化，用手册解释该型号和固件为何可能出现这种故障。</p>
+<p><strong>调查和执行层。</strong> 常见问题先跑规则和统计检测。复杂问题由 Agent 选择只读查询、比较候选原因并整理证据。权限检查、计划核对、作业跟踪和验收由固定流程处理。第一期先输出调查 ID、对象、时间窗、数据覆盖、证据链接和未决项。用调查 ID 关联 DME、应用监控和工单后，再接经审批的设备作业。</p>
+<p><strong>评估。</strong> 每次保存调查截止时间、关键证据、当时拓扑、工具和规则版本、判断与人工复核结论。先用缺采集、共享路径、审批后变化、响应丢失与保护未恢复五类用例做回归，再扩大站点。纯 OceanStor 环境优先验证 DME 能查什么、能执行什么。多厂商环境先确认各产品覆盖哪些设备，以及如何关联不同系统的证据。建设细节见 <a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a>。</p>
 <h2 id="6-诊断引擎与-agent-如何分工">6. 诊断引擎与 Agent 如何分工</h2>
-<p>一次可复核的调查要回答三个问题。确切观察到了什么，哪些原因仍可能成立，下一次查什么最能区分它们。</p>
+<p>调查要写清观察到了什么、哪些原因仍可能成立、接下来查什么能区分这些原因。</p>
 <h3 id="把事实推断和变更分开放">把事实、推断和变更分开放</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -871,18 +871,18 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tbody>
 <tr>
 <td>观测和分析器</td>
-<td>时窗对齐、SLO 好请求比例、窗口吞吐、偏离历史区间、采集覆盖率</td>
+<td>对齐时间窗，计算 SLO 达标请求比例、吞吐、历史偏离和采集覆盖率</td>
 <td>值、单位、阈值、分母、实体 ID 和可查窗口。缺数据单列原因</td>
 </tr>
 <tr>
 <td>设备诊断服务</td>
-<td>从设备获取原厂诊断。性能慢查时延、瓶颈、配置和相关告警；受支持的 I/O 中断另查首错</td>
+<td>从设备取原厂诊断。慢写查时延、瓶颈、配置和告警。受支持的 I/O 中断另查首错</td>
 <td>对象、候选原因、原厂报告及时间。新分析作业有单独的能力和预算</td>
 </tr>
 <tr>
 <td>业务到设备的证据服务</td>
-<td>按事件时间查当时有效拓扑，按实际可查时间过滤再晚到也相关的证据；映射应用、主机、卷和路径</td>
-<td>实际版本、观察范围、缺数。多解时维持分支或请用户给稳定 ID</td>
+<td>把应用、主机、卷和路径映射到事发时的拓扑。只取截止时已能查到的证据</td>
+<td>实际版本、观察范围、缺失数据。存在多个匹配时，保留多个候选或请用户提供稳定 ID</td>
 </tr>
 <tr>
 <td>只读调查 Agent</td>
@@ -891,12 +891,12 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 <tr>
 <td>审批与执行器</td>
-<td>核验引用的现场条件、计划、角色及保护约束；只执行有有效批准的动作</td>
+<td>核对现场条件、计划、角色和保护要求。只执行已获有效批准的动作</td>
 <td>记录审批、请求与实际作业，分开记录实物变化、业务和数据保护</td>
 </tr>
 </tbody>
 </table></div>
-<p>常见告警组合和原厂故障树先跑。趋势与离群算法给出异常时点和程度，服务路径和对照帮助排掉候选。模型负责选下一项取证及解释，数字、单位、窗宽、覆盖和准入规则在服务端计算。</p>
+<p>先匹配常见告警组合，再跑原厂故障树。统计方法标出异常时间和程度，用服务路径及对照排除候选。模型选择下一项查询并解释结果。服务端计算指标、单位、窗口和覆盖，检查操作是否符合规则。</p>
 <h3 id="一次调查如何补证">一次调查如何补证</h3>
 <p>先看<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html#2-%E4%BB%8E%E5%90%8C%E4%B8%80%E4%B8%AA%E7%97%87%E7%8A%B6%E8%AF%86%E5%88%AB%E4%B8%89%E7%A7%8D%E5%8E%9F%E5%9B%A0">回放实操</a>中的三个独立事故。给定相同 46 ms 的起始视图，下表只使用截止 02:16 UTC 的证据。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -918,19 +918,19 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>B</td>
 <td>B08 路径退到单链路，B04/B05 丢包与重传倍数上升，B10 替代路径对照；B06/B07 给设备观察</td>
-<td>路径降级是优先候选。23/19 倍依赖基线绝对值，丢包与重传是同一过程的相关表现</td>
+<td>路径降级是优先候选。23 倍和 19 倍要结合实际基线看。丢包和重传可能来自同一过程</td>
 <td>查主机与交换机两端的绝对计数、实际流量和受影响主机</td>
 </tr>
 <tr>
 <td>C</td>
 <td>C02 请求约 1.03 倍，C03 平均写量约 5.9 倍，C10 吞吐约 6 倍；C08 同池批量任务；C06 没观察到回填</td>
-<td>负载结构变化优先。1.03 × 5.9 约等于 6.08，和吞吐量级相符。这几个量可能是同一数据链的衍生量，不能当成独立因果证据</td>
+<td>负载结构变化优先。1.03 × 5.9 约等于 6.08，和吞吐量级相符。这些量可能由同一批数据算出，评估因果时算作一组证据</td>
 <td>分主机与业务核对写大小、时点、并发和同池未受影响对象</td>
 </tr>
 </tbody>
 </table></div>
 <h4 id="b-与-b-缺网络的逐步回执">B 与 B 缺网络的逐步回执</h4>
-<p>这是一条可用现有 CSV 重放的教学轨迹。CSV 只记录 7 列，缺少真实租户、物理端口 ID 和服务拓扑。演练使用案例授权范围代替资产目录。生产第一步按下文的网关契约取得这些字段。</p>
+<p>这组步骤可用现有 CSV 重放。CSV 只有 7 列，缺真实租户、物理端口 ID 和服务拓扑。演练按案例限定授权范围。生产环境先通过下文网关取得这些字段。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -956,8 +956,8 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>3</td>
 <td><code>query_signal_window</code> 查路径和独立业务；<code>query_changes</code> 查同窗事件</td>
-<td>B04/B05/B10 与 B08 在同一调查窗口可见。B08 的可查时间为 02:12:10，其余三条为 02:15:10。B09 的 7 ms 是独立业务对照，不能替代 B10 的异路径对照</td>
-<td>B04/B05/B10、B08 被移除，分别回 <code>partial/no_data</code>。B09 仍在，不能说明目标路径健康</td>
+<td>B04/B05/B10 与 B08 在同一调查窗口可见。B08 的可查时间为 02:12:10，其余三条为 02:15:10。B09 的 7 ms 来自独立业务，备用路径要看 B10</td>
+<td>B04/B05/B10、B08 被移除，分别回 <code>partial/no_data</code>。B09 仍可查，但它只报告独立业务</td>
 </tr>
 <tr>
 <td>4</td>
@@ -987,7 +987,7 @@ foreach ($variant in 'complete','missing-network') {
 }
 </code></pre>
 <h3 id="给小模型的工具和终止条件">给小模型的工具和终止条件</h3>
-<p><strong>交给可信网关的上下文。</strong> 服务端从会话认证和已授权调查注入 <code>principal_id</code>、<code>tenant_id</code>、<code>scope_id</code>、<code>policy_version</code>、<code>investigation_id</code>、<code>snapshot_id</code>、<code>incident_at</code> 和 <code>knowledge_cutoff</code>。模型提交的实体、信号和窗口只能缩小该范围。网关按当前调用权限校验每次读，回放历史数据也不会恢复过去角色的权限。跨源无原子快照时，固定每源数据版本、水位、实体范围和过期状态。错误提示在相应身份下返回，避免泄露越权对象是否存在。</p>
+<p><strong>网关负责权限和时间。</strong> 服务端根据会话身份和已授权调查填入 <code>principal_id</code>、<code>tenant_id</code>、<code>scope_id</code>、<code>policy_version</code>、<code>investigation_id</code>、<code>snapshot_id</code>、<code>incident_at</code> 和 <code>knowledge_cutoff</code>。模型只能用实体、信号和窗口缩小查询范围。网关每次都按当前权限校验，历史回放也一样。数据源无法同时生成快照时，分别固定版本、采集进度、实体范围和过期状态。错误只返回调用者有权知道的信息。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -1005,7 +1005,7 @@ foreach ($variant in 'complete','missing-network') {
 <tr>
 <td><code>query_signal_window</code></td>
 <td>授权实体子集、信号、窗口、粒度</td>
-<td>有界数值、单位、测量点、样本 ID、水位、实际覆盖和缺数</td>
+<td>限定数量的数值、单位、测量点、样本 ID、采集进度、覆盖范围和缺失数据</td>
 </tr>
 <tr>
 <td><code>query_changes</code></td>
@@ -1024,11 +1024,11 @@ foreach ($variant in 'complete','missing-network') {
 </tr>
 </tbody>
 </table></div>
-<p>每次查询均返回 <code>status</code> 与允许披露的元数据。仅在已授权且确有证据时返回 <code>evidence_id</code>、稳定实体、来源、事件/有效时间、来源观察时间、<code>available_at</code>（可被查询时间）、源版本或快照引用。无数据、超时或拒绝时，按权限说明覆盖边界，不生成证据编号或暴露越权实体。对照 A10，即使记录描述的是 02:12:30，也只能从 02:18 开始可查。对旧窗口新跑的设备分析和晚发布的 Runbook 修订也要做同样过滤。录入另一租户同名卷时，应拒绝超范围查询。</p>
+<p>查询返回 <code>status</code> 和允许披露的元数据。有权限且确有证据时，返回 <code>evidence_id</code>、稳定实体、来源、事件或有效时间、来源观察时间、<code>available_at</code>（开始可查的时间），以及源版本或快照引用。无数据、超时或访问被拒时，只按权限说明覆盖范围。A10 描述的是 02:12:30 的情况，但要到 02:18 才能查到。新跑的设备分析和晚发布的运行手册也用实际可查时间过滤。另一租户的同名卷超出权限，应拒绝查询。</p>
 <p><strong>把读取报告与新诊断作业拆开。</strong> 新的智能分析可能消耗设备资源、形成持久化报告或触发异步工作。以 Ceph 为例，读取与主动采样健康指标都可标为读授权命令，主动采样仍写入采集数据库。DME 白皮书说明执行智能分析可产生报告。原厂端点和副作用的具体契约以部署验证为准。需触发时走另行授权的 <code>request_device_analysis</code>，设置限额、去重、轮询和审计。新生成的报告单列新的可见时间，旧快照不会自动纳入。 <a href="#v--%E8%AF%8A%E6%96%AD%E5%A5%91%E7%BA%A6%E4%B8%8E%E4%BD%9C%E4%B8%9A%E9%AA%8C%E8%AF%81">V</a></p>
-<p>返回状态区分 <code>ok</code>、<code>partial</code>、<code>no_data</code>、<code>forbidden</code>、<code>timeout</code>。有支持证据时列候选、反证和下一步。无法在授权及预算内得到区分证据时终止为 <code>undetermined</code> 并交接。核验引用与声称的结论匹配，证据可见、合规并且真的支持该实体、时点与结论。</p>
+<p>工具返回 <code>ok</code>、<code>partial</code>、<code>no_data</code>、<code>forbidden</code> 或 <code>timeout</code>。有证据时列候选原因、反证和下一步。在权限和预算内仍找不到能区分原因的证据时，返回 <code>undetermined</code> 并交接。复核引用是否有权访问，是否支持报告中的对象、时间和结论。</p>
 <h2 id="7-本地-qwen3-32b-能承担什么">7. 本地 Qwen3-32B 能承担什么</h2>
-<p><strong>Qwen3-32B 可以作为第一版只读诊断 Agent 的候选。</strong> 先为单事故、限定对象和有界时间窗提供结构化事实。最先验中文手册问答、告警分流和报告归纳。多轮取证、复杂跨站故障和动作计划，按真实案例分别验收。</p>
+<p><strong>第一版只读诊断 Agent 可试用 Qwen3-32B。</strong> 先给单起事故、指定对象和时段的结构化数据。先测中文手册问答、告警分流和报告摘要。多轮取证、跨站故障和操作计划用真实案例分别验收。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -1046,7 +1046,7 @@ foreach ($variant in 'complete','missing-network') {
 <tr>
 <td>告警分流、摘要、DME 报告归纳</td>
 <td>识别实体和故障域，整理设备证据</td>
-<td>坏单位、重名实体和缺失证据都能识别。数值及阈值在工具算</td>
+<td>识别错误单位、重名对象和缺证。数值和阈值由工具计算</td>
 </tr>
 <tr>
 <td>多轮只读调查</td>
@@ -1061,7 +1061,7 @@ foreach ($variant in 'complete','missing-network') {
 </tbody>
 </table></div>
 <h3 id="参数上下文显存与实际吞吐">参数、上下文、显存与实际吞吐</h3>
-<p>Qwen 官方模型卡给出 32.8B 稠密模型、原生 32,768 token，配置 YaRN 后可扩至 131,072 token。模型文件的 <code>max_position_embeddings</code>、推理引擎实际建缓存的上限和任务使用的总 token 长度要分别记录。端到端总预算包含提示、工具回执、思考与最终文本。 <a href="#q--qwen3-32b-%E4%B8%8E%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2">Q</a></p>
+<p>Qwen 官方模型卡列出 32.8B 参数，原生上下文为 32,768 token。用 YaRN 扩展后可达 131,072 token。分别记录模型的 <code>max_position_embeddings</code>、推理引擎实际缓存上限，以及单次任务用掉的 token 总数。提示、工具回执、思考和最终回答都计入预算。 <a href="#q--qwen3-32b-%E4%B8%8E%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2">Q</a></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -1078,7 +1078,7 @@ foreach ($variant in 'complete','missing-network') {
 </tr>
 <tr>
 <td>4-bit 权重</td>
-<td>位数理想下界 16.4 GB / 15.27 GiB。所查 Ollama Q4_K_M 工件约 20 GB / 18.63 GiB</td>
+<td>仅按位数算，理论下限是 16.4 GB / 15.27 GiB。所查 Ollama Q4_K_M 模型文件约 20 GB / 18.63 GiB</td>
 <td>文件体积仅作粗估，记录实际常驻权重、卸载与运行峰值</td>
 </tr>
 <tr>
@@ -1094,13 +1094,13 @@ foreach ($variant in 'complete','missing-network') {
 <tr>
 <td>上下文及 P95 延迟</td>
 <td>单并发、短证据窗起步，逐步加到目标并发和窗长</td>
-<td>记录 Ollama <code>ollama ps</code> 的 PROCESSOR/CONTEXT、给定的 <code>num_ctx</code>，或 vLLM 的 <code>max_model_len</code>；同时记录缓存精度、首条有效证据、报告 P95、超时及峰值显存</td>
+<td>记录 <code>ollama ps</code> 的 PROCESSOR/CONTEXT 和配置的 <code>num_ctx</code>，或 vLLM 的 <code>max_model_len</code>。同时记录缓存精度、拿到首条有效证据的时间、报告耗时 P95、超时和峰值显存</td>
 </tr>
 </tbody>
 </table></div>
-<p>2026-11-22 当前 Windows 工作站快照为约 15.7 GiB 物理内存、Intel Iris Xe 集显、Ollama 模型清单为空。上述约 20 GB 工件加运行开销不适合在这里作为稳定部署配置。这些是文档参数与预算复算，未运行 Qwen3-32B 推理。 <a href="#q--qwen3-32b-%E4%B8%8E%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2">Q</a></p>
+<p>2026-11-22 记录的 Windows 工作站有约 15.7 GiB 内存和 Intel Iris Xe 集显，Ollama 当时没有模型。约 20 GB 的模型文件已超过该机物理内存，运行还需额外空间。以上为参数估算，当时未运行 Qwen3-32B。 <a href="#q--qwen3-32b-%E4%B8%8E%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2">Q</a></p>
 <h3 id="工具兼容的最小验收">工具兼容的最小验收</h3>
-<p>固定模型 revision、量化工件、运行时版本、聊天模板、推理模式和输出限制。Qwen 原版 Qwen3 文档以 Hermes 风格为例，具体工具及 reasoning parser 以选定运行时文档为准。Qwen-Agent 可以负责应用编排和消费结构化回执。一次调用只指定一套模板和解析责任，避免应用和引擎重复解析。</p>
+<p>固定模型修订版本、量化文件、运行时版本、聊天模板、推理模式和输出限制。Qwen3 文档以 Hermes 风格为例。工具解析和思考内容解析以所用运行时文档为准。Qwen-Agent 可编排调用并读取结构化回执。每次调用使用一套模板，由应用或引擎中的一方解析。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -1117,8 +1117,8 @@ foreach ($variant in 'complete','missing-network') {
 </tr>
 <tr>
 <td>流式与非流式</td>
-<td>相同模型分别跑四种组合：thinking 开关 × 流式开关</td>
-<td>OpenAI 兼容流式可按响应内工具 index 聚合，具备工具调用 ID 时用它关联回执。Ollama 原生可按 function.index 或顺序及 tool_name 匹配，缺线上 ID 时由网关建立内部 ID。完整结束且校验后才发起；关联不明确时串行或暂停</td>
+<td>同一模型组合测试思考模式和流式输出，各自开、关，共四种</td>
+<td>OpenAI 兼容流式响应可按工具 index 拼接。有工具调用 ID 时，用它匹配回执。Ollama 原生接口可按 function.index，或按顺序和 tool_name 匹配。响应缺 ID 时由网关生成内部 ID。收到完整参数并校验后再发请求。无法匹配时改成串行或暂停</td>
 </tr>
 <tr>
 <td>截断、模型误用和重试</td>
@@ -1134,7 +1134,7 @@ foreach ($variant in 'complete','missing-network') {
 </table></div>
 <p>同一快照分别测 thinking 和 non-thinking，保持任务、证据与工具限制一致，记录新增的正确候选、暂缓、重试及耗时。模型卡说明能力，部署环境的合格判断依实测。 <a href="#q--qwen3-32b-%E4%B8%8E%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2">Q</a></p>
 <h2 id="8-只有-rag-时怎样控制准确率">8. 只有 RAG 时怎样控制准确率</h2>
-<p><strong>RAG 无法保证诊断准确率。</strong> A、B、C 若只收到字节层面相同的 46 ms 告警和同一手册，且三类等权、没有案例 ID 或答案泄漏，固定给一个根因最多对一例。这个算例约束的是可见信息，同故障域的生产准确率还要用实际输入评测。RAGTruth 支持检索后仍可能有无依据或冲突的生成，不能转成 Qwen3-32B 在这项任务的错误率。 <a href="#r--rag-%E4%B8%8E%E8%AF%84%E6%B5%8B">R</a></p>
+<p><strong>同一条告警和同一本手册无法区分 A、B、C。</strong> 三类等权时，如果 46 ms 告警完全相同、没有案例 ID 或其他答案线索，固定猜一个根因最多答对一例。生产准确率要用实际输入评测。RAGTruth 发现检索后仍可能生成缺乏依据或与资料冲突的内容。Qwen3-32B 在本任务中的错误率需另测。 <a href="#r--rag-%E4%B8%8E%E8%AF%84%E6%B5%8B">R</a></p>
 <h3 id="有什么数据才答什么问题">有什么数据才答什么问题</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -1157,8 +1157,8 @@ foreach ($variant in 'complete','missing-network') {
 </tr>
 <tr>
 <td>文档加后端采集快照</td>
-<td>后端用确定性规则打包事发证据，适合已定义的事故模式</td>
-<td>使用带时点、源水位与权限等元信息的包，缺项明确显示</td>
+<td>后端按固定规则整理事发证据，适用于已定义的事故模式</td>
+<td>证据包带时间、采集进度和权限，并标出缺失项</td>
 </tr>
 <tr>
 <td>快照加有界只读 Agent</td>
@@ -1167,7 +1167,7 @@ foreach ($variant in 'complete','missing-network') {
 </tr>
 </tbody>
 </table></div>
-<p><strong>最小证据包。</strong> 目录可用 <code>manifest.json</code>、<code>signals.csv</code>、<code>relations.jsonl</code>、<code>events.jsonl</code>、<code>runbook_refs.jsonl</code>。清单记录调查及快照 ID、授权范围、时间、各源数据内容哈希与版本。每条指标留实体、计量点、采样或聚合粒度、单位和缺失状态；关系记录有效范围、版本和可查时间；事件分别留事发、采集、可查时间；Runbook 留型号、固件、版本和生效状态。真实租户、权限和哈希由服务填入，以下是现有 CSV 的教学映射。</p>
+<p><strong>最小证据包。</strong> 可包含 <code>manifest.json</code>、<code>signals.csv</code>、<code>relations.jsonl</code>、<code>events.jsonl</code> 和 <code>runbook_refs.jsonl</code>。清单记录调查 ID、快照 ID、授权范围、时间和每个数据源的哈希及版本。指标记录实体、测量点、采样或汇总粒度、单位和缺失状态。关系记录有效范围、版本和开始可查的时间。事件分别记录发生、采集和开始可查的时间。运行手册记录型号、固件、版本和生效状态。实际租户、权限和哈希由服务填入。下面用现有 CSV 演示。</p>
 <pre><code class="language-json">{
   &quot;snapshot_id&quot;: &quot;training-b-0216&quot;,
   &quot;incident_at&quot;: &quot;2026-11-21T02:16:00Z&quot;,
@@ -1196,14 +1196,14 @@ foreach ($variant in 'complete','missing-network') {
   }
 }
 </code></pre>
-<p>这个清单是评估器的私有输入账本，所列哈希校验整个源 CSV。模型只接收经授权、截止过滤和随机审计 ID 映射后的证据包。将最终证据包单独散列并记录映射，path、case_filter 和整份源 CSV 只留评估器。生产网关要按已授权对象返回可用、暂缺和被过滤的范围。对于无权枚举的对象只返回授权范围内的结果或通用拒绝。按权限、实体、时间、固件做硬过滤，再走关键词和向量召回、去重及重排。后端校验每条引用存在且可见，还要核验它能否支持对应结论。比如 C06 的零回填只能说明该观测范围内没看到回填，不能支撑‘新应用版本引发事故’。引用支持应逐项验，必要时保留人工复核。 <a href="#r--rag-%E4%B8%8E%E8%AF%84%E6%B5%8B">R</a></p>
+<p>清单由评估器保存，哈希校验整个源 CSV。模型只收到按权限和截止时间筛过的证据包，其中证据 ID 已换成随机审计 ID。另算证据包的哈希并保存 ID 映射。<code>path</code>、<code>case_filter</code> 和整份 CSV 由评估器保留。生产网关只能报告授权范围内的可用、暂缺和被过滤数据，越权时返回通用拒绝。按权限、实体、时间和固件筛选后，再做关键词和向量检索、去重和重排。后端逐条检查引用是否存在、能否访问、是否支持对应结论。比如 C06 只说明观察范围内没看到回填。要判断新版本是否引发事故，还需查发布记录和新旧实例。必要时交人工复核。 <a href="#r--rag-%E4%B8%8E%E8%AF%84%E6%B5%8B">R</a></p>
 <h3 id="怎么取得可验收的准确率">怎么取得可验收的准确率</h3>
 <p><strong>两份对照实验。</strong></p>
 <ol>
-<li><strong>评估取证链。</strong> 给同一批事故固定原始证据、可见截止、权限和查询预算。在同一模型配置下分别跑静态 RAG、纯快照、文档加快照、快照加只读工具，另设规则或原厂诊断基线。各组最终拿到的信息有差异，报告取证覆盖、延迟、总成本和端到端诊断。</li>
-<li><strong>评估模型推理。</strong> 固定实际输入的证据体、排序后的文档、工具回执及可达集，只改模型或推理模式。避免跨组带上上一轮会话、额外在线数据和标签。无法冻结输入的商用 Agent 在此列记为不适用，另提供<a href="#%E4%BB%BB%E5%8A%A1%E4%B8%80-%E4%BB%8E%E5%86%99%E5%85%A5%E5%BB%B6%E8%BF%9F%E6%9F%A5%E5%88%B0%E5%8E%9F%E5%9B%A0">原生端到端结果</a>。</li>
+<li><strong>评估取证链。</strong> 给同一批事故固定原始证据、可见截止、权限和查询预算。用同一模型配置跑四组。静态 RAG、只有快照、文档加快照、快照加只读工具。另跑规则或原厂诊断作基线。分别记录各组查到什么、耗时、总成本和诊断结果。</li>
+<li><strong>评估模型推理。</strong> 固定给模型的证据、文档顺序、工具回执和可查询范围，只改模型或推理模式。各组独立启动，避免读到上一轮会话、额外在线数据或答案标签。无法冻结输入的商用 Agent 在此列记为不适用，另提供<a href="#%E4%BB%BB%E5%8A%A1%E4%B8%80-%E4%BB%8E%E5%86%99%E5%85%A5%E5%BB%B6%E8%BF%9F%E6%9F%A5%E5%88%B0%E5%8E%9F%E5%9B%A0">原生端到端结果</a>。</li>
 </ol>
-<p><strong>事故真值和截止时是否可判分别标注。</strong> 审核人员先用事后证据标 <code>true_cause</code>，再用独立的冻结快照标 <code>decidable_as_of</code> 和合格行为。B 完整例和 B 缺网络变体是同一起教学事故。两者事后原因相同，截止时前者可给优先候选，后者应暂缓。未确认真值的事故记录为 <code>unknown</code>，可评价证据和决策边界。按母事故、近重复、站点及时间分组切分，不把同一次事故的变体、事故复盘答案或能暴露标签的 ID 放进盲测索引或会话。A/B/C 及缺数变体先用于流程试验。</p>
+<p><strong>分别标注事后确认的原因和截止时是否可判断。</strong> 审核人员用事后证据标 <code>true_cause</code>，再用固定的事故快照标 <code>decidable_as_of</code> 和当时应采取的做法。B 完整例和 B 缺网络例是同一起事故，事后原因相同。截止时，完整例可列优先候选，缺网络例应暂缓。根因未确认的记 <code>unknown</code>，仍可评估证据和是否该给结论。按原始事故、相似案例、站点和时间划分数据。同一起事故的变体留在同一组。盲测索引和会话排除复盘答案和会暴露标签的 ID。A/B/C 及缺数变体先用于流程试验。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -1242,7 +1242,7 @@ foreach ($variant in 'complete','missing-network') {
 </tr>
 </tbody>
 </table></div>
-<p>分母为零记不适用。对相同案例保留配对结果，按母事故估算不确定性，分报故障域、采集范围和风险级别。100 个在目标分布下独立、同口径且策略固定的事故若零严重错误，单侧 95% 上界约 2.95%。在同样的理想条件下，要使零事件的上界低于 1%，至少 299 个独立样本。相关变体、重复运行和分布漂移需按实际情况处理。 <a href="#r--rag-%E4%B8%8E%E8%AF%84%E6%B5%8B">R</a></p>
+<p>分母为零时记不适用。同一案例保留各组对应结果，按原始事故估算不确定性，按故障域、采集范围和风险级别分别报告。按目标场景分布独立抽取 100 个事故，使用相同定义和固定策略。如果没有严重错误，严重错误率的单侧 95% 上界约为 2.95%。在同样条件下，至少需要 299 个独立样本且零严重错误，上界才能低于 1%。同一事故的变体和重复运行要考虑相关性，场景分布变化时需重新评估。 <a href="#r--rag-%E4%B8%8E%E8%AF%84%E6%B5%8B">R</a></p>
 <h2 id="附录-厂商原始资料">附录 厂商原始资料</h2>
 <p>正文的编号跳到对应产品。每组列出可回查的功能、版本或部署边界。</p>
 <h3 id="h--华为">H · 华为</h3>
@@ -1337,7 +1337,6 @@ foreach ($variant in 'complete','missing-network') {
 <li>工具提示与实际副作用需分别核对。 <a href="https://modelcontextprotocol.io/specification/2025-11-25/schema#toolannotations">MCP 工具注解</a> · <a href="https://github.com/ceph/ceph/blob/v20.2.0/src/pybind/mgr/devicehealth/module.py">Ceph v20.2.0 devicehealth 源码</a></li>
 <li>异步返回中的作业状态及另一条改变容量的机制。 <a href="https://docs.netapp.com/us-en/ontap-automation/rest/asynchronous_processing.html">ONTAP 异步作业</a> · <a href="https://docs.netapp.com/us-en/ontap/volumes/configure-automatic-grow-shrink-size-task.html">FlexVol 自动增长</a></li>
 </ul>
-
   </article>
 </main>
 <footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>
