@@ -1,0 +1,73 @@
+{
+  "incident_id": "INC-ENOSPC-01",
+  "target": "ceph-lab/pool-7/image-9f",
+  "clock_origin": "2026-11-22T02:16:00Z",
+  "approver": "lab-approver",
+  "topology_revision": 7,
+  "volume_gib": 20,
+  "growth_gib": 4,
+  "pool_headroom_gib": 8,
+  "evidence": {
+    "application": {
+      "evidence_id": "E01",
+      "source": "orders-writer",
+      "observed_at": "2026-11-22T02:14:30Z",
+      "available_at": "2026-11-22T02:14:35Z",
+      "error": "ENOSPC"
+    },
+    "filesystem": {
+      "evidence_id": "E02",
+      "source": "application-host",
+      "observed_at": "2026-11-22T02:15:00Z",
+      "available_at": "2026-11-22T02:15:05Z",
+      "size_gib": 20,
+      "free_gib": 0,
+      "free_inodes": 64000
+    },
+    "quota": {
+      "evidence_id": "E03",
+      "source": "tenant-quota",
+      "observed_at": "2026-11-22T02:15:10Z",
+      "available_at": "2026-11-22T02:15:12Z",
+      "remaining_gib": 10
+    },
+    "pool": {
+      "evidence_id": "E04",
+      "source": "ceph-pool",
+      "observed_at": "2026-11-22T02:15:15Z",
+      "available_at": "2026-11-22T02:15:20Z",
+      "free_gib": 16
+    }
+  },
+  "checks": {
+    "business": {
+      "evidence_id": "V-B01",
+      "source": "application-probe",
+      "target": "ceph-lab/pool-7/image-9f",
+      "observed_offset_minutes": 1,
+      "filesystem_gib": 24,
+      "free_gib": 4,
+      "attempted_writes": 100,
+      "successful_writes": 100,
+      "readback_ok": true
+    },
+    "protection": {
+      "evidence_id": "V-P01",
+      "source": "ceph-health-probe",
+      "target": "ceph-lab/pool-7/image-9f",
+      "observed_offset_minutes": 1,
+      "degraded_pgs": 0,
+      "pgs_not_active_clean": 0,
+      "scrub_errors": 0
+    },
+    "stale-protection": {
+      "evidence_id": "V-P00",
+      "source": "ceph-health-probe",
+      "target": "ceph-lab/pool-7/image-9f",
+      "observed_offset_minutes": -1,
+      "degraded_pgs": 0,
+      "pgs_not_active_clean": 0,
+      "scrub_errors": 0
+    }
+  }
+}

@@ -94,7 +94,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
     <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
 <a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
 <a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
-<a href="./PB级存储运维实操.html">三站实操</a></nav>
+<a href="./PB级存储运维实操.html">存储实操</a></nav>
     <h1>外部资料拆解：架构、流程图与例子</h1>
   </div>
 </header>
@@ -124,7 +124,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><a href="#22-链接索引">22. 链接索引</a></li></ul></nav></details>
   <article>
 <p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">深入篇</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a> · <a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html">答案册</a></p>
-<p>资料核验日期为 2026-11-18。文中把前几篇的 42 个外部链接按主题归入 21 节。每节有流程图、机制说明、例子和原文链接。</p>
+<p>资料核验日期为 2026-11-18。文中把前几篇的 46 个外部链接按主题归入 21 节。每节有流程图、机制说明、例子和原文链接。</p>
 <blockquote>
 <p>快速浏览可先看每节开头和流程图。要做实现，再看后面的机制和案例。</p>
 </blockquote>
@@ -247,7 +247,7 @@ P99
 <p>为每条日志证据保存事件时间、观测时间和来源。</p>
 <p>原文见 <a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">OpenTelemetry 日志数据模型</a> · <a href="https://opentelemetry.io/docs/">OpenTelemetry 文档</a></p>
 <h2 id="6-everpure-pure1--fusion设备群遥测与工具化调查">6. Everpure Pure1 + Fusion：设备群遥测与工具化调查</h2>
-<p>Pure1 收集多台阵列的遥测，提供健康、容量和性能视图。Fusion 查询阵列内部关系和工作负载拓扑。Copilot 或 Agent 可通过 MCP 查询，写工具默认隐藏，需要显式配置。</p>
+<p>Pure1 收集阵列遥测，提供健康、容量和性能视图。外部 Agent 可分别接入只读的 Pure1 Manage MCP，以及查询阵列内部关系和工作负载的 Fusion MCP。Fusion 2.0 的写工具默认关闭。</p>
 <pre><code class="language-text">阵列（Pure Storage FlashArray/FlashBlade）
    │ 遥测/健康/容量/性能
    ▼
@@ -260,13 +260,13 @@ Fusion（阵列、卷、文件系统、工作负载、预设、拓扑）
    │ MCP / 直连令牌
    ├─ 拓扑与关系查询
    ├─ 部分性能查询（依赖直连令牌）
-   └─ 可选受监督写工具（默认隐藏，需配置）
+   └─ 可选写工具（默认关闭，启用后核对确认设置）
 </code></pre>
 <ul>
 <li>用 Pure1 找出异常站点、租户或设备。</li>
 <li>用 Fusion 查卷在哪台阵列、属于哪个工作负载，以及与谁共享资源。</li>
 <li>MCP 为查询工具定义输入格式，Copilot 或 Agent 从工具输出读取事实。</li>
-<li>Fusion 的写工具默认隐藏。配置后，调用仍受令牌权限约束。调查和处置分别授权。</li>
+<li>Fusion 2.0 分别开启精选写工具和通用写工具。调用受阵列令牌权限约束。默认由服务端发起确认。客户端不支持确认时，默认拒绝写入。管理员可另行关闭服务端确认。该确认只覆盖经 Fusion 服务提交的请求。普通批准和拒绝记在 INFO，默认 WARN 日志未收录这两类记录。</li>
 </ul>
 <p>值班收到“订单库延迟升高”的报告。</p>
 <pre><code class="language-text">1) Pure1 MCP: 查设备群健康/性能 → 发现 site-a 的 array-3 前端延迟升高
@@ -277,7 +277,7 @@ Fusion（阵列、卷、文件系统、工作负载、预设、拓扑）
 </code></pre>
 <p>每一步都记录用过的工具、查询的实体和时间窗，以及返回结果。</p>
 <p>先找异常设备，再拉拓扑、查变更和取证。读写工具分别授权，查询结果带实体和时间窗。</p>
-<p>原文见 <a href="https://blog.everpuredata.com/products/pure1-now-agentic/">Everpure Pure1 Agentic 说明</a> · <a href="https://www.everpuredata.com/au/video/webinars/ask-us-everything-about-pure1-ai-copilot-mcp-server-fusion/6405406488112.html">2026-09 官方演示</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 用户指南</a> · <a href="https://blog.everpuredata.com/purely-technical/mcp-across-everpure-nutanix-kubernetes/">跨栈 MCP 案例</a></p>
+<p>原文见 <a href="https://blog.everpuredata.com/products/pure1-now-agentic/">Everpure Pure1 Agentic 说明</a> · <a href="https://www.everpuredata.com/au/video/webinars/ask-us-everything-about-pure1-ai-copilot-mcp-server-fusion/6405406488112.html">2026-09 官方演示</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 用户指南</a> · <a href="https://blog.everpuredata.com/purely-technical/mcp-across-everpure-nutanix-kubernetes/">跨栈 MCP 案例</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/v2.0.0-public/docs/USER_GUIDE.md">Fusion 2.0 版本手册</a></p>
 <h2 id="7-netapp-autosupport--digital-advisor遥测资产与风险建议">7. NetApp AutoSupport + Digital Advisor：遥测、资产与风险建议</h2>
 <p>ONTAP 的 AutoSupport 把设备遥测、日志和配置发给 NetApp。Active IQ/Digital Advisor 将这些记录与资产、软件版本和支持合同关联，给出风险、容量、升级和生命周期建议。</p>
 <pre><code class="language-text">ONTAP 集群
@@ -317,30 +317,23 @@ DII 数据层（资产、性能、容量、日志、告警、采集健康）
 <li>截至文中核验日期，MCP 仍是 Preview，工具只读且限于当前租户。</li>
 </ul>
 <p>应用 P99 升高，DII 显示某阵列性能异常。3 个采集器有 1 个断连，采集器在线率是 67%。再用资产清单查哪些设备缺样本，才能算资产覆盖率。暂时只报告已收到的数据。</p>
-<p>先调用 <code>collection_status</code>。覆盖率不足时，缩小结论的适用范围。</p>
-<p>原文见 <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/concept_whats_new.html">DII 发布记录</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">DII Monitor</a></p>
+<p>原厂配方先用 <code>AcquisitionUnitsService_getAcquisitionUnits</code> 查采集单元，再用 <code>CollectorService_getDataSources</code> 查数据源。结合连接状态、最后上报和最后一次成功采集判断数据是否新鲜，必要时查单个采集单元或数据源的详情。<code>collection_status</code> 可作为自建包装，汇总上述结果和授权台账内的样本覆盖率。没有可靠分母时标覆盖未知。</p>
+<p>原文见 <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/concept_whats_new.html">DII 发布记录</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">DII Monitor</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_recipe_environment_inventory.html">DII 采集状态配方</a></p>
 <h2 id="9-dell-aiops--powerstore健康评分预测与来源保留">9. Dell AIOps / PowerStore：健康评分、预测与来源保留</h2>
-<p>Dell AIOps 提供健康评分、预测分析和生成式助手。PowerStore 提供性能历史基线，并检测资源争用和容量突增。</p>
-<pre><code class="language-text">PowerStore / 其他基础设施
-   │ 遥测/性能/容量/告警
-   ▼
-Dell AIOps（CloudIQ 类）
-   ├─ 健康评分（规则/加权）
-   ├─ 预测分析（容量/性能）
-   ├─ 异常/争用/突增检测
-   └─ GenAI Assistant（解释/建议）
-        │
-        ▼
-分级响应/工单/报告
+<p>PowerStoreOS 4.2 的本地异常视图标记设备性能偏离。另行连接 Dell AIOps 后可查云端健康、趋势和容量等分析。设备 Health Checks 可按条件处理指定的已知问题。</p>
+<pre><code class="language-text">PowerStore
+   ├─ 本地 Manager（4.2）：设备性能偏离点，无直接告警
+   ├─ Support Connectivity + 云端接入 → Dell AIOps：健康、趋势和建议
+   └─ Health Checks：4.2 起检查包纳入 RxDefinitions，并可对指定问题开启 Auto-Repair
 </code></pre>
 <ul>
-<li>健康分通常由多项指标加权或扣分得出。比较型号或版本前，核对计分口径。</li>
-<li>分开查性能基线、资源争用和容量突增，便于定位问题。</li>
-<li>检查 GenAI Assistant 的解释和建议能否追溯到底层指标和来源。</li>
+<li>本地异常视图按设备显示时延、IOPS、带宽和 I/O 大小，只标偏离点。单卷要查对应性能视图。</li>
+<li>云端健康分和助手取决于是否接通、上传了哪些数据以及账号支持范围。核对建议能否追到指标或告警。</li>
+<li>只有命中可修复的已知问题，并满足检查包、版本和模式要求时，才验 Auto-Repair。</li>
 </ul>
-<p>PowerStore 检测到某卷容量在 24 小时内突增 20%，性能基线显示 IOPS 未变。AIOps 可能建议查快照、克隆或日志。要找增长原因，再查快照、备份和应用变更。</p>
+<p>设云端报某卷 24 小时内用量增加 20%，本地设备 IOPS 变化不大。再查卷用量、快照、克隆、备份和应用变更，确认增长原因。</p>
 <p>从健康分进入调查，每条结论能追溯到指标、事件或变更记录。</p>
-<p>原文见 <a href="https://www.dell.com/en-us/infohub/articles/dell-aiops-assure-infrastructure-integrity-with-ease">Dell AIOps</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">PowerStore 可观测性</a></p>
+<p>原文见 <a href="https://www.dell.com/en-us/infohub/articles/dell-aiops-assure-infrastructure-integrity-with-ease">Dell AIOps</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">PowerStore 可观测性</a> · <a href="https://www.dell.com/en-us/infohub/articles/spot-trouble-before-it-hurts-your-apps-performance-anomaly-detection-in-powerstoreos-4-2">PowerStoreOS 4.2 本地异常检测</a> · <a href="https://www.dell.com/support/kbdoc/en-us/000193518/powerstore-000193518">RxDefinitions 与 Auto-Repair</a></p>
 <h2 id="10-aws-devops-agent跨栈调查与沙箱">10. AWS DevOps Agent：跨栈调查与沙箱</h2>
 <p>AWS DevOps Agent 在 Agent Space 内关联拓扑、告警、日志和变更。调查工具在只读沙箱内运行，网络访问受白名单限制。</p>
 <pre><code class="language-text">Agent Space
@@ -375,24 +368,24 @@ Dell AIOps（CloudIQ 类）
    │ 北向：RESTful / SNMP Trap / Ansible / CSI / 云管 / ITSM
    ▼
 客户云管 / ITSM / 自建平台
-   │
-   └─ iMasterCloud DME IQ（云端 SaaS：移动 APP、Call Home、工单、在线客服）
+
+独立云服务：iMasterCloud DME IQ（移动 APP、Call Home、工单、在线客服）
 </code></pre>
 <ul>
 <li>华为存储通过 RESTful 接口同步资源和性能数据，用 SNMP Trap 上报事件。端口光功率等少量指标走 SSH。第三方设备用各自接口。资源每 6 小时同步，性能粒度为 1 或 5 分钟。</li>
-<li>配置库存当前属性，历史库存性能，OpenSearch 存可搜索的资源和关系。分钟级数据保留 7 天，30 分钟聚合数据保留 6 个月，天级数据保留 2 年。5 秒历史按需读取 Dorado V6+ 设备，最长一周。</li>
+<li>配置库供查询当前属性，历史库保留性能。OpenSearch 支撑全局搜索。按事发时点复原拓扑，需要另存来源和版本。分钟级数据保留 7 天，30 分钟聚合数据保留 6 个月，天级数据保留 2 年。受支持的 Dorado V6 及后续设备需预先启用 5 秒数据留存，才可按需回查，最长一周。DME 自身不保存该粒度的历史。</li>
 <li>SAN 按 WWN 和 HostLink 建拓扑，NAS 用 IO trace，容器用 CSI。分析功能包括性能分析、I/O 路径、首错、故障树和健康评分。故障智能体使用场景匹配、思维链和工具。</li>
 <li>DME 提供资源发放和待办任务。可用 Ansible 或 API Explorer 编排业务，在工作台运行诊断、巡检、信息收集和自定义动作。</li>
-<li>DME IQ 在云端训练模型并做预测，提供移动运维、Call Home、工单和在线客服。</li>
+<li>DME IQ 提供云端预测、移动运维、Call Home、工单和在线客服。实时跟踪工单进度需绑定华为维保服务。地端待办按本地角色审核，可按部署对接客户 ITSM。</li>
 </ul>
-<p>看容量告警从采集到验收经过哪些组件。</p>
+<p>下面用合成例子走一遍地端扩容。各组件是否联通由现场验证。</p>
 <pre><code class="language-text">设备上报容量 → DME 配置库/历史库 → 容量检查策略触发事件
-→ 健康评分扣分 → 容量预测（过去 180 天 → 未来 1 年）
-→ 生成扩容建议/工单 → DME IQ/ITSM 通知
-→ 管理员审批 → 资源发放/扩容 → 验证水位/业务
+→ 看健康扣分和容量预测（最多用过去 180 天，预测未来 1 年）
+→ 拟扩容计划 → 地端待办审核或已接入的 ITSM 审批
+→ 资源发放/扩容 → 分别复查容量、业务与保护状态
 </code></pre>
 <p>公开材料列出了从设备事实到验证的产品组件。证据 ID、模型指标和动作授权细节仍需核验。</p>
-<p>可用 DME 读取设备数据并执行动作。业务 SLO、历史证据、工具契约、处置审批和评测需要另建。各环节见 <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a>。</p>
+<p>可用 DME 查询设备并按角色执行已支持的作业。跨系统计划审批绑定、历史证据和处置验收要另行连接并验证。各环节见 <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">DME 解剖</a>。</p>
 <p>原文见 <a href="https://e.huawei.com/cn/products/storage/data-management">DME 数据管理产品页</a> · <a href="https://e.huawei.com/cn/products/storage/data-management/data-management-engine">DME 产品页</a> · <a href="https://e.huawei.com/cn/products/storage/data-management/eservice">DME IQ 产品页</a> · <a href="https://e.huawei.com/cn/documents/products/storage/113fc2f4d1f54670942dd224c8060d62">DME 25.1.0 白皮书</a> · <a href="https://e.huawei.com/cn/documents/products/storage/69ddfac82b98443aa070ae54adda1edd">DME 彩页</a> · <a href="https://e.huawei.com/cn/documents/products/storage/2dc27b1210404a5580f802575653910e">DME IQ 彩页</a></p>
 <h2 id="12-华为-agenticops--datamasterllm--知识--技能--工具">12. 华为 AgenticOps / DataMaster：LLM + 知识 + 技能 + 工具</h2>
 <p>华为在 AgenticOps 博客里用 DataMaster 举例，说明 LLM 如何调用知识库、Skill 库和工具库来规划任务。DME 产品页确认了对话式运维、故障 Agent 和模型对接。优化 Agent 和 MaaS 在 25.1.0 的交付范围待核实。</p>
@@ -638,7 +631,7 @@ SLO（如 99.9%/30 天）
 <tr>
 <td>6</td>
 <td>Everpure Pure1 + Fusion</td>
-<td>4</td>
+<td>5</td>
 </tr>
 <tr>
 <td>7</td>
@@ -648,12 +641,12 @@ SLO（如 99.9%/30 天）
 <tr>
 <td>8</td>
 <td>NetApp DII + MCP</td>
-<td>3</td>
+<td>4</td>
 </tr>
 <tr>
 <td>9</td>
 <td>Dell AIOps / PowerStore</td>
-<td>2</td>
+<td>4</td>
 </tr>
 <tr>
 <td>10</td>
@@ -718,7 +711,7 @@ SLO（如 99.9%/30 天）
 </tbody>
 </table></div>
 <blockquote>
-<p>合计 42 个唯一链接。核对产品能力、版本和指标时，以原文和现场版本为准。</p>
+<p>合计 46 个唯一链接。核对产品能力、版本和指标时，以原文和现场版本为准。</p>
 </blockquote>
   </article>
 </main>

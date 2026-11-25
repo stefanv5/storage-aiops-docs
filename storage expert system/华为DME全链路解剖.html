@@ -94,7 +94,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
     <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
 <a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
 <a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
-<a href="./PB级存储运维实操.html">三站实操</a></nav>
+<a href="./PB级存储运维实操.html">存储实操</a></nav>
     <h1>华为 iMaster DME 全链路解剖：每个环节有什么、缺什么</h1>
   </div>
 </header>
@@ -182,7 +182,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>DME 对接外部平台的接口包括 REST、SNMP、Ansible 和 CSI。公开资料未说明 MCP 服务、工具的输入输出格式和自动发现机制。通用 Agent 接入时需封装这些接口。</li>
 </ol>
 <h2 id="1-一句话结论与产品地图">1. 一句话结论与产品地图</h2>
-<p><strong>iMaster DME 是部署在数据中心的基础设施与数据管理平台。</strong> 它统一管理适配的存储、网络、服务器及虚拟化等资源，提供监控、诊断、自动化、数据目录和防勒索。iMasterCloud DME IQ 是华为另行说明的云端智能运维平台，功能和部署范围以各自资料为准。DataMaster 是 DME 产品页披露的存储运维智能体。</p>
+<p><strong>iMaster DME 是部署在数据中心的基础设施与数据管理平台。</strong> 它统一管理适配的存储、网络、服务器及虚拟化等资源，提供监控、诊断、自动化、数据目录和防勒索。iMasterCloud DME IQ 是另一条云运维服务。它提供 Call Home 和支持工单，实时跟踪工单进度需绑定华为维保服务。地端作业审批走本地 DME 或已接入的 ITSM，DME IQ 工单无需参与。DataMaster 是 DME 产品页披露的存储运维智能体。</p>
 <p>DME 能管理多类设备，结合设备指标和专家规则排障，还能编排资源发放等操作。DME IQ 提供云端支持。公开资料对外部工具的调用格式、可复现评测、历史证据、业务服务目标（SLO）、处置权限及跨系统覆盖说明较少。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -262,14 +262,14 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 采集与配置库（资源、配置、告警、性能）
    │
    ├─ 历史库（性能；分钟级 7 天 / 30 分钟 6 个月 / 天级 2 年）
-   ├─ 全局搜索（OpenSearch；资源属性与关系）
+   ├─ 全局搜索（OpenSearch，可搜索的关键属性）
    ├─ 告警/事件引擎（规则、屏蔽、聚合、相关性、通知）
    └─ 智能分析/智能体（I/O 路径、故障树、健康评分、LLM 工具调用）
 </code></pre>
 <p><code>[白皮书]</code> 列出以下采集间隔和数据来源。</p>
 <ul>
 <li>华为闪存和 FC 交换机每 1 分钟采集一次。OceanStor 9000 和以太网交换机每 5 分钟采集一次，其他分布式存储每 1 分钟采集一次。</li>
-<li>实时性能每 5 秒刷新。DME 可按需通过 REST 查询 Dorado V6+ 上的 5 秒历史数据。须先在设备侧开启保存，最长保留一周。</li>
+<li>实时性能每 5 秒刷新。要回查 5 秒历史，须在受支持的 Dorado V6 及后续设备预先开启相应留存。DME 通过设备 REST 按需读取，最长可回查一周。DME 自身不保存该粒度的历史。</li>
 <li>资源纳管每 6 小时同步一次，可手动触发。</li>
 <li>通过 RESTful 管理华为存储资源并采集性能。SNMP 上报告警，端口光功率等少量指标通过 SSH 获取。</li>
 <li>DME 内部使用配置库、历史库、Elasticsearch 和 OpenSearch。公开资料未提供供客户导出原始数据的接口。</li>
@@ -448,7 +448,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tbody>
 </table></div>
 <p><code>[白皮书]</code> 说明，DME 可管理华为全系列和主流第三方存储。存储资源每 6 小时同步。只有华为闪存支持配置存储池。免密跳转限于华为闪存和分布式存储。</p>
-<p><strong>机制。</strong> 配置库保存当前属性，历史库保存变更和性能，OpenSearch 索引资源和关系。白皮书说明，全局搜索可返回基本信息、资源关系、性能、健康、告警和异常检查结果。这些数据构成以设备为中心的配置管理数据库（CMDB）。</p>
+<p><strong>机制。</strong> 配置库保存当前属性，历史库保存性能数据。OpenSearch 支撑全局搜索，白皮书列出的搜索结果包括基本信息、资源关系、性能、健康、告警和异常检查。要复原事发时的路径，仍需保留设备、交换机或平台提供的关系版本和时间。</p>
 <p><strong>业界先进。</strong> <code>[原理]</code> OpenTelemetry 的资源和服务语义规范统一实体和属性命名。ITIL/CMDB 用配置项及其关系描述系统。Neo4j 可做多跳图查询，RDF/OWL 可描述关系并用于规则推理。Palantir 可基于实体关系和权限编排动作。存储行业尚缺广泛采用的公开资源与关系模型。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -537,7 +537,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <p><strong>DME 公开能力。</strong></p>
 <ul>
 <li>采集：REST（华为存储资源/性能）、SNMP Trap（告警）、SSH（端口光功率等少量指标）、CSI（容器）、虚拟化/容器平台 API；第三方存储按厂商接口。</li>
-<li>闪存和 FC 每 1 分钟采集，分布式设备按类型每 1 或 5 分钟采集。实时视图每 5 秒刷新。5 秒历史由 Dorado V6+ 设备保存并按需读取，最长一周。</li>
+<li>闪存和 FC 每 1 分钟采集，分布式设备按类型每 1 或 5 分钟采集。实时视图每 5 秒刷新。5 秒历史按需从已提前开启相应留存的兼容 Dorado V6 及后续设备读取，最长一周。</li>
 <li>保留：分钟级 7 天、30 分钟聚合 6 个月、天级聚合 2 年。</li>
 <li>彩页称最多管理 175 套存储，支持用多个节点扩展。跨数据中心要求时延 &lt; 50 ms、丢包率 &lt; 0.1%、带宽 ≥ 100 Mbit/s。</li>
 <li>搜索：OpenSearch 支撑全局搜索，20 万资源一键检索（彩页口径）。</li>
@@ -943,8 +943,8 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>防勒索：HyperDetect、文件扩展名拦截、实时检测、智能检测、安全快照、网存联动（HiSec Insight）、AirGap、备份集群响应、虚拟机隔离恢复。</li>
 <li>安全配置核查、远程证明（超融合场景，需 TPM）。</li>
 </ul>
-<p><strong>机制。</strong> <code>[推断]</code> DME 通过预置工作流、参数预检查和审批执行设备操作。工作台的自定义动作由华为服务人员执行。外部 Agent 能否调用这些动作，取决于目标版本的接口和授权。</p>
-<p><strong>业界先进。</strong> <code>[原理]</code> 可用 OPA 等工具把权限和变更规则写成代码。操作前先审批、试运行或在少量资源上验证，并限制影响范围。执行时要记录审计，处理重复提交，并支持失败回滚。Fusion 的受监督写工具默认隐藏，需显式配置。AWS Agent 的调查沙箱使用只读权限和网络允许列表。Terraform 可先 <code>plan</code> 再 <code>apply</code>，Ansible 可用幂等任务实现重复执行不叠加变更。</p>
+<p><strong>机制。</strong> <code>[推断]</code> DME 通过预置工作流、参数预检和地端角色审核执行设备作业。工作台的自定义动作由华为服务人员执行。DME IQ 负责云端支持工单，地端审核有自己的入口。外部 Agent 能调用哪些动作，以及如何关联 ITSM 审批，要按目标部署验证。</p>
+<p><strong>业界先进。</strong> <code>[原理]</code> 可用 OPA 等工具把权限和变更规则写成代码。操作前先审批、试运行或在少量资源上验证，并限制影响范围。执行时要记录审计，处理重复提交，并支持失败回滚。Fusion 2.0 的写工具默认关闭。启用后还需核对阵列令牌、可另行关闭的服务端确认和审计日志级别。AWS Agent 的调查沙箱使用只读权限和网络允许列表。Terraform 可先 <code>plan</code> 再 <code>apply</code>，Ansible 可用幂等任务实现重复执行不叠加变更。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -993,7 +993,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <ul>
 <li>多数据中心：DME 管理多个数据中心设备，需打通管理网络；跨 DC 时延 &lt; 50 ms、丢包 &lt; 0.1%、带宽 ≥ 100 Mbit/s。</li>
 <li>规模：最大 175 套存储（彩页）；多节点横向扩展；元数据节点 1–10。</li>
-<li>DME IQ：云端、移动 APP + Web、200+ 国家/地区客户（产品页）、Call Home 10 分钟感知、自动建单、7×24 原厂支持、伙伴工具。</li>
+<li>DME IQ：云端、移动 APP + Web、200+ 国家/地区客户（产品页）、Call Home 10 分钟感知、自动建单、7×24 原厂支持和伙伴工具。实时跟踪工单进度需绑定华为维保服务。</li>
 <li>案例：交通银行“1+1+N”多 Agent、齐鲁银行、东方证券、İşBank、IFEU 等。</li>
 </ul>
 <p><strong>机制。</strong> <code>[推断]</code> 公开材料给出了案例和厂商指标。回放数据和盲测方法未公开。多集群可用多套 DME 接入云管平台。跨集群的全局拓扑和查询能力需确认。</p>
@@ -1423,7 +1423,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>Agent 的读写权限、审批、操作影响范围、防重复执行、回滚和审计字段。</li>
 <li>原始遥测导出、查询 ID、覆盖率 API、时态拓扑 API。</li>
 <li>MCP 支持计划、开放插件生态、第三方动作扩展。</li>
-<li>DME IQ 的数据驻留、跨境、第三方模型数据边界。</li>
+<li>DME IQ 的数据驻留、跨境和第三方模型数据边界。地端审批是否依赖外部服务、断云后的工单状态和补录方式也需现场验证。</li>
 <li>厂商指标的测试条件与分母。</li>
 </ul>
 <h3 id="93-与业界系统的对照">9.3 与业界系统的对照</h3>

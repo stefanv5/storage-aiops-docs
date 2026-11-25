@@ -94,7 +94,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
     <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
 <a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
 <a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
-<a href="./PB级存储运维实操.html">三站实操</a></nav>
+<a href="./PB级存储运维实操.html">存储实操</a></nav>
     <h1>存储专家系统进阶篇：存储内核、数据保护与实现手册</h1>
   </div>
 </header>
@@ -795,17 +795,19 @@ N=16: 16 / (1 + 1.5 + 2.4) = 3.27（效率 20%，已回退）
 </code></pre>
 <p>命中率从 90% 降到 70% 时，平均延迟约为原来的 2.6 倍。尾延迟要单独测。调缓存时同时检查命中率、冷数据挤占、预取和写回策略。</p>
 <h3 id="54-容量tco-与扩容窗口">5.4 容量、TCO 与扩容窗口</h3>
-<p>先把原始容量、可用容量和有效容量分开记。</p>
-<pre><code class="language-text">raw → usable（RAID/EC/副本）→ effective（快照/克隆/元数据/回收站/安全水位）
-可分配容量 = effective × (1 − 安全水位)
+<p>分别记原始容量、冗余后容量、固定占用、容量预留和告警线。用量和告警线要用同一口径。快照等占用已计入用量时，就留在用量一侧；已从容量一侧扣除时，只比较剩余口径的用量。</p>
+<pre><code class="language-text">冗余后容量 = raw × RAID / EC / 副本方案的容量效率
+扣固定占用后容量 = 冗余后容量 − 该口径下单列的固定占用
+可分配容量 = 扣固定占用后容量 × (1 − 预留比例)
+告警线 = 可分配容量 × 告警比例
 </code></pre>
-<p>例如，100 个节点，每节点 12 块 20 TB 盘，合计 24,000 TB raw。EC 8+3 的效率为 8/11，约 72.7%。</p>
-<pre><code class="language-text">usable = 24,000 × 8/11 ≈ 17,455 TB
-10% 安全水位 → 15,709 TB
+<p>例如，100 个节点，每节点 12 块 20 TB 盘，合计 24,000 TB raw。EC 8+3 的效率为 8/11，约 72.7%。算例无另列固定占用，先扣 10% 预留，再用可分配容量的 90% 告警。</p>
+<pre><code class="language-text">冗余后容量 = 24,000 × 8/11 ≈ 17,455 TB
+扣 10% 预留后，可分配容量约 15,709 TB
 当前已用 12,000 TB；90% 告警线 = 14,138 TB
 剩余可增长 = 2,138 TB；50 TB/天 → 42.8 天
 </code></pre>
-<p>估到 90% 水位的天数后，扣除采购、上架、布线、初始化和数据重平衡的时间。另留故障域预留（N+1）和重建余量，同时估算快照、克隆增长和业务峰值。</p>
+<p>从预计触线的日期倒推采购、上架、布线、初始化和数据重平衡的时间。再按失去一个故障域的情景复算 N+1 和重建余量，同时估算快照、克隆增长和业务峰值。若预留已经包含该故障情景，核对它是否足够，避免重复扣除。</p>
 <p>算 TCO 时，计入介质、控制器、机柜、电力、制冷、网络、软件许可、维保、人力、迁移和停机。比较每 TB 单价时也要比较这些成本。</p>
 <h3 id="55-slo-与容量性能的联动">5.5 SLO 与容量/性能的联动</h3>
 <ul>
@@ -1011,42 +1013,73 @@ CREATE TABLE edge (
 CREATE INDEX edge_src_time ON edge (src_id, valid_from, valid_to);
 CREATE INDEX edge_dst_time ON edge (dst_id, valid_from, valid_to);
 
--- 事件/变更：事件时间与观测时间分开
+-- 事件：source_id 由接入服务从已登记来源设置
 CREATE TABLE event (
-  event_id    TEXT PRIMARY KEY,
-  event_type  TEXT NOT NULL,              -- change/alert/deploy/maintenance
-  entity_id   TEXT,
-  event_time  TIMESTAMPTZ NOT NULL,
-  observed_at TIMESTAMPTZ NOT NULL,
-  source      TEXT NOT NULL,
-  source_ref  TEXT,
-  payload     JSONB NOT NULL
+  source_id    TEXT NOT NULL,
+  event_id     TEXT NOT NULL,
+  event_type   TEXT NOT NULL,             -- change/alert/deploy/maintenance
+  entity_id    TEXT NOT NULL REFERENCES entity(entity_id),
+  event_time   TIMESTAMPTZ NOT NULL,
+  observed_at  TIMESTAMPTZ NOT NULL,
+  available_at TIMESTAMPTZ NOT NULL,
+  source_ref   TEXT,
+  payload      JSONB NOT NULL,
+  PRIMARY KEY (source_id, event_id)
 );
+
+CREATE INDEX event_lookup ON event (source_id, entity_id, available_at);
 
 -- 证据对象：不可变引用
 CREATE TABLE evidence (
   evidence_id TEXT PRIMARY KEY,
   incident_id TEXT,
   query_id    TEXT NOT NULL,
-  source      TEXT NOT NULL,
-  entity_id   TEXT,
+  source_id    TEXT NOT NULL,
+  entity_id    TEXT NOT NULL REFERENCES entity(entity_id),
   window_start TIMESTAMPTZ,
   window_end   TIMESTAMPTZ,
   observed_at  TIMESTAMPTZ NOT NULL,
+  available_at TIMESTAMPTZ NOT NULL,
   quality      JSONB NOT NULL,            -- coverage/missing/units
-  payload_ref  TEXT NOT NULL,             -- 对象存储路径
+  payload_ref  TEXT NOT NULL,             -- 已落盘的不可变对象引用
   summary      TEXT NOT NULL
 );
+
+CREATE INDEX evidence_lookup ON evidence (source_id, entity_id, available_at);
 </code></pre>
 <p>建表和写入时遵守以下约束。</p>
 <ul>
 <li><code>entity_id</code> 使用稳定 ID，名称和别名另存表。</li>
 <li><code>observed_at</code> 记录来源看到关系的时间。<code>known_from/known_to</code> 记录这一版关系何时对调查者可见。收到补录或纠正时，在同一事务里关闭旧修订的 <code>known_to</code>，再插入新修订。旧版的 <code>valid_from/valid_to</code> 原样保留。例如 02:20 得知某条边在 02:10 结束，旧版保留原开放区间，新版 <code>valid_to</code> 为 02:10，<code>known_from</code> 为 02:20。撤销关系时关闭旧修订，按需记录撤销事件。对同一来源、同一逻辑边的并发写入做串行处理。查询时匹配两组半开区间。</li>
-<li>证据记录只追加。需要删除时添加墓碑标记（tombstone）并记审计。</li>
+<li><code>event_time</code> 是原始事件发生时间，<code>observed_at</code> 是采集端看到它的时间。<code>available_at</code> 由接入服务按正式发布的时间登记。证据的正文和索引都可用后才发布。补录保留原发生和观测时间，按本次实际发布时间记录 <code>available_at</code>。</li>
+<li>每个来源用接入登记中的稳定 <code>source_id</code>。同源事件重试用 <code>ON CONFLICT (source_id, event_id) DO NOTHING</code>，保留首次可查时间。来源重用事件编号时，先用来源代次或稳定的原生版本消除歧义。同键异内容要记录冲突并查证。证据记录只追加。需要删除时添加墓碑标记（tombstone）并记审计。</li>
 <li>时间统一存 UTC，展示时转换为本地时区。</li>
 </ul>
 <h3 id="72-as-of-查询">7.2 as-of 查询</h3>
-<p>用 PostgreSQL 的 <code>tstzrange</code> 表示时间区间。</p>
+<p>回放时，网关绑定调查截止和快照，重查当前权限，再传入获准的来源与实体组合、时间窗和预算。生产快照冻结当时已经提交并发布的批次或不可变记录清单。<code>available_at</code> 只做时间过滤，单靠它无法冻结并发写入。例如事务在 02:15 取事务时间、02:17 才提交，该记录在 02:16 尚不可查，不能用事务开始时间填可查时间，也不能在重放时把新提交记录加回旧快照。</p>
+<p>下面的 PostgreSQL 查询假设底表已限定为该快照的记录，只演示可查时间和授权过滤。实际列表还要按事件时间或证据窗口缩小范围并分页。参数 <code>$1</code>、<code>$2</code> 是成对的允许来源和实体数组，<code>$3</code> 是服务端分配的 <code>knowledge_cutoff</code>。</p>
+<pre><code class="language-sql">WITH allowed AS (
+  SELECT source_id, entity_id
+  FROM unnest($1::text[], $2::text[]) AS scope(source_id, entity_id)
+),
+candidates AS (
+  SELECT 'event' AS kind, event_id AS record_id, source_id, entity_id, observed_at, available_at
+  FROM event
+  UNION ALL
+  SELECT 'evidence', evidence_id, source_id, entity_id, observed_at, available_at
+  FROM evidence
+)
+SELECT c.kind, c.record_id, c.source_id, c.observed_at, c.available_at
+FROM candidates c
+WHERE c.available_at &lt;= $3::timestamptz
+  AND EXISTS (
+    SELECT 1 FROM allowed a
+    WHERE a.source_id = c.source_id AND a.entity_id = c.entity_id
+  )
+ORDER BY c.available_at, c.kind, c.source_id, c.record_id;
+</code></pre>
+<p>验例。两来源各报 <code>E01</code> 时保留两条，重放同一来源的 <code>E01</code> 不增加行数。02:12 观测、02:18 才可查的记录在 02:16 冻结快照中看不到。另开一次调查，绑定 02:18 已发布的快照和新的截止时间，才可在同等权限下查到。撤掉来源权限后仍应排除。02:16 的快照保持原样。</p>
+<p>拓扑单独按事发时的有效区间和同一截止时的知识区间查。边的 <code>source</code> 是登记的可信来源 ID。用 PostgreSQL 的 <code>tstzrange</code> 表示两组区间。服务端在绑定的快照中生成授权后的边集合，同时检查来源和两端实体。以下定义只在教学用固定数据上运行。生产查询从选定的发布版本读取相同的边集合，或在查询中加入对应版本的过滤。</p>
 <pre><code class="language-sql">CREATE EXTENSION IF NOT EXISTS btree_gist;
 ALTER TABLE edge ADD COLUMN valid_range TSTZRANGE
   GENERATED ALWAYS AS (tstzrange(valid_from, valid_to, '[)')) STORED;
@@ -1054,28 +1087,54 @@ ALTER TABLE edge ADD COLUMN knowledge_range TSTZRANGE
   GENERATED ALWAYS AS (tstzrange(known_from, known_to, '[)')) STORED;
 CREATE INDEX edge_range_gist ON edge USING GIST (src_id, relation, valid_range, knowledge_range);
 
--- 事发时刻 t、知识截止 cutoff 的有效拓扑
-SELECT src_id, dst_id, relation, source, confidence
-FROM edge
-WHERE src_id = :entity_id
-  AND valid_range @&gt; CAST(:t AS TIMESTAMPTZ)
-  AND knowledge_range @&gt; CAST(:cutoff AS TIMESTAMPTZ)
+CREATE FUNCTION scoped_topology_edges(
+  allowed_sources TEXT[], allowed_entities TEXT[],
+  valid_at TIMESTAMPTZ, knowledge_cutoff TIMESTAMPTZ
+)
+RETURNS SETOF edge
+LANGUAGE sql STABLE
+AS $$
+  WITH allowed AS (
+    SELECT source_id, entity_id
+    FROM unnest(allowed_sources, allowed_entities) AS scope(source_id, entity_id)
+  )
+  SELECT e.*
+  FROM edge e
+  WHERE e.valid_range @&gt; valid_at
+    AND e.knowledge_range @&gt; knowledge_cutoff
+    AND EXISTS (
+      SELECT 1 FROM allowed a
+      WHERE a.source_id = e.source AND a.entity_id = e.src_id
+    )
+    AND EXISTS (
+      SELECT 1 FROM allowed a
+      WHERE a.source_id = e.source AND a.entity_id = e.dst_id
+    );
+$$;
+</code></pre>
+<p>以下两段演示沿边方向查下游。单跳查询的参数依次为成对授权来源和实体数组、拓扑有效时点、知识截止、起点 ID。网关校验设备和时间范围后再绑定参数。接入生产工具时，也要按获准的关系类型和方向限制查询。</p>
+<pre><code class="language-sql">SELECT src_id, dst_id, relation, source, confidence
+FROM scoped_topology_edges($1, $2, $3, $4)
+WHERE src_id = $5
 ORDER BY relation, dst_id;
 </code></pre>
-<p>用递归 CTE 查多跳关系，并限制最大深度。</p>
+<p>多跳复用同一套授权后的边，并在第六个参数指定最大深度。起点须在授权实体中。</p>
 <pre><code class="language-sql">WITH RECURSIVE reach(entity_id, depth, path) AS (
-  SELECT CAST(:start_id AS TEXT), 0, ARRAY[CAST(:start_id AS TEXT)]
+  SELECT $5::text, 0, ARRAY[$5::text]
+  WHERE $5::text = ANY($2::text[])
   UNION ALL
   SELECT e.dst_id, r.depth + 1, r.path || e.dst_id
   FROM reach r
-  JOIN edge e ON e.src_id = r.entity_id
-  WHERE r.depth &lt; :max_depth
-    AND e.valid_range @&gt; CAST(:t AS TIMESTAMPTZ)
-    AND e.knowledge_range @&gt; CAST(:cutoff AS TIMESTAMPTZ)
-    AND NOT e.dst_id = ANY(r.path)       -- 防环
+  JOIN scoped_topology_edges($1, $2, $3, $4) e ON e.src_id = r.entity_id
+  WHERE r.depth &lt; $6::integer
+    AND NOT e.dst_id = ANY(r.path)
 )
-SELECT DISTINCT entity_id, depth FROM reach ORDER BY depth;
+SELECT entity_id, min(depth) AS depth
+FROM reach
+GROUP BY entity_id
+ORDER BY depth, entity_id;
 </code></pre>
+<p>验例。起点属于当前租户，下一跳是已授权的卷，再下一跳只属于另一租户。单跳只返回该卷。即使深度设为 3，多跳也不能返回另一租户的实体或经它到更下游。把一条边改成来自未授权来源，即使两端实体都可见，也不能走这条边。</p>
 <p>大图上的递归 CTE 可能很慢。生产查询要限制深度、边类型和租户范围。多跳开销过高时，可用图数据库或预计算结果。</p>
 <h3 id="73-promqlslo覆盖率和异常">7.3 PromQL：SLO、覆盖率和异常</h3>
 <p>先算成功且耗时 ≤20 ms 的好请求比例。</p>
@@ -1112,11 +1171,11 @@ clamp_min(mad_over_time(latency_ms[1h] offset 5m), 1)
   &quot;description&quot;: &quot;查询指定实体在某一时刻的有效拓扑邻域；返回带有效期、观测时间和来源的节点与边。&quot;,
   &quot;inputSchema&quot;: {
     &quot;type&quot;: &quot;object&quot;,
-    &quot;required&quot;: [&quot;entity_id&quot;, &quot;as_of&quot;, &quot;knowledge_cutoff&quot;],
+    &quot;required&quot;: [&quot;entity_id&quot;],
+    &quot;additionalProperties&quot;: false,
     &quot;properties&quot;: {
       &quot;entity_id&quot;: {&quot;type&quot;: &quot;string&quot;},
-      &quot;as_of&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;format&quot;: &quot;date-time&quot;},
-      &quot;knowledge_cutoff&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;format&quot;: &quot;date-time&quot;},
+      &quot;as_of&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;format&quot;: &quot;date-time&quot;, &quot;description&quot;: &quot;在已授权的事发查询窗口内指定更早的有效时点，省略时用 incident_at。&quot;},
       &quot;direction&quot;: {&quot;enum&quot;: [&quot;up&quot;, &quot;down&quot;, &quot;both&quot;], &quot;default&quot;: &quot;both&quot;},
       &quot;max_depth&quot;: {&quot;type&quot;: &quot;integer&quot;, &quot;minimum&quot;: 1, &quot;maximum&quot;: 4},
       &quot;relations&quot;: {&quot;type&quot;: &quot;array&quot;, &quot;items&quot;: {&quot;type&quot;: &quot;string&quot;}}
@@ -1139,31 +1198,32 @@ clamp_min(mad_over_time(latency_ms[1h] offset 5m), 1)
 </code></pre>
 <p>MCP 适配层处理返回格式、权限和证据。</p>
 <ol>
-<li>把 DME、OTel 和 CMDB 的 REST 响应转成上面的 schema。</li>
-<li>由服务端填入租户及实体权限、知识截止时间和查询预算，例如最多返回 5,000 行。</li>
-<li>为每次查询生成 <code>query_id</code> 和证据对象。</li>
+<li>把 DME、CMDB 和监控或日志后端的查询结果转成上面的格式。应用和采集端用 OpenTelemetry (OTel) 采集，经 OTLP 发送到采集器或后端。调查用 PromQL、日志 API 等后端接口查历史。<a href="https://opentelemetry.io/docs/specs/otlp/">OpenTelemetry 协议</a></li>
+<li>服务端从认证会话和调查记录绑定 <code>principal_id</code>、<code>tenant_id</code>、<code>scope_id</code>、<code>policy_version</code>、<code>investigation_id</code>、<code>snapshot_id</code>、<code>incident_at</code> 和 <code>knowledge_cutoff</code>，并限制查询量，例如最多返回 5,000 行。模型可用实体、关系和时间缩小范围。可选 <code>as_of</code> 只选授权窗口内、不晚于 <code>incident_at</code> 的拓扑有效时点。超出窗口时拒绝，知识截止保持不变。<a href="./%E4%B8%9A%E7%95%8CAI%E8%BF%90%E7%BB%B4%E4%BA%A7%E5%93%81%E4%B8%8E%E5%8D%8E%E4%B8%BADME%E5%AF%B9%E6%A0%87.html#%E7%BB%99%E5%B0%8F%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%B7%A5%E5%85%B7%E5%92%8C%E7%BB%88%E6%AD%A2%E6%9D%A1%E4%BB%B6">对标的服务端约定</a></li>
+<li>每次查询生成 <code>query_id</code>，返回可引用的证据。各证据保留自己的 <code>observed_at</code> 和 <code>available_at</code>。历史回放读取已冻结的证据及其引用。</li>
 </ol>
 <p>模型只接收转换后的响应。适配层统一字段和单位，并写清怎样分页、每种错误代表什么。</p>
 <h3 id="75-agent-循环与验证器">7.5 Agent 循环与验证器</h3>
-<pre><code class="language-python">state = init(symptom, window, scope, budget)
+<pre><code class="language-python">context = load_authorized_investigation(session, investigation_id)
+state = init(symptom, context.window, context.budget)
 for step in range(max_steps):
     if state.budget_exhausted():
         return undecided(state, reason=&quot;budget&quot;)
-    plan = llm.plan(state, tools=available_tools(state.scope))
+    plan = llm.plan(state, tools=available_tools(context))
     call = validate_schema(plan.tool_call)
-    if not authorize(call, state.principal):
+    if not authorize(call, context):
         state.add_refusal(call)
         continue
-    obs = execute(call, timeout=state.timeout)
-    state.add_evidence(make_evidence(obs, call))
+    obs = execute_read(call, context=context, timeout=state.timeout)
+    state.add_evidence(obs.evidence)
     if state.sufficient() or state.no_discriminating_query():
         break
 
 report = llm.compose(state, schema=REPORT_SCHEMA)
-errors = verify(report, state)
+errors = verify(report, state, context)
 if errors:
-    report = llm.repair(report, errors, state)  # 有界重试
-    errors = verify(report, state)
+    report = llm.repair(report, safe_feedback(errors), state)  # 有界重试
+    errors = verify(report, state, context)
 if errors:
     return undecided(state, reason=&quot;report_validation_failed&quot;)
 return report
@@ -1171,7 +1231,7 @@ return report
 <p>验证器至少执行以下检查。</p>
 <pre><code class="language-text">每个事实有 evidence_id
 evidence_id 在 state 中存在
-证据对调查者的可见时间 ≤ 报告知识截止
+证据 available_at ≤ 服务端调查截止 knowledge_cutoff
 单位/量纲一致（ms/s、MiB/MB、IOPS/BW）
 数值在证据范围内
 没有越权实体/租户
@@ -1182,7 +1242,7 @@ evidence_id 在 state 中存在
   &quot;incident_id&quot;: &quot;INC-2026-11-10-001&quot;,
   &quot;snapshot_id&quot;: &quot;snap-0216&quot;,
   &quot;symptoms&quot;: [&quot;02:16 收到 orders 写延迟投诉，调查最近的应用指标与相关变更&quot;],
-  &quot;allowed_evidence_before&quot;: &quot;2026-11-10T02:16:00Z&quot;,
+  &quot;knowledge_cutoff&quot;: &quot;2026-11-10T02:16:00Z&quot;,
   &quot;ground_truth&quot;: {
     &quot;root_cause_entity&quot;: &quot;ceph-a/hot/pg1&quot;,
     &quot;root_cause_type&quot;: &quot;backfill_contention&quot;,
@@ -1203,7 +1263,7 @@ evidence_id 在 state 中存在
 <p>答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#3-%E8%BF%9B%E9%98%B6%E7%AF%87%E5%90%84%E7%AB%A0%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 3 部分</a>。</p>
 </blockquote>
 <ol>
-<li>写出 <code>entity/edge/evidence</code> 三张表的最小 DDL，并加一个“查询 02:16 可见、02:10:30 有效拓扑”的 SQL。</li>
+<li>写出 <code>entity/edge/event/evidence</code> 的最小 DDL，并查询 02:16 可见、02:10:30 有效的已授权拓扑。再用同源重放和两源同 ID 验证事件去重。</li>
 <li>用 PromQL 写“成功且 ≤20 ms 的写请求比例”和 99.9% SLO 的 1 小时燃烧率。</li>
 <li>为 <code>query_metric</code> 写一个 JSON Schema，要求返回单位、缺失区间、覆盖率、query_id。</li>
 <li>设计一个评测 JSON：包含一个正常事故、一个缺数据变体、一个晚到数据变体；说明如何防止答案泄漏。</li>
@@ -1291,7 +1351,7 @@ evidence_id 在 state 中存在
    → coverage 3/3 arrays, 42/42 hosts, 2/2 NAS ports; no gaps
 2) query_slo(workload=reporting, window=09:50-10:05)
    → good_ratio 96.2%, p99 120ms, errors 0.3%
-3) get_topology_at(entity=reporting-vm, as_of=10:00, cutoff=10:05)
+3) get_topology_at(entity_id=reporting-vm, as_of=2026-11-12T10:00:00Z)
    → VM → ESXi-03 → nfs-lif-2 → ctrl-A → report_fs → pool1 → disk group 1
 4) list_changes(entity=report_fs, window=09:30-10:05)
    → CHG-21 backup scan (09:55), report job create (09:58)

@@ -94,7 +94,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
     <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
 <a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
 <a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
-<a href="./PB级存储运维实操.html">三站实操</a></nav>
+<a href="./PB级存储运维实操.html">存储实操</a></nav>
     <h1>从存储遥测到可验证的 AI 诊断</h1>
   </div>
 </header>
@@ -148,7 +148,7 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9%/30 天
 <h2 id="2-采集时序与海量成本">2. 采集、时序与海量成本</h2>
 <p>采集后的数据按用途入库。</p>
 <pre><code class="language-text">设备/主机/应用
-   │ 拉取/推送：REST、SNMP、SSH、OTel、syslog
+   │ 拉取/推送：REST、SNMP、SSH、OTLP、syslog
    ▼
 采集与缓冲（去重、水位、背压）
    │
@@ -157,7 +157,7 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9%/30 天
    ├─ 对象存储（日志/证据快照）
    └─ 文档索引（Runbook/复盘）
 </code></pre>
-<p>每个指标写清实体、单位和标签。标签放可分组查询的维度，流水号留在日志或事件里。计数器先处理重置再求速率。缺报单独标记。分别记录事件发生、采集端看到事件和调查系统可用这条记录的时间。一半 OSD 停报时，平均延迟可能下降，查覆盖率才能发现样本少了一半。</p>
+<p>每个指标写清实体、单位和标签。标签放可分组查询的维度，流水号留在日志或事件里。计数器先处理重置再求速率。缺报单独标记。分别记录事件发生的 <code>event_time</code>、采集端看到数据的 <code>observed_at</code>，以及接入服务发布后首次可查的 <code>available_at</code>。应用可用 OpenTelemetry 采集，通过 OTLP 发送到采集器或后端。调查时从监控、日志或追踪后端查询。一半 OSD 停报时，平均延迟可能下降，查覆盖率才能发现样本少了一半。</p>
 <p>以每 15 秒采样为例。</p>
 <pre><code class="language-text">50,000 序列 × 86,400/15 = 288,000,000 样本/天
 2 字节/样本 ≈ 576 MB/天（单副本）
@@ -202,8 +202,9 @@ T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
 <p>参考见 <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/task_create_monitor.html">NetApp DII Monitor</a> · <a href="https://www.dell.com/en-us/infohub/articles/dell-powerstore-cybersecurity-3">Dell PowerStore 可观测性</a></p>
 <h2 id="5-容量与硬盘风险预测">5. 容量与硬盘风险预测</h2>
 <p>先算池还能用多久。</p>
-<pre><code class="language-text">raw → usable（副本/RAID/EC）→ effective（快照/克隆/元数据/回收站/水位）
-到阈值天数 = (effective × 阈值 − 已用) / 净增
+<pre><code class="language-text">raw × 冗余效率 = 冗余后容量
+（冗余后容量 − 单列固定占用）×（1 − 预留比例）= 可分配容量
+到阈值天数 = (可分配容量 × 告警比例 − 同口径已用容量) / 净增
 </code></pre>
 <p>硬盘预测按盘、按天组织样本。</p>
 <pre><code class="language-text">样本 = (disk_id, day, 当时可见特征)
@@ -212,8 +213,8 @@ T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
 切分 = 按时间 + 按设备，禁止同盘泄漏
 评测 = PR-AUC、召回@告警预算、提前量、校准
 </code></pre>
-<p>预测容量前，统一 raw、usable、effective 的计算口径。预测硬盘故障前，确认哪些记录是真实故障，哪些在观察结束前换盘、迁移或停止跟踪。比较厂商的“14 天”“30 天”和“健康度 60 分”时，分别核对预测窗口和评分定义，再判断能否与故障概率对应。</p>
-<p>原始容量 2,400 TB，EC 8+2 之后可用 1,920 TB。先扣 5% 容量预留，剩 1,824 TB，再按剩余容量的 95% 告警。已用 1,500 TB、每天净增 6 TB 时，约 38.8 天到阈值。每天净增 3 或 9 TB 时，分别约 77.6 或 25.9 天。10,000 块硬盘，AFR 2%、召回率 80%、精确率 20% 时，平均每天有 2.19 次告警，其中误报 1.75 次。</p>
+<p>预测容量前，统一冗余后容量和用量口径。已计入用量的占用无需另扣。预留只扣一次，告警比例单独应用。预测硬盘故障前，确认哪些记录是真实故障，哪些在观察结束前换盘、迁移或停止跟踪。比较厂商的“14 天”“30 天”和“健康度 60 分”时，分别核对预测窗口和评分定义，再判断能否与故障概率对应。</p>
+<p>原始容量 2,400 TB，EC 8+2 之后有 1,920 TB 冗余后容量。无另列的固定占用，扣一次 5% 预留后可分配 1,824 TB，再按该容量的 95% 告警。已用 1,500 TB、每天净增 6 TB 时，约 38.8 天到阈值。每天净增 3 或 9 TB 时，分别约 77.6 或 25.9 天。10,000 块硬盘，AFR 2%、召回率 80%、精确率 20% 时，平均每天有 2.19 次告警，其中误报 1.75 次。</p>
 <p>参考见 <a href="https://www.usenix.org/conference/fast20/presentation/lu">FAST ’20 硬盘预测</a> · <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a></p>
 <h2 id="6-根因证据与反证">6. 根因、证据与反证</h2>
 <p>沿着事发时的拓扑，找发生在症状前的变更。</p>
@@ -245,12 +246,12 @@ T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
    → 对每个假设选最有区分度的查询
    → 证据足够/预算耗尽/需人工 → 报告/未决
 </code></pre>
-<p>每个工具都要约定输入、输出、时间口径、权限、错误类型和查询 ID。</p>
+<p>每个工具都要约定输入、输出、时间口径、权限、错误类型和查询 ID。服务端绑定身份、授权、冻结快照和 <code>knowledge_cutoff</code>。模型只可收窄范围。查事件、证据和拓扑时共用同一知识截止，事件按可信来源和原生事件 ID 去重。</p>
 <pre><code class="language-text">query_metric(entity_id, metric, start, end, step)
   → unit, samples, missing_intervals, coverage, query_id, source
 </code></pre>
-<p>RAG 先按 ACL、租户、产品、型号、版本、故障码、审批状态和生效时间筛选，再用关键词和向量检索并重排。文档冲突时，列出各自的版本、出处和适用范围。证据对象带 <code>evidence_id/query_id/source/entity_id/window/observed_at/quality/payload_ref</code>。报告分开写事实、推断和未决问题。</p>
-<p>用 02:16 的快照直接问模型，模型可能把 P99 的 46ms 写成“平均值”。用工具查 M06/M07，可拿到窗口、单位、覆盖率和查询 ID。验证器还能拒绝 E04，因为这条证据在 02:18 才可见。</p>
+<p>RAG 先按 ACL、租户、产品、型号、版本、故障码、审批状态和生效时间筛选，再用关键词和向量检索并重排。文档冲突时，列出各自的版本、出处和适用范围。证据对象带 <code>evidence_id/query_id/source_id/entity_id/window/observed_at/available_at/quality/payload_ref</code>。报告分开写事实、推断和未决问题。</p>
+<p>用 02:16 的快照直接问模型，模型可能把 P99 的 46ms 写成“平均值”。用工具查 M06/M07，可拿到窗口、单位、覆盖率和查询 ID。验证器还能拒绝 E04，因为这条证据在 02:18 才可见。实验中的 <code>observed_utc</code> 表示可见时间，生产用 <code>available_at</code> 单列。</p>
 <p>参考见 <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a> · <a href="https://docs.netapp.com/us-en/data-infrastructure-insights/mcp_overview.html">DII MCP</a> · <a href="https://docs.aws.amazon.com/ai/responsible-ai/aws-aidevops-agent/overview.html">AWS 服务卡</a></p>
 <h2 id="8-处置验证与评测">8. 处置、验证与评测</h2>
 <p>执行前复核状态，执行后同时检查业务和数据保护。</p>
@@ -310,7 +311,7 @@ T02 02:10:30 起：  orders → vol01 → hot → PG1 → osd.12/17/18
 </tbody>
 </table></div>
 <p>参考见 <a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a> · <a href="https://github.com/PureStorage-OpenConnect/fusion-mcp-server/blob/main/docs/USER_GUIDE.md">Fusion MCP 指南</a></p>
-<p>站点定容、设备接入和工作流见<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a>。演练见<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">三站实操</a>。</p>
+<p>站点定容、设备接入和工作流见<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E6%89%8B%E5%86%8C.html">PB 级建设手册</a>。演练见<a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">存储实操</a>。</p>
   </article>
 </main>
 <footer class="page-width"><a href="./index.html">查看完整资料目录</a></footer>

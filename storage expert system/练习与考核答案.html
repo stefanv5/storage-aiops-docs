@@ -94,7 +94,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
     <nav class="primary" aria-label="学习资料导航"><a href="./index.html">资料目录</a>
 <a href="./存储专家系统学习路径与资料指南.html">学习导览</a>
 <a href="./PB级存储智能运维建设手册.html">PB 级建设手册</a>
-<a href="./PB级存储运维实操.html">三站实操</a></nav>
+<a href="./PB级存储运维实操.html">存储实操</a></nav>
     <h1>练习与考核答案</h1>
   </div>
 </header>
@@ -312,8 +312,9 @@ C: 秩  99,000 → (50,100] 桶内 1,000/2,000 → 50 + 25 = 75 ms
 </code></pre>
 <p>样本量 1 分，三副本年存储 1 分，扫描量 1 分，覆盖率规则 2 分。覆盖率规则须写明“禁止全局均值”。</p>
 <h3 id="13-第-3-节时态拓扑-sql">1.3 第 3 节：时态拓扑 SQL</h3>
+<p><code>authorized_snapshot_edges</code> 表示在固定快照中按边的来源及两端实体授权后的集合。下例只展示两组时间谓词。完整查询见<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#72-as-of-%E6%9F%A5%E8%AF%A2">进阶篇 §7.2</a>。</p>
 <pre><code class="language-sql">SELECT src_id, dst_id, relation, valid_from, valid_to, observed_at, source
-FROM edge
+FROM authorized_snapshot_edges
 WHERE src_id = :entity_id
   AND valid_from &lt;= :t
   AND (valid_to IS NULL OR :t &lt; valid_to)
@@ -322,7 +323,7 @@ WHERE src_id = :entity_id
 </code></pre>
 <p>也可用 <code>tstzrange</code> 查询。</p>
 <pre><code class="language-sql">SELECT *
-FROM edge
+FROM authorized_snapshot_edges
 WHERE src_id = :entity_id
   AND tstzrange(valid_from, valid_to, '[)') @&gt; CAST(:t AS TIMESTAMPTZ)
   AND tstzrange(known_from, known_to, '[)') @&gt; CAST(:knowledge_cutoff AS TIMESTAMPTZ);
@@ -362,10 +363,10 @@ M08: 224,940 / 225,000 = 99.973%
 <p>真实采样点有相关性，0.029/天来自独立假设。它说明在这一假设下，持续超限规则比单点阈值少报几个数量级。</p>
 <p>z 分数、SLO、误报量、规则组合各 2 分。</p>
 <h3 id="15-第-5-节容量与硬盘告警预算">1.5 第 5 节：容量与硬盘告警预算</h3>
-<p>先从可用容量扣 5% 预留，再用剩余容量的 95% 作为单独的告警阈值。</p>
+<p>算例无另列固定占用。先从冗余后容量扣 5% 预留，再按可分配容量的 95% 设告警阈值。</p>
 <pre><code class="language-text">raw = 2,400 TB
-EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
-5% 预留 = 1,824 TB
+EC 8+2 冗余后容量 = 2,400 × 0.8 = 1,920 TB
+扣 5% 预留后，可分配容量 = 1,824 TB
 95% 水位 = 1,732.8 TB
 已用 1,500 TB；剩余 232.8 TB
 6 TB/天 → 38.8 天
@@ -439,9 +440,9 @@ EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
 </tr>
 <tr>
 <td><code>get_topology_at</code></td>
-<td>entity_id, as_of, knowledge_cutoff, direction, max_depth</td>
+<td>entity_id, as_of（可选）, direction, max_depth</td>
 <td>nodes, edges, valid_from/to, observed_at, source, coverage, query_id</td>
-<td>只读，按指定时点查拓扑</td>
+<td><code>as_of</code> 只选授权窗口内、不晚于事发时点的有效时间，知识截止由服务端固定</td>
 </tr>
 <tr>
 <td><code>query_metric</code></td>
@@ -452,8 +453,8 @@ EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
 <tr>
 <td><code>list_changes</code></td>
 <td>entity_id, window, change_type</td>
-<td>change_id, event_time, observed_at, status, source_ref</td>
-<td>只读，保留事件时间和观测时间</td>
+<td>source_id, event_id, event_time, observed_at, available_at, status, source_ref, query_id</td>
+<td>只读，按来源和事件 ID 去重，按服务端截止过滤</td>
 </tr>
 <tr>
 <td><code>search_runbooks</code></td>
@@ -463,6 +464,7 @@ EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
 </tr>
 </tbody>
 </table></div>
+<p>网关从认证会话和调查记录绑定身份、租户、授权、知识截止及快照，模型只提供缩小查询范围的参数。所有工具都用同一截止查询冻结证据。<a href="./%E4%B8%9A%E7%95%8CAI%E8%BF%90%E7%BB%B4%E4%BA%A7%E5%93%81%E4%B8%8E%E5%8D%8E%E4%B8%BADME%E5%AF%B9%E6%A0%87.html#%E7%BB%99%E5%B0%8F%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%B7%A5%E5%85%B7%E5%92%8C%E7%BB%88%E6%AD%A2%E6%9D%A1%E4%BB%B6">对标的服务端约定</a></p>
 <p>比较直接提问与用工具查证的结果。</p>
 <ul>
 <li>直接问模型时，模型可能编造数值、混用单位、引用不存在的文档或漏报数据缺口。</li>
@@ -504,7 +506,7 @@ EC 8+2 usable = 2,400 × 0.8 = 1,920 TB
 <pre><code class="language-text">T01（02:00–02:10:30）：orders → vol01 → hot → PG1 → osd.11/12/13
 T02（02:10:30 起）：orders → vol01 → hot → PG1 → osd.12/17/18
 </code></pre>
-<p>用事发时点匹配有效区间，用 02:16 匹配知识区间。比较维护前后，改变事发时点，保持同一调查截止。按可见时间过滤晚到事件，按事件 ID 防重。E04 到 02:18 才可见。</p>
+<p>用事发时点匹配有效区间，用 02:16 匹配知识区间。比较维护前后，改变事发时点，保持同一调查截止。按 <code>available_at</code> 过滤晚到事件，按 <code>(source_id, event_id)</code> 防重。E04 到 02:18 才可见。实验 CSV 的 <code>observed_utc</code> 已表示可见时间。</p>
 <p><strong>节点 04：MAD 与首次触发</strong></p>
 <pre><code class="language-text">中位数 6，MAD 1
 M06: z=18.21；M07: z=26.98
@@ -520,7 +522,7 @@ M07 好请求 93.27%
 <p><strong>节点 07：三份工具契约</strong></p>
 <pre><code class="language-text">get_collection_status(cluster, window) → sources, watermark, missing, coverage, query_id
 query_metric(entity, metric, start, end, step) → unit, samples, missing_intervals, coverage, query_id
-get_topology_at(entity, as_of, cutoff) → nodes, edges, valid_from/to, observed_at, coverage, query_id
+get_topology_at(entity_id, as_of?) → nodes, edges, valid_from/to, observed_at, coverage, query_id
 </code></pre>
 <p>报告附 <code>evidence_id/query_id</code>。覆盖不足时把根因标为未决，并写下一项查询。</p>
 <p><strong>节点 08：调度调整的前置/退出/验证</strong></p>
@@ -592,7 +594,7 @@ get_topology_at(entity, as_of, cutoff) → nodes, edges, valid_from/to, observed
 </tbody>
 </table></div>
 <p>关系类型用 <code>runs_on</code>、<code>hosted_by</code>、<code>maps_to</code>、<code>member_of</code>、<code>replicates_to</code>、<code>depends_on</code>、<code>protects</code>。每条关系的修订保留 <code>valid_from/valid_to/known_from/known_to/observed_at/source/confidence</code>。</p>
-<p>下方 Cypher 示例按事发时间和知识截止查询路径。</p>
+<p>下方 Cypher 示例在网关选定的授权快照中查路径。这个图只包含当前租户可查的节点和边。写入子图前逐边核对来源及两端实体的权限，避免从已授权节点走到其他租户。示例中的 <code>$t</code> 和 <code>$cutoff</code> 由服务端绑定。</p>
 <pre><code class="language-cypher">MATCH p = (w:Workload {id:$w})-[:RUNS_ON|MAPS_TO|MEMBER_OF*1..6]-&gt;(d:Disk)
 WHERE all(r IN relationships(p)
       WHERE r.valid_from &lt;= $t AND (r.valid_to IS NULL OR $t &lt; r.valid_to)
@@ -781,11 +783,11 @@ SLO 目标为 99.9%。1 小时和 5 分钟窗口的好请求比例都 &lt; 98.56
 <li><code>get_health</code> 查健康评分和扣分项。</li>
 <li><code>get_collection_status</code> 查采集覆盖、数据水位和断连。</li>
 <li><code>list_changes</code> 查变更、维护和工单。</li>
-<li><code>run_smart_analysis</code> 触发只读智能分析，返回报告 ID。该操作仍可能消耗产品资源，标 <code>readOnlyHint=false</code> 或设单独预算。</li>
+<li><code>get_smart_analysis_report</code> 按报告 ID 查询已有分析结果，实际依所选 DME 版本提供的接口。触发新的分析作业有资源和状态副作用，另行配置。</li>
 <li><code>search_runbooks</code> 按产品、版本和故障码查操作手册。</li>
 </ol>
-<p>用 OAuth2/RBAC 限定租户和实体范围。每次调用注入 <code>principal</code>，并返回 <code>query_id</code>。错误分 <code>unauthorized/not_found/no_data/timeout/backend_error</code>。</p>
-<p>DME 助手在产品内完成操作，有设备知识和预置动作，能处理的请求受意图库限制。Agent 加 MCP 可跨 DME、OTel 和 CMDB，工具可组合、模型可更换。接入方需定义 schema、权限和证据格式。</p>
+<p>用 OAuth2/RBAC 限定租户和实体范围。网关从认证会话和调查记录绑定 <code>principal_id</code>、租户、授权范围、快照和知识截止，返回 <code>query_id</code>。模型输入不含这些服务端字段。错误可分 <code>unauthorized/not_found/no_data/timeout/backend_error</code>，向客户端披露哪类错误取决于其权限。</p>
+<p>DME 助手在产品内完成操作，有设备知识和预置动作，能处理的请求受意图库限制。Agent 加 MCP 可组合 DME、CMDB 及监控和日志后端的查询。应用由 OpenTelemetry 采集，通过 OTLP 发送；历史数据由后端查询。接入方需定义 schema、权限和证据格式。</p>
 <p>10 个工具 3 分，权限和错误 2 分，对比 1 分。</p>
 <h3 id="29-第-8-环节隔离风险盘的变更契约">2.9 第 8 环节：隔离风险盘的变更契约</h3>
 <pre><code class="language-text">目标：隔离 ceph-a/osd.17 上的风险盘
@@ -914,7 +916,7 @@ RAID 6 单块读改写：每次前台写对应 3 次后端读、3 次后端写
 </code></pre>
 <p><strong>4. 容量窗口</strong></p>
 <pre><code class="language-text">raw 24,000 TB；EC 8+3 = 24,000×8/11 ≈ 17,455 TB
-10% 预留 = 15,709 TB；90% 线 = 14,138 TB；已用 12,000
+扣 10% 预留后，可分配容量约 15,709 TB；按 90% 告警约 14,138 TB；已用 12,000 TB
 剩余 2,138 TB
 25 TB/天 → 85.5 天
 75 TB/天 → 28.5 天
@@ -939,15 +941,7 @@ RAID 6 单块读改写：每次前台写对应 3 次后端读、3 次后端写
 <p>若每个 OSD 的 PG 数已经足够且 autoscaler 正常，可以保持 PG 数。PG 太多会增加 peering、内存和恢复开销。用 <code>pg_autoscaler</code> 和实际负载决定是否调整。</p>
 <h3 id="37-第-7-章实现">3.7 第 7 章：实现</h3>
 <p><strong>1. DDL + as-of SQL</strong></p>
-<p>见进阶篇 7.1/7.2。<code>entity</code> 使用稳定 ID 和别名。<code>edge</code> 保存有效区间、知识区间及来源观测时间。查询同时匹配两组左闭右开的区间。</p>
-<pre><code class="language-sql">SELECT *
-FROM edge
-WHERE src_id = :id
-  AND valid_from &lt;= :t
-  AND (valid_to IS NULL OR :t &lt; valid_to)
-  AND known_from &lt;= :cutoff
-  AND (known_to IS NULL OR :cutoff &lt; known_to);
-</code></pre>
+<p><code>entity</code> 使用稳定 ID 和别名。<code>edge</code> 保存左闭右开的有效区间、知识区间及源观测时间。先按来源和边两端授权，再匹配两组区间。事件按 <code>(source_id, event_id)</code> 去重。事件和证据只查冻结快照内且 <code>available_at ≤ knowledge_cutoff</code> 的记录。事发时点和知识截止分别绑定，所有后端共用同一调查截止。<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#72-as-of-%E6%9F%A5%E8%AF%A2">进阶篇的查询示例</a></p>
 <p><strong>2. PromQL</strong></p>
 <pre><code class="language-promql"># 成功且 ≤20ms 的写请求比例
 sum(rate(req_duration_seconds_bucket{le=&quot;0.02&quot;,code=~&quot;2..&quot;,op=&quot;write&quot;}[5m]))
@@ -967,6 +961,7 @@ sum(rate(req_duration_seconds_count{op=&quot;write&quot;}[5m]))
   &quot;inputSchema&quot;: {
     &quot;type&quot;: &quot;object&quot;,
     &quot;required&quot;: [&quot;entity_id&quot;,&quot;metric&quot;,&quot;start&quot;,&quot;end&quot;,&quot;step&quot;],
+    &quot;additionalProperties&quot;: false,
     &quot;properties&quot;: {
       &quot;entity_id&quot;: {&quot;type&quot;:&quot;string&quot;},
       &quot;metric&quot;: {&quot;enum&quot;:[&quot;p99_ms&quot;,&quot;iops&quot;,&quot;bandwidth_bytes&quot;,&quot;queue_depth&quot;,&quot;cpu_pct&quot;]},
@@ -978,14 +973,14 @@ sum(rate(req_duration_seconds_count{op=&quot;write&quot;}[5m]))
   },
   &quot;outputSchema&quot;: {
     &quot;type&quot;: &quot;object&quot;,
-    &quot;required&quot;: [&quot;unit&quot;,&quot;samples&quot;,&quot;missing_intervals&quot;,&quot;coverage&quot;,&quot;query_id&quot;,&quot;source&quot;],
+    &quot;required&quot;: [&quot;unit&quot;,&quot;samples&quot;,&quot;missing_intervals&quot;,&quot;coverage&quot;,&quot;query_id&quot;,&quot;source_id&quot;],
     &quot;properties&quot;: {
       &quot;unit&quot;: {&quot;type&quot;:&quot;string&quot;},
       &quot;samples&quot;: {&quot;type&quot;:&quot;array&quot;},
       &quot;missing_intervals&quot;: {&quot;type&quot;:&quot;array&quot;},
       &quot;coverage&quot;: {&quot;type&quot;:&quot;number&quot;},
       &quot;query_id&quot;: {&quot;type&quot;:&quot;string&quot;},
-      &quot;source&quot;: {&quot;type&quot;:&quot;string&quot;},
+      &quot;source_id&quot;: {&quot;type&quot;:&quot;string&quot;},
       &quot;error&quot;: {&quot;enum&quot;:[&quot;unauthorized&quot;,&quot;not_found&quot;,&quot;no_data&quot;,&quot;timeout&quot;,&quot;backend_error&quot;]}
     }
   },
@@ -1027,7 +1022,7 @@ sum(rate(req_duration_seconds_count{op=&quot;write&quot;}[5m]))
   &quot;scoring&quot;: {&quot;detection&quot;:2,&quot;root_cause&quot;:3,&quot;evidence&quot;:3,&quot;time&quot;:1,&quot;missing&quot;:1,&quot;durability&quot;:2}
 }
 </code></pre>
-<p>按各变体自己的 <code>must_cite</code> 和 <code>must_not_cite</code> 评分。缺数据时，检查报告是否指出缺口并暂缓根因结论。用独立快照和密钥隔离变体，确保模型看不到答案，由独立评审评分。记录命中禁引列表的引用，按 <code>knowledge_time</code> 检查晚到数据。</p>
+<p>按各变体自己的 <code>must_cite</code> 和 <code>must_not_cite</code> 评分。缺数据时，检查报告是否指出缺口并暂缓根因结论。用独立快照和密钥隔离变体，确保模型看不到答案，由独立评审评分。记录命中禁引列表的引用。晚到检查按冻结的发布快照和服务端 <code>knowledge_cutoff</code> 对比 <code>available_at</code>。</p>
 <h2 id="4-综合自测-30-题答案">4. 综合自测 30 题答案</h2>
 <blockquote>
 <p>计算题给出步骤，设计和案例题给出参考要点。详细推导见<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a>对应章节。</p>
@@ -1096,13 +1091,13 @@ TP = 0.548×0.8 = 0.438
 <p><strong>B12. 时态拓扑</strong></p>
 <ul>
 <li><code>valid_from/valid_to</code> 记录关系实际何时有效，用它还原维护前或维护后的拓扑。</li>
-<li><code>observed_at</code> 记录采集时间，回放时按调查截止过滤晚到数据。</li>
+<li><code>observed_at</code> 记录采集端首次看到的时间。事件和证据用 <code>available_at</code> 记录首次可查时间，拓扑修订用 <code>known_from/known_to</code> 记录可查区间。回放只查冻结快照中、知识截止内可查的记录。</li>
 <li>使用半开区间 <code>[valid_from, valid_to)</code>。<code>valid_to NULL</code> 表示仍有效。</li>
 <li>查询 <code>valid_range @&gt; t AND knowledge_range @&gt; cutoff</code>。晚到修订保留旧有效区间，仅关闭旧知识区间并新增修订。</li>
 <li>用 <code>source/confidence</code> 标注来源和置信度，以便处理多源冲突。</li>
 </ul>
 <p><strong>B13. query_metric 契约</strong></p>
-<p>输入为 <code>entity_id, metric enum, start, end, step, aggregation</code>。输出为 <code>unit, samples, missing_intervals, coverage, query_id, source, error</code>。工具只读，设最大时间窗、样本数、超时和租户权限。错误分 <code>unauthorized/not_found/no_data/timeout/backend_error</code>。</p>
+<p>输入为 <code>entity_id, metric enum, start, end, step, aggregation</code>。成功输出包括 <code>unit, samples, missing_intervals, coverage, query_id, source_id</code>。工具只读，网关绑定身份、租户、授权、快照和知识截止，并限制时间窗、样本量和超时。模型传入的窗口只能缩小范围。错误分 <code>unauthorized/not_found/no_data/timeout/backend_error</code>。</p>
 <p><strong>B14. RAG</strong></p>
 <pre><code class="language-text">ACL/租户 → 产品/型号 → 版本区间 → 故障码/症状 → 审批/生效时间
 → 关键词+向量混合召回 → 重排 → 冲突检测 → 返回 doc_id/section/version/effective_at/引用
