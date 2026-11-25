@@ -123,7 +123,7 @@ footer .wrap{width:min(var(--max),calc(100% - 40px));margin:0 auto}
   <div class="wrap">
     <p class="eyebrow">Storage AIOps · 2026-11-18</p>
     <h1>海量存储专家系统<br>从 I/O 到故障处理</h1>
-    <p class="lead">先看请求怎样到达磁盘，再学怎样查故障、做变更和确认恢复。每章配图、算例和自测。</p>
+    <p class="lead">一次写请求走哪条路？慢在哪一段？先用图和算例查清原因，再练变更和恢复检查。</p>
     <div class="stats">
       <span class="stat"><b>14</b> 个章节</span>
       <span class="stat"><b>12</b> 张架构/流程图</span>
@@ -158,10 +158,9 @@ footer .wrap{width:min(var(--max),calc(100% - 40px));margin:0 auto}
 <main>
 <section class="module" id="m0">
   <h2><span class="num">00</span> 运维系统的组成和能力</h2>
-  <p class="lead">接到“订单写入变慢”的告警后，先确认影响，再查原因。执行任何变更前要确认权限，执行后要验证结果。</p>
+  <p class="lead">订单写入变慢时，先查哪些请求和卷受影响，再找原因。要改设备，先审批，做完再查业务和数据。</p>
 
   <h3>0.1 专家系统的五项工作</h3>
-  <p>下表列出每项工作负责的问题、常用工具和容易犯的错误。</p>
   <div class="table-wrap"><table>
     <thead><tr><th>面</th><th>回答的问题</th><th>典型组件</th><th>失败表现</th></tr></thead>
     <tbody>
@@ -174,11 +173,11 @@ footer .wrap{width:min(var(--max),calc(100% - 40px));margin:0 auto}
   </table></div>
 
   <div class="grid2">
-    <div class="card"><h4>用规则控制权限和变更</h4><p>检测阈值、SLO、权限、变更和验收都要有明确规则。规则可审计，也可用旧事故复测。</p></div>
-    <div class="card"><h4>用模型找线索和写报告</h4><p>模型可以找异常、做预测、检索资料和提出原因。确认设备状态时，直接查询设备或监控数据。</p></div>
+    <div class="card"><h4>规则负责什么</h4><p>阈值、SLO、权限和验收条件写成规则。每次执行留记录，改完规则用旧事故重测。</p></div>
+    <div class="card"><h4>模型能帮什么</h4><p>找异常、预测、查手册、列原因。要知道设备现在怎样，直接查设备或监控。</p></div>
   </div>
 
-  <h3>0.2 五级能力各需要什么证据和权限</h3>
+  <h3>0.2 从监控到自动处置</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>级别</th><th>能力</th><th>必要证据</th><th>授权</th></tr></thead>
     <tbody>
@@ -189,7 +188,7 @@ footer .wrap{width:min(var(--max),calc(100% - 40px));margin:0 auto}
       <tr><td>L4 自治</td><td>在规定范围内自动处置</td><td>L3 全部要求，加长期回放、自动停止条件和审计</td><td>白名单、执行限额和自动停止</td></tr>
     </tbody>
   </table></div>
-  <p>先用事故回放验证检测和诊断。确认输出能引用原始证据后，再开放自动处置。</p>
+  <p>先用事故回放检查能否发现问题、查清原因，并给出原始证据。准备开放自动处置时，另做审批、回滚和恢复验收。</p>
 
   <figure class="diagram">
     <svg viewBox="0 0 920 380" role="img" aria-labelledby="flowTitle flowDesc">
@@ -241,7 +240,7 @@ footer .wrap{width:min(var(--max),calc(100% - 40px));margin:0 auto}
 </section>
 <section class="module" id="m1">
   <h2><span class="num">01</span> 请求路径、延迟和 SLO</h2>
-  <p class="lead">收到慢写告警时，先确认哪个业务、哪类请求和哪个时间窗受影响，再看延迟出在哪一段。</p>
+  <p class="lead">收到慢写告警，先圈出受影响的业务、请求和时间段，再沿请求路径找慢点。</p>
 
   <h3>1.1 四种存储的请求路径</h3>
   <p>块、文件、对象和分布式存储的请求路径不同。先找出每一段可以测量的位置。</p>
@@ -340,7 +339,7 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9% / 30 天
     = 20 + 6,000/12,900 × 30 ≈ 33.95 ms</code></pre>
   <p>三个客户端的 P99 分别约 14.44 ms、35 ms、75 ms，算术平均约 41.48 ms。全局分位数应按相同桶边界求和，再在目标桶内插值。<a href="./练习与考核答案.html#11-第-1-节直方图合并与延迟分解">原始桶计数</a></p>
 
-  <h3>1.7 失败模式</h3>
+  <h3>1.7 测延迟时容易踩的坑</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
     <tbody>
@@ -352,13 +351,13 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9% / 30 天
     </tbody>
   </table></div>
 
-  <h3>1.8 放到 DME 里看</h3>
+  <h3>1.8 用 DME 能查到哪一段</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
     <tbody>
-      <tr><td>拓扑</td><td>SAN 用 FC 交换机 WWN + HostLink；NAS 用 IO trace；容器用 CSI</td><td>没有公开的 as-of 拓扑/映射 epoch</td></tr>
-      <tr><td>性能分析</td><td>I/O 路径时延、首错模块、故障树、5 秒视图</td><td>没有业务 SLO/错误预算；没有应用侧 OTel</td></tr>
-      <tr><td>结论口径</td><td>1 分钟识别、3 分钟定界、5 分钟辅助定位</td><td>没有公开测试集/误报率，不能直接当验收值</td></tr>
+      <tr><td>拓扑</td><td>SAN 用 FC 交换机 WWN 和 HostLink，NAS 用 IO trace，容器用 CSI</td><td>按事故时间查拓扑和映射版本，需现场确认接口</td></tr>
+      <tr><td>性能分析</td><td>查 I/O 路径时延、故障树、5 秒视图，以及适用中断场景的首错</td><td>业务 SLO、错误预算和应用追踪要接应用监控</td></tr>
+      <tr><td>厂商公布的时长</td><td>1 分钟识别、3 分钟划定范围、5 分钟辅助定位</td><td>用现场故障集测时长和误报，再定验收线</td></tr>
     </tbody>
   </table></div>
 
@@ -368,7 +367,7 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9% / 30 天
 </section>
 <section class="module" id="m2">
   <h2><span class="num">02</span> 监控数据、时间和存储成本</h2>
-  <p class="lead">设备多、标签多、采样密，监控成本就会上升。记录哪些设备仍在上报，避免用剩余样本推断整个集群。</p>
+  <p class="lead">设备多、标签多、采样密，监控存储和查询就更贵。一半设备停报时，剩下的数据只能说明这些设备的情况。</p>
 
   <h3>2.1 从设备采集到查询</h3>
   <p>监控数据要经过采集、缓冲、入库和查询。记录每步的延迟、丢失情况和已接收的数据范围。</p>
@@ -416,7 +415,7 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9% / 30 天
       <path class="tl" d="M760 286 V305 H100 V300" stroke-dasharray="4 4"/>
       <text class="tm" x="120" y="322">回放/审计：用同一 snapshot_id 复现当时可见的数据</text>
     </svg>
-    <figcaption>图 2-1　采集、入库和查询都可能改变结果。返回结果时附上覆盖率和时间。</figcaption>
+    <figcaption>图 2-1　数据从设备到查询结果，要经过采集、排队和入库。查询时也要看到采样时间和覆盖率。</figcaption>
   </figure>
 
   <h3>2.2 时间序列的数量和成本</h3>
@@ -437,7 +436,7 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9% / 30 天
       <tr><td>日志/证据</td><td>原始</td><td>7–30 天，冷存更久</td><td>深度取证</td></tr>
     </tbody>
   </table></div>
-  <h3>2.3 三个时间：事件时间、观测时间、知识时间</h3>
+  <h3>2.3 何时发生、何时收到、何时能查</h3>
   <p>查同一事件时，区分发生、采集到和入库后可查询的时间。</p>
   <div class="table-wrap"><table>
     <thead><tr><th>时间</th><th>含义</th><th>防什么错</th></tr></thead>
@@ -454,7 +453,7 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9% / 30 天
   <div class="example danger"><span class="tag">例子</span><p>一半 OSD 停报后，健康 OSD 的平均延迟下降。先算覆盖率 <code>coverage = reporting / expected</code>，再把结果限定在实际收到数据的对象。</p></div>
   <p>可按业务要求设置阈值。例如覆盖率低于 80% 时，只报告已观测对象。5 分钟内覆盖率下降超过 10% 时报警。诊断报告要列出缺失的对象和字段。</p>
 
-  <h3>2.5 失败模式</h3>
+  <h3>2.5 监控数据常见问题</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
     <tbody>
@@ -467,13 +466,13 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9% / 30 天
     </tbody>
   </table></div>
 
-  <h3>2.6 放到 DME 里看</h3>
+  <h3>2.6 DME 的采集间隔和保留期</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
     <tbody>
-      <tr><td>采集粒度</td><td>闪存 1 分钟、分布式 1/5 分钟、FC 1 分钟；实时 5 秒</td><td>5 秒历史不落 DME，按需从 Dorado V6+ 读，最长一周</td></tr>
+      <tr><td>采集间隔</td><td>闪存和 FC 每 1 分钟采集，分布式按类型为 1 或 5 分钟。实时视图每 5 秒刷新</td><td>5 秒历史保存在支持的 Dorado V6 及后续设备。先开启留存，DME 才能按需回查，最长一周</td></tr>
       <tr><td>保留</td><td>分钟级 7 天、30 分钟 6 个月、天级 2 年</td><td>能否自定义长期原始数据留存，按部署版本核对</td></tr>
-      <tr><td>搜索</td><td>OpenSearch 支撑全局搜索，20 万资源一键检索</td><td>没有公开的原始遥测导出/查询 ID/覆盖 API</td></tr>
+      <tr><td>搜索</td><td>OpenSearch 支持全局查询，资料列出 20 万资源的检索规模</td><td>原始样本导出、查询 ID 和覆盖率接口需按版本核对</td></tr>
     </tbody>
   </table></div>
 
@@ -483,7 +482,7 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥99.9% / 30 天
 </section>
 <section class="module" id="m3">
   <h2><span class="num">03</span> 设备标识和历史拓扑</h2>
-  <p class="lead">主机改名、换卡、OSD 编号重用、Pod 重建和卷迁移都会改动拓扑。查旧事故要找当时的设备和连接关系。</p>
+  <p class="lead">卷迁过、主机换过卡、OSD 编号也可能重用。查旧事故时，先找事发时用的是哪台设备、哪条路径。</p>
 
   <h3>3.1 怎样跟踪同一台设备</h3>
   <p>主机名、LUN 编号、OSD 编号、WWN 和 Pod 名都可能变化。用稳定标识记录设备，再保存它的别名和生效时间。</p>
@@ -541,9 +540,9 @@ WHERE src_id = :workload
       <text class="tx" x="300" y="196">维护后有效</text>
       <text class="tx" x="60" y="285">两版都保留；用 T01 解释维护前路径，用 T02 解释 backfill 目标。</text>
     </svg>
-    <figcaption>图 3-1　有效区间决定事发时哪条关系成立，知识区间决定调查当时能看到哪个修订。</figcaption>
+    <figcaption>图 3-1　先看事发时这条关系是否有效，再看调查时能查到哪一版。</figcaption>
   </figure>
-  <h3>3.3 图模型：节点和边的语义要明确</h3>
+  <h3>3.3 怎样记设备及其关系</h3>
   <pre><code>Workload → Volume/LUN/FileSystem/Bucket
 Volume   → Pool → PG → OSD → Disk
 Host     → HBA/Port → Switch Port → Array Port → Controller
@@ -553,7 +552,7 @@ Incident → Symptom/Entity
 Runbook  → Product/Version/FaultCode/Symptom</code></pre>
   <p>记录关系的方向，例如 <code>runs_on</code>、<code>maps_to</code>、<code>replicates_to</code>、<code>depends_on</code>、<code>hosted_by</code>、<code>protects</code>。网络能连通和数据有依赖，用两种关系记录。</p>
 
-  <h3>3.4 事发拓扑重建：一个完整的例子</h3>
+  <h3>3.4 用两份映射查维护前后的路径</h3>
   <p>02:10:30 计划下线并显式标记 <code>osd.11</code> 为 <code>out</code>，PG 的新放置目标包含 <code>osd.17/18</code>。02:14 结束的窗口观测到订单写 P99 升高。02:16 的调查可以用下面两版映射解释放置变化，实际 I/O 路径还需核对 <code>acting</code> 与 OSD 遥测。</p>
   <div class="table-wrap"><table>
     <thead><tr><th>时间</th><th>拓扑版本</th><th>用途</th></tr></thead>
@@ -564,7 +563,7 @@ Runbook  → Product/Version/FaultCode/Symptom</code></pre>
   </table></div>
   <p>第二版映射能解释为什么 <code>osd.17/18</code> 正忙。第一版只适用于维护前。保留两版及其有效期，并记录 CRUSH map epoch（映射版本号）或快照 ID。再用 <code>acting</code> 核对实际提供服务的 OSD。</p>
 
-  <h3>3.5 失败模式</h3>
+  <h3>3.5 什么情况下会查错设备</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
     <tbody>
@@ -577,7 +576,7 @@ Runbook  → Product/Version/FaultCode/Symptom</code></pre>
     </tbody>
   </table></div>
 
-  <h3>3.6 放到 DME 里看</h3>
+  <h3>3.6 DME 从哪里取得拓扑</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
     <tbody>
@@ -593,7 +592,7 @@ Runbook  → Product/Version/FaultCode/Symptom</code></pre>
 </section>
 <section class="module" id="m4">
   <h2><span class="num">04</span> 异常检测和告警</h2>
-  <p class="lead">按 4.3 节的正态假设，5 万条正常序列每 15 秒做一次 3.5σ 单点检测，一天约有 13.4 万次假阳性。加上持续时间和实际增幅的要求，再决定何时通知值班员。</p>
+  <p class="lead">按 4.3 节的正态假设，5 万条正常序列每 15 秒按 3.5σ 检查一次，一天约会误判 13.4 万个点。值班告警还要看升了多少、持续多久。</p>
 
   <h3>4.1 先选信号，再选算法</h3>
   <div class="table-wrap"><table>
@@ -671,7 +670,7 @@ P2：6h burn ≥6
 P3：3d burn ≥1</code></pre>
   <p>业务仍达标但冗余不足时，按保护告警处理。业务超出 SLO 时，按业务规则升级。两项同时异常时，分别记录影响和恢复进度。</p>
 
-  <h3>4.5 失败模式</h3>
+  <h3>4.5 哪些告警容易误报或漏报</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
     <tbody>
@@ -684,7 +683,7 @@ P3：3d burn ≥1</code></pre>
     </tbody>
   </table></div>
 
-  <h3>4.6 放到 DME 里看</h3>
+  <h3>4.6 DME 的告警规则和健康分</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
     <tbody>
@@ -694,23 +693,23 @@ P3：3d burn ≥1</code></pre>
     </tbody>
   </table></div>
 
-  <details class="quiz"><summary>自测：M06 的 z 为 18.21，还要查什么？</summary><div class="answer"><p>异常比基线上升了 27 ms。再确认是否持续、是否影响业务、数据是否齐全。M07 仍超限，好请求占 93.27%，覆盖率是 3/3。要查原因时，再单看 IOPS、带宽和重传。</p></div></details>
+  <details class="quiz"><summary>自测：M06 的 z 为 18.21，还要查什么？</summary><div class="answer"><p>异常比基线上升了 27 ms。再确认延迟升高了多久、影响了哪些请求、是否有设备停报。M07 仍超限，好请求占 93.27%，覆盖率是 3/3。要查原因时，再单看 IOPS、带宽和重传。</p></div></details>
 
   <p class="source"><a href="#m4-sources">本章原始资料</a></p>
 </section>
 <section class="module" id="m5">
   <h2><span class="num">05</span> 容量和硬盘故障预测</h2>
-  <p class="lead">比较提前 14 天、30 天或 1 年的预测时，先问预测目标、故障标签和误报量。再核对值班团队能处理多少告警。</p>
+  <p class="lead">看到提前 14 天、30 天或 1 年的预测，先问它在预测什么、怎样判断故障、会报错几次。还要算值班员一天能处理多少告警。</p>
 
   <h3>5.1 区分原始、可用和有效容量</h3>
   <pre><code>raw       = 裸容量
 usable    = 副本：raw / 副本数
           = EC k+m：raw × k / (k + m)
 effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全水位</code></pre>
-  <p>10 个节点各有 12 块 20 TB 的盘，原始容量是 2,400 TB。EC 8+2 的效率为 80%，可用 1,920 TB。扣 5% 容量预留后剩 1,824 TB。再以剩余容量的 95% 作为告警线。算例已用 1,500 TB，每天净增 6 TB。</p>
+  <p>10 个节点各有 12 块 20 TB 的盘，原始容量是 2,400 TB。EC 8+2 的效率为 80%，扣除冗余开销后是 1,920 TB。这个算例没有另列固定占用。留出 5% 后可分配 1,824 TB，再按其 95% 设告警线。算例已用 1,500 TB，每天净增 6 TB。</p>
   <pre><code>到 95% 水位 = (1,824 × 0.95 − 1,500) / 6 ≈ 38.8 天
 3 TB/天 → 77.6 天；9 TB/天 → 25.9 天</code></pre>
-  <p>给出用满日期的范围。扩容、清理或修改留存规则后，根据新数据重新拟合。</p>
+  <p>给出预计到达告警线的日期范围。扩容、清理或修改留存规则后，根据新数据重新拟合。</p>
 
   <figure class="diagram">
     <svg viewBox="0 0 920 360" role="img" aria-labelledby="capTitle capDesc">
@@ -770,14 +769,14 @@ effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全�
   <p>主动换盘要单独标记，否则模型学到的可能是换盘习惯。观察结束时还没坏的盘要保留观察截止时间。测试时间应晚于训练时间，同一块盘的同一次故障只能进入一边。</p>
   <p>使用预测时已经可见的 SMART 或 NVMe 数据。包括重分配扇区、待定扇区、不可纠正错误、命令超时、CRC 错误、磨损、通电时长、温度、型号、固件和批次。记录这些值怎样变化。用 Logistic 回归做基准，再比较树模型的效果、可解释性及概率校准。</p>
 
-  <h3>5.4 告警预算：先定运维能处理多少</h3>
+  <h3>5.4 一天会收到多少硬盘告警</h3>
   <p>10,000 块盘，年故障率 2% → 每年 200 次故障，约 0.55 次/天。若召回 80%、精确率 20%：</p>
   <pre><code>TP/天 = 0.55 × 0.8 = 0.44
 总告警/天 = 0.44 / 0.2 = 2.2
 误报/天 = 1.76</code></pre>
   <p>如果精确率只有 5%，平均每天约 8.8 条告警。先定值班团队每天能处理多少，再设阈值。评测记录 PR-AUC、规定告警量下的召回率、每千盘日误报、提前量，以及预测概率与实际故障比例是否一致。</p>
 
-  <h3>5.5 失败模式</h3>
+  <h3>5.5 预测结果偏高的常见原因</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
     <tbody>
@@ -790,7 +789,7 @@ effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全�
     </tbody>
   </table></div>
 
-  <h3>5.6 放到 DME 里看</h3>
+  <h3>5.6 DME 可以预测多远</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>能力</th><th>DME 公开口径</th><th>仍然缺什么</th></tr></thead>
     <tbody>
@@ -806,7 +805,7 @@ effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全�
 </section>
 <section class="module" id="m6">
   <h2><span class="num">06</span> 查根因与核对反证</h2>
-  <p class="lead">列出可能原因后，还要说明哪条证据支持它，哪条证据可能推翻它。</p>
+  <p class="lead">怀疑回填拖慢写入时，要查慢写和回填是否经过同一批设备。再找一条能推翻这个判断的证据。</p>
 
   <h3>6.1 相关、干预与反事实</h3>
   <div class="table-wrap"><table>
@@ -860,7 +859,7 @@ effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全�
     </svg>
     <figcaption>图 6-1　每个候选原因都附上支持证据、反证和下一项最能区分原因的查询。</figcaption>
   </figure>
-  <h3>6.3 证据评分：六个维度</h3>
+  <h3>6.3 哪些证据更能说明原因</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>维度</th><th>问题</th><th>例子</th></tr></thead>
     <tbody>
@@ -898,7 +897,7 @@ effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全�
   </table></div>
   <p>三类原因各自引用证据。查流程原因时，核对维护步骤、配置和以往事故。</p>
 
-  <h3>6.6 失败模式</h3>
+  <h3>6.6 为什么会把症状当成根因</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
     <tbody>
@@ -911,13 +910,13 @@ effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全�
     </tbody>
   </table></div>
 
-  <h3>6.7 放到 DME 里看</h3>
+  <h3>6.7 DME 怎样查慢写和中断</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
     <tbody>
-      <tr><td>智能分析</td><td>I/O 全路径时延、首错模块、故障树、修复建议</td><td>没有公开证据对象/反证/置信度校准</td></tr>
-      <tr><td>故障智能体</td><td>场景匹配 + 思维链 + 健康/告警/性能/故障树工具；闪存覆盖 64%</td><td>排除对象/迁移/容灾/备份/AI 全局/主机/交换机侧</td></tr>
-      <tr><td>评测</td><td>1/3/5 分钟口径</td><td>没有公开测试集/误报率/盲评</td></tr>
+      <tr><td>智能分析</td><td>查 I/O 路径时延、故障树，并给修复建议。适用的中断可查首错</td><td>现场查报告能否追到原证据、展示反证。置信度校准需核实</td></tr>
+      <tr><td>故障智能体</td><td>按场景查健康、告警、性能和故障树。白皮书所列闪存故障场景覆盖 64%</td><td>该范围排除对象、迁移、容灾、备份、AI 全局、主机和交换机侧故障</td></tr>
+      <tr><td>评测</td><td>厂商公布了 1/3/5 分钟的处理时长</td><td>用自己的故障集测发现时间、定位和误报</td></tr>
     </tbody>
   </table></div>
 
@@ -927,7 +926,7 @@ effective = usable − 快照 − 克隆 − 元数据 − 回收站 − 安全�
 </section>
 <section class="module" id="m7">
   <h2><span class="num">07</span> Agent 怎样查数据和手册</h2>
-  <p class="lead">Agent 是能调用工具的 AI。调查前确定对象、时间范围和权限。Agent 查数据、找手册，关键证据缺失时说明还要查什么。</p>
+  <p class="lead">让 Agent 查故障时，先告诉它查哪个对象、哪段时间。工具按权限返回数据。关键数据缺失时，报告里写清还要查什么。</p>
 
   <h3>7.1 调查步骤和停止条件</h3>
   <pre><code>初始化（症状、窗口、资产、权限）
@@ -1010,7 +1009,7 @@ observed_at, quality, payload_ref, summary</code></pre>
   <h3>7.6 怎样防止日志和文档里的指令被执行</h3>
   <p>告警、日志、工单和手册可能夹带让模型改变行为的文字。将这些内容标为 <code>untrusted_data</code>，按数据处理。只允许已登记的工具，检查参数，并限制可访问的网络、租户和对象。写操作走独立通道，要求审批、防重复和回滚。保留审计记录。</p>
 
-  <h3>7.7 失败模式</h3>
+  <h3>7.7 调用工具时容易出什么错</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
     <tbody>
@@ -1023,13 +1022,13 @@ observed_at, quality, payload_ref, summary</code></pre>
     </tbody>
   </table></div>
 
-  <h3>7.8 放到 DME 里看</h3>
+  <h3>7.8 DME 的助手和对外接口</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
     <tbody>
-      <tr><td>运维助手</td><td>意图库 + 多轮追问 + 任务拆解 + 系统 API 调用 + 结果摘要</td><td>没有公开的意图库/工具清单/调用契约</td></tr>
-      <tr><td>故障智能体</td><td>场景匹配 + 排查思维链 + 健康/告警/性能/故障树工具</td><td>没有公开的轨迹/证据引用/越权审计</td></tr>
-      <tr><td>开放接口</td><td>北向 REST/SNMP/Ansible/CSI；可接入跨域智能体</td><td>没有公开 MCP/Schema/Agent 发现机制</td></tr>
+      <tr><td>运维助手</td><td>识别意图、追问细节、拆分任务、调用系统 API，再整理结果</td><td>所用意图、工具和调用参数需按实际版本核对</td></tr>
+      <tr><td>故障智能体</td><td>匹配故障场景，再查健康、告警、性能和故障树</td><td>能否回看调查步骤、证据引用和越权记录，需现场测</td></tr>
+      <tr><td>开放接口</td><td>提供 REST、SNMP、Ansible 和 CSI 等接口，可接跨域智能体</td><td>MCP、工具参数格式和服务发现方式需核实</td></tr>
     </tbody>
   </table></div>
 
@@ -1105,10 +1104,10 @@ observed_at, quality, payload_ref, summary</code></pre>
   </table></div>
   <p>Ceph 的 P99 恢复后，再查 <code>degraded_pgs</code>、恢复速率、scrub 校验错误，以及 OSD 是否再次掉线。Dorado/DME 可查控制器 CPU、缓存命中、端口误码、复制、双活和硬盘健康。按实际设备确定验收指标。</p>
 
-  <h3>8.4 一个完整的处置例子</h3>
+  <h3>8.4 慢写好转后还要查什么</h3>
   <div class="example"><span class="tag">算例</span><p>Ceph 回放中，维护触发的 backfill 与写入争用。02:19 在沙箱模拟调整恢复调度。02:25 的窗口写 P99 降至 14 ms，好请求比例约 99.95%，仍有 11 个退化 PG。此时要继续观察恢复进度、PG 状态、scrub 错误和故障域压力。<a href="./Ceph事故回放实验.html#参考结果与验收">实验数据与验收</a></p></div>
 
-  <h3>8.5 失败模式</h3>
+  <h3>8.5 哪些变更容易出问题</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
     <tbody>
@@ -1120,7 +1119,7 @@ observed_at, quality, payload_ref, summary</code></pre>
     </tbody>
   </table></div>
 
-  <h3>8.6 放到 DME 里看</h3>
+  <h3>8.6 DME 怎样审核和执行作业</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
     <tbody>
@@ -1215,11 +1214,11 @@ observed_at, quality, payload_ref, summary</code></pre>
     </tbody>
   </table></div>
 
-  <h3>9.6 失败模式</h3>
+  <h3>9.6 评测和多集群部署常见问题</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>失败模式</th><th>后果</th><th>纠正</th></tr></thead>
     <tbody>
-      <tr><td>评测用未来数据</td><td>指标虚高</td><td>知识时间截断</td></tr>
+      <tr><td>评测用了后来才到的数据</td><td>成绩偏高</td><td>只查调查截止前已经可见的数据</td></tr>
       <tr><td>只有成功案例</td><td>过度自信</td><td>负对照 + 缺数据</td></tr>
       <tr><td>按行随机切分</td><td>同事故泄漏</td><td>按事故/时间/集群切分</td></tr>
       <tr><td>集中存放所有明细</td><td>存储成本上升，数据可能跨出允许范围</td><td>站点汇总，按需查明细</td></tr>
@@ -1227,7 +1226,7 @@ observed_at, quality, payload_ref, summary</code></pre>
     </tbody>
   </table></div>
 
-  <h3>9.7 放到 DME 里看</h3>
+  <h3>9.7 DME 的多站点管理</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>能力</th><th>DME 公开做法</th><th>仍然缺什么</th></tr></thead>
     <tbody>
@@ -1243,7 +1242,7 @@ observed_at, quality, payload_ref, summary</code></pre>
 </section>
 <section class="module" id="m10">
   <h2><span class="num">10</span> 华为 DME 能负责哪些运维工作</h2>
-  <p class="lead">DME 提供设备接入、监控、拓扑、故障树、预测和自动化。要从应用查到设备，再核对历史拓扑、工具接口、业务 SLO 和变更权限是否能接通。</p>
+  <p class="lead">DME 能接设备、查指标和拓扑、做诊断、预测及自动化。要查应用慢写，还得把业务 SLO、事发时的路径和设备数据接在一起，再确认谁有权做变更。</p>
 
   <h3>10.1 DME、DME IQ 和 DataMaster 的分工</h3>
   <div class="grid2">
@@ -1485,8 +1484,8 @@ observed_at, quality, payload_ref, summary</code></pre>
   <h2><span class="num">13</span> PB 级建设与实操</h2>
   <p class="lead">练习接设备、查故障、写变更计划和跟踪作业，再确认业务与数据保护状态。</p>
   <div class="grid2">
-    <div class="card"><h4>建设手册</h4><p>用三站点、10 PB 的例子估算容量和监控规模。再看设备接入、资产映射、Agent 工具、作业记录和上线验收。</p><p><a href="./PB级存储智能运维建设手册.html">打开 PB 级建设手册</a></p></div>
-    <div class="card"><h4>存储实操</h4><p>从实验 Ceph 集群采集数据。用模拟数据区分三种慢写原因，再练习重启后找回作业。第四站用同一个容量事故，走完取证、审批、模拟扩容和恢复检查。</p><p><a href="./PB级存储运维实操.html">打开实操与验收步骤</a></p></div>
+    <div class="card"><h4>建设手册</h4><p>以三站点、10 PB 为例，算容量和监控用量，再看怎么接设备、查数据和验收上线。</p><p><a href="./PB级存储智能运维建设手册.html">打开 PB 级建设手册</a></p></div>
+    <div class="card"><h4>存储实操</h4><p>第一站从实验 Ceph 集群采数据。后面用模拟数据查慢写、练重启后找回作业，再处理一次容量事故。</p><p><a href="./PB级存储运维实操.html">打开实操与验收步骤</a></p></div>
   </div>
 </section>
 </main>

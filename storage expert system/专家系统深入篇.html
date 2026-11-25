@@ -176,7 +176,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><a href="#11-参考资料">11. 参考资料</a></li></ul></nav></details>
   <article>
 <p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">华为 DME 全链路解剖</a> · <a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html">练习与考核答案</a> · <a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html">Ceph 回放实验</a></p>
-<p>资料核验日期为 2026-11-18。读者需要了解 PromQL、SLO 和 RCA。本文接续<a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a>，补上模型、查询和验收方法。文中的 <code>[原理]</code> 来自公开论文、标准或开源文档，<code>[产品]</code> 来自厂商公开材料，<code>[建议]</code> 表示课程设计，<code>[推断]</code> 表示推断。</p>
+<p>资料核验日期为 2026-11-18。本文面向了解 PromQL、SLO 和根因分析（RCA）的读者，在<a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a>的基础上补充模型、查询和验收方法。<code>[原理]</code> 引用公开论文、标准或开源文档，<code>[产品]</code> 引用厂商公开材料。<code>[建议]</code> 是课程中的做法，<code>[推断]</code> 标记根据现有材料作出的判断。</p>
 <blockquote>
 <p>各来源的架构、流程图和例子见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解</a>。</p>
 </blockquote>
@@ -187,7 +187,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <p>给出故障结论时，附上每条证据的时间、实体、单位和出处。证据不足时，列出待查项。存储规模越大，涉及的实体、指标和故障域越多，处置出错的代价也可能更高。</p>
 </blockquote>
 <h2 id="0-先建立坐标系专家系统的五个面与五级成熟度">0. 运维系统要做什么</h2>
-<p>系统要能查状态和适用知识、提出诊断、审批处置，也要能回放和评测。</p>
+<p>运维系统要能还原事发状态、找到适用的手册、用证据诊断故障，并跟踪审批和处置结果。事后用回放检验诊断和处置。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -199,31 +199,31 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </thead>
 <tbody>
 <tr>
-<td>状态面</td>
-<td>现在和当时发生了什么？</td>
+<td>查状态</td>
+<td>系统现在怎样？事发时发生了什么？</td>
 <td>指标、日志、事件、变更、拓扑快照</td>
-<td>数据缺失被当成“变好了”</td>
+<td>设备停报后，误判为性能好转</td>
 </tr>
 <tr>
-<td>知识面</td>
-<td>这类现象通常意味着什么？</td>
+<td>查知识</td>
+<td>有哪些已知故障和适用手册？</td>
 <td>实体和关系定义、故障模式、操作手册（Runbook）、版本约束</td>
 <td>检索到过期或不适用的手册</td>
 </tr>
 <tr>
-<td>推理面</td>
-<td>哪条因果链最可信？还缺什么证据？</td>
+<td>查原因</td>
+<td>哪个原因最能解释现象？还缺什么证据？</td>
 <td>规则、统计、因果图、故障树、LLM 规划</td>
-<td>把相关当因果，或只给一个答案</td>
+<td>把同时发生当成因果关系，或漏查其他原因</td>
 </tr>
 <tr>
-<td>行动面</td>
-<td>能不能动、谁来批、怎么回滚？</td>
+<td>做处置</td>
+<td>能否变更、谁来审批、怎样回滚？</td>
 <td>工单、审批、编排、幂等接口</td>
-<td>业务恢复了，冗余却还没恢复</td>
+<td>只确认业务恢复，漏查冗余</td>
 </tr>
 <tr>
-<td>评测面</td>
+<td>做评测</td>
 <td>系统在哪些任务上比人工做得好？</td>
 <td>回放集、盲评、负对照、成本记录</td>
 <td>只展示成功案例</td>
@@ -307,7 +307,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>异常/预测</td>
 <td>统计/ML</td>
-<td>需要从数据学分布</td>
+<td>用历史数据估计正常范围和趋势</td>
 </tr>
 <tr>
 <td>候选根因</td>
@@ -317,7 +317,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>假设生成/证据选择</td>
 <td>LLM</td>
-<td>擅长非结构化线索和下一步查询</td>
+<td>从日志和工单找线索，再提出下一项查询</td>
 </tr>
 <tr>
 <td>事实陈述</td>
@@ -332,11 +332,11 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <tr>
 <td>最终动作</td>
 <td>人或受监督工作流</td>
-<td>代价不对称</td>
+<td>错误变更可能影响业务和数据保护</td>
 </tr>
 </tbody>
 </table></div>
-<p>让 LLM 提问和解释，用工具查询事实，再用验证器校验。DME 可用故障树和智能分析查故障，用运维助手和故障智能体发起调查。两者之间仍需开放的证据格式和工具契约。</p>
+<p>DME 可用运维助手和故障智能体发起调查，用故障树和智能分析查故障。要把调查与故障分析接起来，需要公开的证据格式和工具契约。</p>
 <h2 id="1-一条-io-的完整生命周期">1. 一条 I/O 的完整生命周期</h2>
 <h3 id="11-块存储从-initiator-到介质">1.1 块存储：从 initiator 到介质</h3>
 <p>一次块写请求经过以下环节。</p>
@@ -354,7 +354,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <pre><code class="language-text">T_end2end = T_client_queue + T_fabric + T_frontend + T_cache_lookup
           + T_backend_queue + T_media + T_retry + T_software_overhead
 </code></pre>
-<p>每段都设测量点。缺一段时，只能根据已测数据说明瓶颈在某处之前或之后。</p>
+<p>为各段设置测量点。有一段没测到时，报告现有观测能把瓶颈缩小到哪一段。</p>
 <p>用 M/M/1 队列说明利用率 ρ 和服务时间 S 如何影响响应时间。</p>
 <pre><code class="language-text">平均排队时间 W = ρS / (1 − ρ)
 平均响应时间 R = S / (1 − ρ)
@@ -586,7 +586,7 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥ 99.9% / 30 天
 三副本 ≈ 1.7–6.9 GB/天
 一年 ≈ 0.6–2.5 TB（三副本，未计索引）
 </code></pre>
-<p>上面只算一个集群的原始指标。还要给其他设备、租户、日志、追踪、拓扑快照和查询副本留空间。按用途设置保留期限。</p>
+<p>这个算例只包含一个集群的原始指标。估算平台用量时，再计入其他设备、租户、日志、追踪、拓扑快照和查询副本。按取证、趋势分析或规划等用途决定保留多久。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -637,11 +637,11 @@ SLO = 好请求数 / 纳入统计的写请求数 ≥ 99.9% / 30 天
 <li><code>observed_at</code> 是采集端看到数据的时间。早期资料也写作 <code>observed_time</code>。</li>
 <li><code>available_at</code> 是该条事件或证据首次可查的时间，对应本节所说的知识时间。由接入服务记录。</li>
 </ul>
-<p>回放 02:16 的事故时，服务端按 <code>available_at ≤ knowledge_cutoff</code> 和当前权限筛选冻结的发布快照。举个独立的验例。应用日志即使在 02:12 已被采集，若到 02:18 才能查，仍须排除。Ceph 实验的合成 CSV 用 <code>observed_utc</code> 表示可见时间，实际接入另存两列。拓扑查事发时间有效且在同一调查截止时可查的修订。<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#72-as-of-%E6%9F%A5%E8%AF%A2">进阶篇 §7.2</a></p>
+<p>回放 02:16 的调查时，服务端从当时冻结的发布快照中筛选当前有权访问、且满足 <code>available_at ≤ knowledge_cutoff</code> 的记录。例如，一条日志在 02:12 被采集，但到 02:18 才能查，就不能出现在 02:16 的报告里。Ceph 实验的合成 CSV 用 <code>observed_utc</code> 表示可查时间，实际接入分别记录 <code>observed_at</code> 和 <code>available_at</code>。查拓扑时，从同一快照中选出事发时有效、到调查截止仍可查的版本。<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#72-as-of-%E6%9F%A5%E8%AF%A2">进阶篇 §7.2</a></p>
 <p>处理数据迟到、时钟漂移、补数和重复上报。</p>
 <ul>
-<li>以可信 <code>source_id</code> 和该源的 <code>event_id</code> 去重。同源重放保留首次可查时间，不同源使用同一 ID 时分别保存。</li>
-<li>按来源、信号和分区记录水位（watermark）。判断窗口是否齐备时，也要核对该窗预期的对象和实际缺样情况。</li>
+<li>用接入端登记的 <code>source_id</code> 和该来源的 <code>event_id</code> 去重。同一来源重传时，保留原记录的首次可查时间。两个来源用了相同的事件 ID 时，各保留一条。</li>
+<li>按来源、信号和分区记录数据处理进度（水位，watermark）。判断某个窗口的数据是否齐全时，还要对照预期上报的对象和实际缺报的对象。</li>
 <li>计数器可能重置。用能识别重置的速率函数，核对重置附近的结果。</li>
 <li>单独标记缺失，在证据质量和结论中反映。</li>
 </ul>
@@ -765,14 +765,14 @@ observed_at               # 观测系统何时看到它
 known_from, known_to      # 该修订何时对调查者可见
 source, confidence        # 谁说的、有多确定
 </code></pre>
-<p>查询“02:16 时刻的拓扑”时，有效时间和知识时间都用半开区间。以下用 <code>authorized_snapshot_edges</code> 表示网关在冻结快照中按来源和两端实体检查权限后交给查询的边集合。</p>
+<p>查询调查时所用的拓扑时，分别传入有效时点和知识截止时间。两个区间都包含起点，排除终点。网关先在冻结快照中检查边的来源和两端实体是否都获准访问，再把通过检查的边交给查询，示例将它们记为 <code>authorized_snapshot_edges</code>。</p>
 <pre><code class="language-sql">SELECT * FROM authorized_snapshot_edges
 WHERE src_id = :workload
   AND valid_from &lt;= :t AND (valid_to IS NULL OR :t &lt; valid_to)
   AND known_from &lt;= :knowledge_cutoff
   AND (known_to IS NULL OR :knowledge_cutoff &lt; known_to);
 </code></pre>
-<p>有效区间回答关系在事发时是否成立，知识区间回答调查时能看到哪个版本。来源另外保留观测时间。若 02:20 才得知某条边在 02:10 结束，就关闭旧版的知识区间，另存一版正确的结束时间。旧版保留原来的有效区间，便于复现 02:16 的调查。<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#71-%E6%9C%80%E5%B0%8F%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B">进阶篇 §7.1</a></p>
+<p>若 02:20 才得知一条关系在 02:10 结束，就把旧版知识区间的终点设为 02:20，保留旧版原来的有效区间。然后新增一版，记下关系在 02:10 结束、新版从 02:20 起可查。这样回放 02:16 的调查时，仍能读到旧版。<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html#71-%E6%9C%80%E5%B0%8F%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B">进阶篇 §7.1</a></p>
 <h3 id="33-图模式">3.3 图模式</h3>
 <p>存储依赖图至少包含以下节点和边。</p>
 <pre><code class="language-text">Workload → Volume/LUN/FileSystem/Bucket
@@ -824,7 +824,7 @@ Runbook  → Product/Version/FaultCode/Symptom
 </table></div>
 <p>先用关系表做正确的区间查询。多跳和路径查询成为瓶颈时，再引入图库。</p>
 <h3 id="35-实体解析与证据置信">3.5 实体解析与证据置信</h3>
-<p>多路径可让同一个 LUN 出现多个设备名，NPIV 可让一个端口出现多个 WWPN。容器还有 PVC、PV 和 StorageClass，第三方阵列的序列号格式也各不相同。解析结果带置信度，有问题时明确返回无法解析、匹配歧义或拓扑过期。</p>
+<p>同一个 LUN 可能因多路径而有多个设备名，同一个端口可能因 NPIV 而有多个 WWPN。容器侧还要对应 PVC、PV 和 StorageClass，不同阵列的序列号格式也可能不同。记录每次匹配的置信度。无法匹配、有多个可能对象或拓扑已过期时，分别标明原因。</p>
 <h3 id="36-事发拓扑重建一个例子">3.6 事发拓扑重建：一个例子</h3>
 <p>02:10:30 维护 <code>osd.11</code> 所在主机，PG 重映射到 <code>osd.17/18</code>。02:14 起，订单写 P99 升高。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -848,7 +848,7 @@ Runbook  → Product/Version/FaultCode/Symptom
 </tr>
 </tbody>
 </table></div>
-<p>02:16 的报告用第二版拓扑查 <code>osd.17/18</code> 的 backfill 和争用，用第一版查维护前的路径。两版都保留有效期。PG 映射带上 CRUSH map epoch 或快照 ID，便于复查当时是哪组 OSD。</p>
+<p>02:16 调查时，用第二版查 <code>osd.17/18</code> 的 backfill 和争用，用第一版查维护前的路径。两版都保留有效期。记录 PG 映射时附上 CRUSH map epoch 或快照 ID，以便复查当时映射到了哪些 OSD。</p>
 <h3 id="37-知识图谱runbook-也是有时态的实体">3.7 知识图谱：Runbook 也是有时态的实体</h3>
 <p>为 Runbook、故障码、产品版本、症状、处置步骤、审批状态和适用机型保留版本。通过图中的边查询它们的适用范围。</p>
 <pre><code class="language-text">产品 = OceanStor Dorado
@@ -946,7 +946,7 @@ ACL 允许当前用户
 </tr>
 </tbody>
 </table></div>
-<p>先将规则作为基线，其结果可逐条解释、审计和回放。机器学习模型与规则并跑，用同一批事故比较检测结果和运维成本。</p>
+<p>先用规则建立对照，逐条核对告警是否能解释、审计和复现。让机器学习模型和规则同时运行，用同一批事故比较检测结果和运维成本。</p>
 <h3 id="42-稳健基线中位数与-mad">4.2 稳健基线：中位数与 MAD</h3>
 <p>先用基线样本 <code>x1..xn</code> 算出中位数和绝对偏差的中位数（MAD）。</p>
 <pre><code class="language-text">median = 中位数(x)
@@ -1040,7 +1040,7 @@ z      = 0.6745 × (x − median) / max(MAD, ε)
 <p><strong>练习</strong>。对实验室的 M01–M08 算 z、好请求比例和覆盖率。假设有 50,000 条序列，估算 3.5σ 单点阈值下的日误报量。设计一套规则，把误报降到 100 条/天以内。<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#1-%E6%B7%B1%E5%85%A5%E7%AF%87%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 1 部分</a></p>
 <h2 id="5-预测容量性能与介质">5. 预测：容量、性能与介质</h2>
 <h3 id="51-容量预测的账本">5.1 容量预测的账本</h3>
-<p>预测前，先确定各项算在哪一侧。快照、克隆、元数据和回收站若已计入已用容量，就不要再从总量扣除。</p>
+<p>先确认哪些固定占用要从容量中扣除，哪些已计入用量。快照、克隆、元数据和回收站等占用只计一次。按下式扣除预留，再用可分配容量算告警线。</p>
 <pre><code class="language-text">raw = 物理容量
 冗余后容量 = raw × 冗余效率
 冗余效率 = 1 / 副本数，或 EC 的 k / (k + m)
@@ -1051,7 +1051,7 @@ z      = 0.6745 × (x − median) / max(MAD, ε)
 <p>10 个节点，每个节点 12 块 20 TB 的盘，总容量为 2,400 TB。EC 8+2 的效率为 80%，冗余后容量为 1,920 TB。无另列的固定占用。扣一次 5% 预留，得到 1,824 TB 可分配容量。再按可分配容量的 95% 告警。假设当前已用 1,500 TB，每天净增 6 TB。</p>
 <pre><code class="language-text">到 95% 水位的天数 = (1,824 × 0.95 − 1,500) / 6 ≈ 38.8 天
 </code></pre>
-<p>若每天净增 3 或 9 TB，分别约能用 77.6 天和 25.9 天。给出不同情景的结果。扩容、清理和生命周期规则调整后，重新拟合。</p>
+<p>若每天净增 3 或 9 TB，则分别约在 77.6 天和 25.9 天后触线。报告列出各增长情景的结果。扩容、清理或调整生命周期规则后，用更新后的数据重新拟合。</p>
 <h3 id="52-模型与回测">5.2 模型与回测</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -1117,7 +1117,7 @@ pinball loss             # 分位预测
 负例 = 该盘在 (t, t+H] 内没有故障，且观测未截尾
 排除 = 主动退役、迁移、数据销毁、观测结束
 </code></pre>
-<p>主动换盘算作故障时，模型会学到运维策略。观察结束就把盘当负例，会低估风险。同一块盘的相邻日期混入训练和测试也会泄漏。按设备和时间切分，确保同一块盘的同一次故障只出现在一侧。</p>
+<p>把主动换盘标成故障，模型容易学到换盘策略。把停止观测的盘当成负例，则会低估风险。按设备和时间划分训练集和测试集，避免同一块盘的相邻日期混入两组，也确保同一盘的同一次故障只出现在一组。</p>
 <p>特征只用当时可见的 SMART/NVMe 指标和变化率，包括重分配扇区、待定扇区、不可纠正错误、命令超时、CRC 错误、磨损、通电小时、温度、型号、固件和批次。树模型（GBDT）通常比 Logistic 回归表现好，仍需解释结果并做概率校准。</p>
 <p>故障样本占比很低，评测还需看以下指标。</p>
 <pre><code class="language-text">PR-AUC
@@ -1213,7 +1213,7 @@ pinball loss             # 分位预测
 </code></pre>
 <p>维护在 02:10:30 生效，backfill 在 02:11 开始。到 02:14 结束的窗口，测到尾延迟升高。02:18 收到晚到日志后，复盘才可补记 02:12:30 的应用积压。若可靠的证据显示 02:09 已变慢，重新检查触发事件和时钟。</p>
 <h3 id="63-证据评分">6.3 证据评分</h3>
-<p>按下表六项给候选评分，并保留原始证据。</p>
+<p>按下表六项给每个可能原因评分，并保留支持或削弱它的原始证据。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -1235,7 +1235,7 @@ pinball loss             # 分位预测
 </tr>
 <tr>
 <td>剂量响应</td>
-<td>强度/范围是否与症状吻合？</td>
+<td>压力的强度和范围是否与症状吻合？</td>
 <td>backfill 615 MiB/s 时 P99 46 ms</td>
 </tr>
 <tr>
@@ -1255,7 +1255,7 @@ pinball loss             # 分位预测
 </tr>
 </tbody>
 </table></div>
-<p>可用加权和打分，也可用贝叶斯网络计算似然。用回放集估权重。要把分数作为概率使用，先做校准。</p>
+<p>可用回放集估计各项权重，再用加权和给候选排序，也可用贝叶斯网络计算似然。要把分数当作概率，先做校准。</p>
 <h3 id="64-故障树因果图与-llm">6.4 故障树、因果图与 LLM</h3>
 <p>用三种方法分别处理结构化故障、因果关系和文本线索。</p>
 <ul>
@@ -1275,7 +1275,7 @@ pinball loss             # 分位预测
 鉴别检查：交换机端口丢包、其他客户端、设备服务耗时
 停止条件：若限速后 P99 不降，H1 降级
 </code></pre>
-<p>值班人员按鉴别检查继续查询，发现预期之外的结果时再改结论。</p>
+<p>值班人员先做能区分这些原因的查询，再按结果更新结论。</p>
 <h3 id="66-三个深度触发机制系统性">6.6 三个深度：触发、机制、系统性</h3>
 <p>每起事故都要查触发事件、症状形成的过程，以及流程或配置留下的缺口。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -1400,7 +1400,7 @@ pinball loss             # 分位预测
 </code></pre>
 <p>实现时检查以下各项。</p>
 <ul>
-<li>时间参数使用带时区的绝对时间。模型只可收窄授权范围，由网关绑定身份、事发时点、知识截止和快照。</li>
+<li>时间参数使用带时区的绝对时间。网关固定调查者身份、事发时点、知识截止和快照。模型只能在授权范围内缩小查询。</li>
 <li>返回单位、缺失区间、覆盖率和查询 ID，便于复查。</li>
 <li>枚举值保持稳定，指标名从枚举中选。</li>
 <li>分开返回无权限、无数据、超时、参数错误和后端错误，按错误类型决定下一步。</li>
@@ -1445,7 +1445,7 @@ pinball loss             # 分位预测
 <p>检索存储 Runbook 时，先按以下条件排除不适用的文档。</p>
 <pre><code class="language-text">租户/ACL → 产品 → 型号 → 版本区间 → 故障码/症状 → 审批状态 → 生效时间
 </code></pre>
-<p>筛选后用关键词和向量召回，再重排。分块保留章节标题、表格、图注和原文链接。故障码精确匹配，工单和复盘可按语义查找。文档冲突时，返回不同版本及其分歧。</p>
+<p>筛选后用关键词和向量检索，再按相关性排序。切分文档时保留章节标题、表格、图注和原文链接。故障码用精确匹配，工单和复盘可按语义查找。文档有冲突时，列出各版本和分歧。</p>
 <p>用 GraphRAG 查跨实体的多跳关系，例如“这个型号的控制器在哪个版本修了这个问题”。要核对实际配置，调用配置查询工具。</p>
 <h3 id="75-上下文与防幻觉">7.5 上下文与防幻觉</h3>
 <p>给模型传入有明确字段的证据对象。</p>
@@ -1456,7 +1456,7 @@ observed_at, available_at, quality, payload_ref, summary
 <ul>
 <li>每个事实引用 <code>evidence_id</code>。</li>
 <li>区分“观测到的事实”和“推断”。</li>
-<li>写明服务端固定的知识截止时间。引用必须在冻结快照内、当前可授权，且 <code>available_at ≤ knowledge_cutoff</code>。</li>
+<li>写明服务端固定的知识截止时间。只引用冻结快照中当前有权访问、且满足 <code>available_at ≤ knowledge_cutoff</code> 的证据。</li>
 <li>数据不足时，标明未决并列出下一步查询。</li>
 <li>数值做单位/量纲校验（ms vs s、MiB vs MB、IOPS vs 带宽）。</li>
 </ul>
@@ -1465,9 +1465,9 @@ observed_at, available_at, quality, payload_ref, summary
 <p>告警描述、日志、文件名、工单和 Runbook 都可能包含提示注入。</p>
 <ul>
 <li>把工具输出标为 <code>untrusted_data</code>，仅作为待处理数据。</li>
-<li>工具白名单 + 参数校验 + 只读默认。</li>
+<li>只开放白名单中的工具。校验参数，默认只读。</li>
 <li>写操作走独立通道、人工审批、幂等键、回滚。</li>
-<li>沙箱/网络白名单；限制可访问的租户和实体。</li>
+<li>用沙箱和网络白名单限制工具能访问的租户和实体。</li>
 <li>审计记录谁在何时用了什么工具、查了什么、改了什么。</li>
 </ul>
 <h3 id="77-评测-agent">7.7 评测 Agent</h3>
@@ -1480,7 +1480,7 @@ observed_at, available_at, quality, payload_ref, summary
 缺数据时正确暂缓率
 轨迹可复现性（同一快照重跑是否一致）
 </code></pre>
-<p>用同一批快照，逐步比较规则、规则加统计、Agent 加工具、Agent 加工具与 RAG 和拓扑的表现。看增加每个组件后哪些指标变化。</p>
+<p>固定同一批快照，依次比较规则、规则加统计、Agent 加工具，以及再接入 RAG 和拓扑后的结果。每轮用相同指标评分，观察新增组件带来的变化。</p>
 <h3 id="78-失败模式">7.8 失败模式</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -1580,7 +1580,7 @@ observed_at, available_at, quality, payload_ref, summary
 观察窗口与成功/失败判据
 审批人、执行人、审计 ID
 </code></pre>
-<p>执行前重查状态。拓扑、授权或冗余变化时重新评估。执行后逐项检查业务 SLO 和耐久性。</p>
+<p>执行前重查拓扑、授权和冗余。任何一项发生变化，就重新评估计划。执行后分别检查业务 SLO 和数据耐久性。</p>
 <h3 id="83-存储特有的验证">8.3 存储特有的验证</h3>
 <p>P99 降低后还要查冗余和数据保护状态。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -1718,7 +1718,7 @@ observed_at, available_at, quality, payload_ref, summary
 </tr>
 </tbody>
 </table></div>
-<p>先验收实体标识、时间字段和采集覆盖率，再进入下一阶段。</p>
+<p>进入下一阶段前，要能用实体 ID 和时间字段还原事发状态，并指出哪些设备缺报。</p>
 <h3 id="810-失败模式">8.10 失败模式</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>

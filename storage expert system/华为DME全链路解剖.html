@@ -133,7 +133,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><a href="#10-结论">10. 结论</a></li></ul></nav></details>
   <article>
 <p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">专家系统深入篇</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E8%BF%9B%E9%98%B6%E7%AF%87.html">进阶篇</a> · <a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html">练习与考核答案</a> · <a href="./%E4%B8%9A%E7%95%8C%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%A0%94.html">业界调研</a> · <a href="./Ceph%E4%BA%8B%E6%95%85%E5%9B%9E%E6%94%BE%E5%AE%9E%E9%AA%8C.html">Ceph 回放实验</a></p>
-<p>资料核验于 2026-11-18。这里对照 iMaster DME、DME IQ 和 DataMaster 在资源建模、采集、诊断、处置和评测等环节的能力。产品说明和本文推断分别标明。资料未说明的功能需向厂商或按现场版本核实。各环节见<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">存储专家系统</a>。</p>
+<p>资料核验于 2026-11-18。本文按资源、采集、诊断、处置和评测对照 iMaster DME、DME IQ 和 DataMaster。遇到公开资料未说明的功能，按现场版本向厂商核实。 <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">存储专家系统</a></p>
 <p>2026-11-21 的专题补充了交通银行联合项目资料，以及按目标型号和版本测试查询、作业与验收的方法。见<a href="./%E4%B8%9A%E7%95%8CAI%E8%BF%90%E7%BB%B4%E4%BA%A7%E5%93%81%E4%B8%8E%E5%8D%8E%E4%B8%BADME%E5%AF%B9%E6%A0%87.html">产品对标专题</a>。</p>
 <blockquote>
 <p>各环节练习的参考答案在<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#2-%E5%8D%8E%E4%B8%BA-dme-%E8%A7%A3%E5%89%96%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">练习与考核答案第 2 部分</a>。</p>
@@ -182,8 +182,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>DME 对接外部平台的接口包括 REST、SNMP、Ansible 和 CSI。公开资料未说明 MCP 服务、工具的输入输出格式和自动发现机制。通用 Agent 接入时需封装这些接口。</li>
 </ol>
 <h2 id="1-一句话结论与产品地图">1. 一句话结论与产品地图</h2>
-<p><strong>iMaster DME 是部署在数据中心的基础设施与数据管理平台。</strong> 它统一管理适配的存储、网络、服务器及虚拟化等资源，提供监控、诊断、自动化、数据目录和防勒索。iMasterCloud DME IQ 是另一条云运维服务。它提供 Call Home 和支持工单，实时跟踪工单进度需绑定华为维保服务。地端作业审批走本地 DME 或已接入的 ITSM，DME IQ 工单无需参与。DataMaster 是 DME 产品页披露的存储运维智能体。</p>
-<p>DME 能管理多类设备，结合设备指标和专家规则排障，还能编排资源发放等操作。DME IQ 提供云端支持。公开资料对外部工具的调用格式、可复现评测、历史证据、业务服务目标（SLO）、处置权限及跨系统覆盖说明较少。</p>
+<p><strong>iMaster DME 部署在数据中心。</strong> 它管理受支持的存储、网络、服务器和虚拟化资源，提供监控、诊断、自动化、数据目录和防勒索。地端作业由 DME 待办或已接入的 ITSM 审批。云端 DME IQ 提供 Call Home 和支持工单，实时跟踪工单需绑定华为维保服务。DataMaster 是产品页列出的存储运维智能体。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -276,8 +275,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </ul>
 <h3 id="23-这个架构意味着什么">2.3 这个架构意味着什么</h3>
 <p><code>[推断]</code> DME 从设备管理接口读取聚合指标。业务 SLO 和客户端尾延迟需要通过应用埋点、OpenTelemetry（OTel）或 eBPF 等工具另行采集。</p>
-<p>DME 内部完成采集、存储、分析和展示。跨云或跨厂商建模时，需先确认是否有途径把原始遥测导入自己的数据湖。</p>
-<p>北向 REST 可查资源、性能和告警。公开资料未说明查询 ID、快照 ID、历史拓扑和证据出处的返回格式。</p>
+<p>北向 REST 可查资源、性能和告警。要在数据湖跨云或跨厂商建模，先查接口能否导出原始遥测。复核旧事故时，再查能否返回查询 ID、快照 ID、历史拓扑和证据来源。公开资料未说明这些格式。</p>
 <h3 id="24-九个环节一页速览">2.4 九个环节一页速览</h3>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -412,11 +410,10 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p>逐项确认数据能否导出、查询是否返回 ID 和时间、Agent 能否通过工具调用。能查到数据来源和时间，才能复核调查结果。</p>
+<p>接入时选一条诊断结论，试着用北向接口查回它引用的对象、时间和原始数据。</p>
 <h2 id="3-逐环节对照">3. 逐环节对照</h2>
-<p>第 0 环节先定义资源和关系。后面九个运维环节与<a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">深入篇</a>对应。等级高表示缺口影响正确性、安全性或复核，建议自建。等级中表示影响效率或覆盖范围，可先做接口适配。等级低表示产品已覆盖，需按适用条件使用。</p>
+<p>第 0 环节定义资源和关系，后面九个环节对应深入篇。高等级缺口影响判断、操作安全或事后复核，建议自建。中等级影响效率或覆盖，可先做接口适配。低等级已有产品能力，按适用条件使用。 <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">深入篇</a></p>
 <h3 id="31-环节-0领域本体与资源模型">3.1 环节 0：领域本体与资源模型</h3>
-<p><strong>DME 公开能力。</strong> 资源模型覆盖从设备接入到维保的各类对象。</p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
 <tr>
@@ -448,7 +445,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tbody>
 </table></div>
 <p><code>[白皮书]</code> 说明，DME 可管理华为全系列和主流第三方存储。存储资源每 6 小时同步。只有华为闪存支持配置存储池。免密跳转限于华为闪存和分布式存储。</p>
-<p><strong>机制。</strong> 配置库保存当前属性，历史库保存性能数据。OpenSearch 支撑全局搜索，白皮书列出的搜索结果包括基本信息、资源关系、性能、健康、告警和异常检查。要复原事发时的路径，仍需保留设备、交换机或平台提供的关系版本和时间。</p>
+<p>配置库保存当前属性，历史库保存性能。全局搜索通过 OpenSearch 查基本信息、资源关系、性能、健康、告警和异常检查。要查回事故时的路径，还要保存设备、交换机或平台的关系版本和时间。</p>
 <p><strong>业界先进。</strong> <code>[原理]</code> OpenTelemetry 的资源和服务语义规范统一实体和属性命名。ITIL/CMDB 用配置项及其关系描述系统。Neo4j 可做多跳图查询，RDF/OWL 可描述关系并用于规则推理。Palantir 可基于实体关系和权限编排动作。存储行业尚缺广泛采用的公开资源与关系模型。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -493,7 +490,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>智能分析可查 I/O 路径时延、瓶颈、故障、亚健康和配置。A 系列可从并行客户端进入 zone，再沿业务网络、Scaleout 或存储 zone 的故障树找首个报错模块。报告覆盖计算、网络和存储。</li>
 <li>彩页口径：1 分钟识别、3 分钟定界、5 分钟辅助定位；秒级性能视图。</li>
 </ul>
-<p><strong>机制。</strong> <code>[推断]</code> DME 所说的“端到端”指已纳管的设备。范围包括主机（通过操作系统或虚拟化接口）、FC/IP 交换机、存储前端端口、控制器、池、LUN 和文件系统。它能查看存储路径哪一段慢。应用进程内部的调用链需要另查，公开资料也未说明 OpenTelemetry 或 eBPF 接入。</p>
+<p><code>[推断]</code> DME 的“端到端”覆盖由操作系统或虚拟化接口纳管的主机、FC/IP 交换机，以及存储前端端口、控制器、池、LUN 和文件系统。值班员可沿路径看哪一段慢。应用进程的调用链需另查，公开资料未说明如何接入 OpenTelemetry 或 eBPF。</p>
 <p><strong>业界先进。</strong> <code>[原理]</code> 用 OpenTelemetry 链路追踪和 eBPF（如 Pixie、Cilium）跟踪应用请求经过哪些组件。Sloth、Nobl9 等 SLO 工具用多个时间窗口计算错误预算消耗速度，也就是燃烧率。Pure1/Fusion 可查工作负载、卷、阵列和设备群的关系。AWS DevOps Agent 根据应用拓扑和变更时间线查不同来源的数据。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -542,7 +539,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>彩页称最多管理 175 套存储，支持用多个节点扩展。跨数据中心要求时延 &lt; 50 ms、丢包率 &lt; 0.1%、带宽 ≥ 100 Mbit/s。</li>
 <li>搜索：OpenSearch 支撑全局搜索，20 万资源一键检索（彩页口径）。</li>
 </ul>
-<p><strong>机制。</strong> <code>[推断]</code> DME 在产品内部提前汇总指标并建搜索索引，供运维查询和做报表。需要复算时，要核对是否能取得原始样本、每个汇总区间的起止时间、采集进度和查询 ID。公开资料没有给出这些接口。</p>
+<p><code>[推断]</code> DME 提前汇总指标并建搜索索引，供查询和报表使用。若要复算汇总值，需查原始样本、汇总区间起止时间、采集进度和查询 ID。公开资料未给出这几项接口。</p>
 <p><strong>业界先进。</strong> <code>[原理]</code> Prometheus 或 OTel 可配合对象存储分层保存时序数据，Kafka 可缓冲采集流量。ClickHouse 或专用时序库（TSDB）可聚合有大量标签组合的指标。原生直方图保留各区间计数，OpenLineage 记录数据处理来源。DII 可独立查询采集状态，Pure1 提供设备群遥测。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -555,9 +552,9 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </thead>
 <tbody>
 <tr>
-<td>没有公开的原始遥测导出/流式接口</td>
+<td>未公开原始遥测导出或订阅接口</td>
 <td>高</td>
-<td>无法自建数据湖、无法做客户侧长期回放和二次建模</td>
+<td>需确认客户能否把遥测导入数据湖，用于长期回放和建模</td>
 </tr>
 <tr>
 <td>没有公开的查询 ID/样本级出处</td>
@@ -595,8 +592,8 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>标签、服务年限、维保、机柜、可用分区；可用分区用于存储网络连通域和资源池划分。</li>
 <li>数据中心视图：资源统计、容量利用率、告警统计、设备列表。</li>
 </ul>
-<p><strong>机制。</strong> <code>[推断]</code> DME 每 6 小时从设备、交换机和平台同步数据，更新当前关系。白皮书未说明历史拓扑快照、按时刻查询、拓扑版本号和 PG 映射版本（epoch）。要回答 02:16 时的连接关系，需保留外部快照或核实现场接口。</p>
-<p><strong>业界先进。</strong> <code>[原理]</code> 双时态建模同时记录关系何时生效、系统何时写入。也可用事件记录、图数据库的带时间关系或 CMDB 配置项历史追溯状态。Fusion MCP 能查阵列、卷、文件系统、工作负载和设备群拓扑。DII 先查资产和采集状态。AWS DevOps Agent 用应用拓扑和变更时间线查不同来源。Ceph 调查还需按 PG/CRUSH 版本保存映射快照。</p>
+<p><code>[推断]</code> DME 每 6 小时同步设备、交换机和平台数据，更新当前关系。若要查 02:16 的连接关系，先核实现场接口是否支持历史快照、按时刻查询、拓扑版本或 PG 映射版本（epoch）。未取到时，查外部快照。</p>
+<p><code>[原理]</code> 查历史关系要同时记录两件事：关系何时生效，系统何时收到。可保存变更事件、带时间的图关系或 CMDB 配置项历史。Fusion MCP 查阵列、卷、文件系统、工作负载和设备群拓扑。DII 查资产与采集状态。AWS DevOps Agent 用应用拓扑串起不同来源和变更。Ceph 还需按 PG/CRUSH 版本留映射快照。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -608,9 +605,9 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </thead>
 <tbody>
 <tr>
-<td>没有公开的“事发时刻拓扑”查询</td>
+<td>未公开按事发时刻查拓扑的接口</td>
 <td>高</td>
-<td>回放/审计时无法证明当时的数据放置；只能用当前拓扑或外部快照</td>
+<td>用外部快照复核当时的数据放置。只有当前拓扑时，事发关系仍待确认</td>
 </tr>
 <tr>
 <td>没有公开的拓扑版本/epoch</td>
@@ -628,15 +625,14 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>第三方阵列/主机/交换机的深度关系有限；跨厂商实体对齐靠人工/别名</td>
 </tr>
 <tr>
-<td>6 小时同步</td>
+<td>每 6 小时同步</td>
 <td>中</td>
-<td>变更窗口内的拓扑变化可能滞后；不能用于分钟级取证</td>
+<td>变更窗口内的关系可能滞后。分钟级取证需查其他来源</td>
 </tr>
 </tbody>
 </table></div>
 <p><strong>练习</strong>（答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#2-%E5%8D%8E%E4%B8%BA-dme-%E8%A7%A3%E5%89%96%E7%BB%83%E4%B9%A0%E7%AD%94%E6%A1%88">答案册第 2 部分</a>）。 检查 DME 能否按时刻查拓扑、导出快照，以及给出 LUN 到物理盘的完整路径和版本。把结果写成接口需求。如现有接口缺这些能力，设计用定时快照、变更事件和外部图数据库补齐的方案。</p>
 <h3 id="35-环节-4异常检测告警与健康评分">3.5 环节 4：异常检测、告警与健康评分</h3>
-<p><strong>DME 公开能力。</strong> DME 支持告警规则、定期检查和健康评分。</p>
 <p>告警规则：</p>
 <ul>
 <li>屏蔽、闪断/振荡、汇聚、相关性（根因/衍生父子）、自动确认、标识（维护态/无效）、重定义（名称/级别/类别）、远程通知、告警同步、维护经验、事件转告警、名称组、HCS 全栈协同。</li>
@@ -653,7 +649,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>百分制扣分：告警、性能异常（基线对比、预测对比）、性能预警（过去 1 个月预测未来 2 周）、容量预警（过去 180 天预测未来 1 年）。</li>
 <li>产品页和彩页列出 80 多个专家检查项。性能预测融合 Lasso、岭回归和随机森林。容量预测融合 SVM、ARIMA、对数回归和线性回归。</li>
 </ul>
-<p><strong>机制。</strong> <code>[推断]</code> DME 结合规则、检查策略、统计基线、预测和健康评分检测异常。告警可追到触发的规则或检查项。产品或用户设定阈值和权重。误报率、召回率和校准结果未公开。</p>
+<p><code>[推断]</code> 从告警查触发的规则或检查项，再核对产品或用户设置的阈值和权重。误报率、召回率和校准结果未公开。</p>
 <p><strong>业界先进。</strong> <code>[原理]</code> 多窗口 SLO 燃烧率可同时检查短期和持续异常。对大量指标做多重检验时，可用错误发现率（FDR）控制误报比例。还可按设备和负载分组建立基线，并用 Alertmanager 抑制关联告警。DII Monitor 可分别检查阈值、异常、容量和性能。Dell 提供健康评分、预测和生成式助手。Pure1 显示设备群健康。验收时一起衡量误报量和首次响应时间。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -746,7 +742,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>机制。</strong> <code>[白皮书]</code> 说明，厂商用现场风险盘和健康盘的历史日志离线训练模型，再随产品版本更新。模型使用坏道数和不可纠正错误数等指标估计故障风险，再用 sigmoid 转换和分段函数给出健康分。低于 60 分是产品的风险提示阈值。</p>
+<p><code>[白皮书]</code> 说明，厂商用现场风险盘和健康盘的历史日志离线训练模型，随产品版本更新。模型根据坏道、不可纠正错误等指标估计风险，经 sigmoid 转换和分段函数给出健康分。低于 60 分提示风险。</p>
 <p><strong>业界先进。</strong> <code>[原理]</code> 分位数回归可给出预测区间。滚动回测按多个历史时点重复预测。生存分析可估计何时故障，竞争风险模型可处理不同故障原因。还可检查概率校准、告警预算和数据漂移，在客户侧重新训练。FAST ’20 的 38 万块盘研究报告了 10 天窗口的 F-measure 和 MCC。Backblaze 提供可复现实验的公开数据。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -802,7 +798,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>工作台：待诊断 → 诊断中 → 已诊断 → 恢复中 → 已恢复 → 待关闭 → 已关闭；自动聚合同一时间窗、有关联的告警为一个“问题”。</li>
 <li>口径：1 分钟识别、3 分钟定界、5 分钟辅助定位（彩页）。</li>
 </ul>
-<p><strong>机制。</strong> <code>[推断]</code> DME 先把现象匹配到预设场景，再按故障树和 I/O 路径调用工具，排除原因并给出结论。<code>[博客]</code> 提到因果推理模型和知识图谱。25.1.0 白皮书未给出这些能力的实现细节。</p>
+<p><code>[推断]</code> DME 先匹配场景，再沿故障树和 I/O 路径查证。审查报告时，核对工具查到哪些对象、排除了哪些候选。因果推理和知识图谱见 <code>[博客]</code>，25.1.0 白皮书未说明实现。</p>
 <p><strong>业界先进。</strong> <code>[原理]</code> 可以用因果图、do-calculus、反事实或双重差分检验因果关系，用贝叶斯网络为故障树中的候选原因估计概率，再记录证据来源。AIOpsLab 分别测试检测、定位、诊断和缓解。RCAEval 检查是否找全候选、排序是否正确，并做盲测。ORCA-bench 测试报障描述不清时能否从多个来源查证。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -815,14 +811,14 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </thead>
 <tbody>
 <tr>
-<td>没有公开的证据对象/出处/查询 ID</td>
+<td>未公开证据出处和查询 ID</td>
 <td>高</td>
-<td>报告结论难以逐条回查到样本、窗口、来源；审计和复现困难</td>
+<td>需验证报告能否逐条回查样本、时间窗和来源</td>
 </tr>
 <tr>
-<td>没有公开的反证/竞争假设表达</td>
+<td>未公开如何记录反证和候选</td>
 <td>高</td>
-<td>产品偏向“给结论”，缺少“哪些假设被排除、排除到什么程度”</td>
+<td>需验证报告是否说明查过哪些候选、凭什么排除</td>
 </tr>
 <tr>
 <td>覆盖 64%，且排除主机/交换机/对象/迁移/容灾/备份</td>
@@ -851,15 +847,14 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <p><strong>DME 公开能力。</strong></p>
 <p>运维助手：</p>
 <ul>
-<li>基于生成式 AI 的对话式数字助理；自然语言交互（LUI）、多轮上下文、意图理解、任务拆解、API 调用、结果汇总。</li>
-<li>流程：意图库语义匹配/排序 → 多轮追问确认 → 调用系统 API → 结构化整理/摘要。</li>
-<li>功能：查性能（含阈值线/趋势总结）、查资源列表、查关联对象、查健康评分、执行智能分析（输出结构化报告与处置建议）。</li>
+<li>运维助手接受自然语言提问（LUI），按语义匹配和排序意图。必要时多轮追问，再拆分任务、调用系统 API 并汇总结果。</li>
+<li>可查性能及其阈值和趋势，也可查资源、关联对象和健康评分，或执行智能分析并生成报告和处置建议。</li>
 <li>口径：80% 日常运维一句话完成、5 倍效率提升（产品页/彩页）。</li>
 </ul>
 <p>故障智能体：</p>
 <ul>
-<li>基于故障场景知识构建排查思维链，自动监控告警/故障消息，匹配场景、解析对象、查关联资源、执行排查、给结论。</li>
-<li>工具：资源健康、关联告警根因、性能瓶颈/异常、劣化风险、故障树智能分析。</li>
+<li>故障智能体监控告警和故障消息，匹配已有场景，找到相关对象后按场景步骤排查。</li>
+<li>工具可查资源健康、关联告警根因、性能瓶颈、性能异常、劣化风险和故障树。</li>
 <li>可通过北向 API 接入用户侧跨域智能体，从应用做到基础设施的跨域诊断。</li>
 </ul>
 <p>DataMaster：</p>
@@ -867,8 +862,8 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>产品页确认对话式运维、故障 Agent，以及内置模型或客户提供的第三方模型对接。</li>
 <li>AgenticOps 博客描述优化 Agent 按 SLO 分析并在管理员确认后执行，也描述云端 MaaS 周级迭代和本地工具协同。25.1.0 白皮书未展开这两项的具体交付边界，需核对部署版本、许可和数据流。</li>
 </ul>
-<p><strong>机制。</strong> <code>[推断]</code> 运维助手把请求匹配到预置意图，调用相应 API，再用大模型组织答案。公开流程限于预置意图和工具。故障智能体先匹配场景，再按故障树调用工具，能查哪些故障取决于场景库。</p>
-<p><strong>业界先进。</strong> <code>[原理]</code> MCP 统一工具描述和调用方式，权限由接入方按部署配置管理。检索增强生成（RAG）先按访问控制列表（ACL）、版本和生效时间过滤文档，再检索。Agent 可记录工具调用、证据引用、成本和被拒绝的越权请求。AWS DevOps Agent 提供 Agent Space、应用拓扑、多源调查和沙箱。Pure1、Fusion 和 DII 已将存储查询提供给 MCP 客户端。</p>
+<p><code>[推断]</code> 运维助手能处理什么取决于预置意图和工具，故障智能体能排查什么取决于场景库。接入外部 Agent 时，用现场告警逐项验证可查范围。</p>
+<p><code>[原理]</code> MCP 统一工具描述和调用方式，由接入方配置权限。RAG 先按访问控制列表（ACL）、版本和生效时间筛文档，再检索。调用、证据引用、成本和越权拒绝都可记录。AWS DevOps Agent 通过 Agent Space 连接应用拓扑、多个数据源和沙箱。Pure1、Fusion 和 DII 提供 MCP 查询。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -943,7 +938,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>防勒索：HyperDetect、文件扩展名拦截、实时检测、智能检测、安全快照、网存联动（HiSec Insight）、AirGap、备份集群响应、虚拟机隔离恢复。</li>
 <li>安全配置核查、远程证明（超融合场景，需 TPM）。</li>
 </ul>
-<p><strong>机制。</strong> <code>[推断]</code> DME 通过预置工作流、参数预检和地端角色审核执行设备作业。工作台的自定义动作由华为服务人员执行。DME IQ 负责云端支持工单，地端审核有自己的入口。外部 Agent 能调用哪些动作，以及如何关联 ITSM 审批，要按目标部署验证。</p>
+<p><code>[推断]</code> 接入外部 Agent 时，先测试它能否读已有报告、能否另行申请启动诊断。再核对地端角色、ITSM 审批和设备工作流能否绑定同一计划。云端 DME IQ 支持工单按云端流程处理。</p>
 <p><strong>业界先进。</strong> <code>[原理]</code> 可用 OPA 等工具把权限和变更规则写成代码。操作前先审批、试运行或在少量资源上验证，并限制影响范围。执行时要记录审计，处理重复提交，并支持失败回滚。Fusion 2.0 的写工具默认关闭。启用后还需核对阵列令牌、可另行关闭的服务端确认和审计日志级别。AWS Agent 的调查沙箱使用只读权限和网络允许列表。Terraform 可先 <code>plan</code> 再 <code>apply</code>，Ansible 可用幂等任务实现重复执行不叠加变更。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -956,24 +951,24 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </thead>
 <tbody>
 <tr>
-<td>没有公开的 Agent 动作授权模型</td>
+<td>未公开 Agent 动作授权规则</td>
 <td>高</td>
-<td>读/写工具是否分离、Agent 能调到哪一级、如何审批，未公开</td>
+<td>分别测试读取、启动分析和提交变更的权限，核对变更由谁审批</td>
 </tr>
 <tr>
-<td>没有公开的幂等/回滚/dry-run 契约</td>
+<td>未公开防重复执行、回滚和试运行接口</td>
 <td>高</td>
-<td>工作流有预检查，但接口级幂等键、回滚动作、失败补偿未公开</td>
+<td>工作流提供预检查。还需验证响应丢失后能否查回原作业，以及失败后如何回滚或补偿</td>
 </tr>
 <tr>
 <td>未公开操作影响范围和自动停止条件</td>
 <td>高</td>
-<td>批量动作的影响范围、并发限制、熔断条件未公开</td>
+<td>核对批量动作可触达的对象、并发上限和停止条件</td>
 </tr>
 <tr>
 <td>未公开处置后的两项验收</td>
 <td>高</td>
-<td>需确认能否在工作台状态之外核查业务 SLO，以及冗余、复制和备份</td>
+<td>查完作业状态，再分别核对业务 SLO 与冗余、复制和备份</td>
 </tr>
 <tr>
 <td>自定义动作面向华为服务人员</td>
@@ -996,7 +991,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li>DME IQ：云端、移动 APP + Web、200+ 国家/地区客户（产品页）、Call Home 10 分钟感知、自动建单、7×24 原厂支持和伙伴工具。实时跟踪工单进度需绑定华为维保服务。</li>
 <li>案例：交通银行“1+1+N”多 Agent、齐鲁银行、东方证券、İşBank、IFEU 等。</li>
 </ul>
-<p><strong>机制。</strong> <code>[推断]</code> 公开材料给出了案例和厂商指标。回放数据和盲测方法未公开。多集群可用多套 DME 接入云管平台。跨集群的全局拓扑和查询能力需确认。</p>
+<p><code>[推断]</code> 多集群可用多套 DME 接入云管平台。要查跨集群影响，先验证全局拓扑和查询覆盖。厂商案例和指标可作参考，回放数据和盲测方法未公开。</p>
 <p><strong>业界先进。</strong> <code>[原理]</code> AIOpsLab、RCAEval 和 ORCA-bench 提供分任务评测。还可用故障注入、公开事故复盘、Backblaze 数据和 SNIA IOTTA 等存储请求记录补充测试。多集群可在各站点缓存数据，用中央目录定位数据，再把查询交给相应站点执行。</p>
 <p><strong>缺口。</strong></p>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
@@ -1061,7 +1056,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>SAN/NAS/容器拓扑、I/O 路径、首错模块、5 秒视图</td>
 <td>◐</td>
 <td>OTel/eBPF 追踪、SLO 燃烧率、Fusion/DII</td>
-<td>无业务 SLO/错误预算；无应用追踪</td>
+<td>公开资料未说明业务 SLO、错误预算与应用追踪</td>
 </tr>
 <tr>
 <td>2 采集/时序</td>
@@ -1096,7 +1091,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>智能分析、故障树、首错、故障智能体 64%</td>
 <td>◐</td>
 <td>因果图、证据溯源、AIOpsLab/RCAEval</td>
-<td>无证据对象/反证/评测；覆盖窄</td>
+<td>证据字段、反证和评测未公开。场景覆盖见第 3.7 节</td>
 </tr>
 <tr>
 <td>7 Agent/工具</td>
@@ -1158,9 +1153,9 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 <tr>
 <td>3</td>
-<td>时态拓扑/证据</td>
-<td>根因可能指向错误设备，结论不可审计</td>
-<td>保存 DME 定时快照和变更事件。外部拓扑图记录生效与写入时间，证据附 <code>query_id</code> 和 <code>snapshot_id</code></td>
+<td>事发时的拓扑与证据</td>
+<td>用当前拓扑查旧事故，可能查错设备</td>
+<td>保存 DME 定时快照和变更事件。外部拓扑图记录生效和写入时间，证据附 <code>query_id</code> 和 <code>snapshot_id</code></td>
 <td>P0</td>
 </tr>
 <tr>
@@ -1186,15 +1181,15 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 <tr>
 <td>7</td>
-<td>数据可携带/可重训</td>
-<td>客户缺少建模、长期回放和合规审计所需的数据</td>
-<td>确认可否导出或订阅原始遥测。至少保存聚合数据、事件和拓扑快照，再自建特征库</td>
+<td>导出数据和重训模型</td>
+<td>客户建模、长期回放和审计需要数据</td>
+<td>查是否支持导出或订阅原始遥测。至少保存聚合数据、事件和拓扑快照，再自建特征库</td>
 <td>P1</td>
 </tr>
 </tbody>
 </table></div>
 <h2 id="7-在-dme-之上补一个专家系统">7. 在 DME 之上补一个专家系统</h2>
-<p>用 DME 查询设备数据和执行设备操作。自建层汇集应用与网络证据，做诊断推断和回放评测。</p>
+<p>DME 查询设备、执行获批的设备作业。自建服务补应用和网络数据，结合设备报告判断原因，并用同一批事故评测。</p>
 <pre><code class="language-text">┌─────────────────────────────────────────────────────────────┐
 │ 评测面：事故回放 / 负对照 / 缺数据 / 晚到 / 盲评 / 成本账      │
 ├─────────────────────────────────────────────────────────────┤
@@ -1288,7 +1283,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>A 只读试运行</td>
 <td>0–1 月</td>
 <td>适配 DME REST，保存实体表和快照，定义基本 SLO</td>
-<td>能回答“当时是什么、缺什么”</td>
+<td>能查到事发时的对象、状态和缺失数据</td>
 </tr>
 <tr>
 <td>B 检测</td>
@@ -1306,7 +1301,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>D Agent</td>
 <td>6–9 月</td>
 <td>MCP 工具、带步骤上限的状态机、结论验证和回放集</td>
-<td>同快照可复现，缺数据会暂缓</td>
+<td>用同一快照可复核判断，缺关键数据时暂缓并列下一条查询</td>
 </tr>
 <tr>
 <td>E 受监督处置</td>
@@ -1323,7 +1318,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tbody>
 </table></div>
 <h2 id="8-尽调问题清单">8. 尽调问题清单</h2>
-<p>向华为或集成商逐项核对。重点查目标版本的接口、许可和权限，并请对方演示关键步骤。</p>
+<p>请华为或集成商用目标版本演示查询和作业，再核对接口、许可与角色。</p>
 <p><strong>API 与数据</strong></p>
 <ol>
 <li>DME 北向 REST 的完整 OpenAPI/Swagger 在哪里？是否覆盖性能、告警、拓扑、变更、资产？</li>
@@ -1428,7 +1423,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </ul>
 <h3 id="93-与业界系统的对照">9.3 与业界系统的对照</h3>
 <p>在 OceanStor 上做设备排障，先验证 DME 的 I/O 路径、故障树和工作台。Fusion 可对照外部工具与写入确认。DII 可对照不同设备的采集状态。PowerStore 可对照异常时间段和指标。AWS 可对照多源调查、记忆和回放。Datadog 可对照按资源授权和操作后复查。各产品的机制和版本出处见<a href="./%E4%B8%9A%E7%95%8CAI%E8%BF%90%E7%BB%B4%E4%BA%A7%E5%93%81%E4%B8%8E%E5%8D%8E%E4%B8%BADME%E5%AF%B9%E6%A0%87.html">业界 AI 运维产品与华为 DME 对标</a>。</p>
-<p>交通银行联合项目公开了知识图谱、RAG、流程编排和多 Agent。采购或实施时，先核对目标版本和部署是否提供这些能力。再用一项操作验证能否关联调查证据、ITSM 审批、原厂作业和独立验收结果。</p>
+<p>交通银行联合项目公开了知识图谱、RAG、流程编排和多 Agent。采购或实施时，先核对目标版本是否交付这些能力。再挑一项设备操作，从调查记录查到 ITSM 审批和原厂作业，最后核对业务与保护验收。</p>
 <h2 id="10-结论">10. 结论</h2>
 <ul>
 <li>OceanStor 为主时，优先用 DME 查设备、走故障树和执行已交付的工作流。诊断覆盖取决于设备型号、版本和故障场景。</li>

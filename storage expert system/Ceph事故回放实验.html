@@ -106,14 +106,20 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <li><a href="#参考结果与验收">参考结果与验收</a></li></ul></nav></details>
   <article>
 <p><a href="./%E5%AD%98%E5%82%A8%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E4%B8%8E%E8%B5%84%E6%96%99%E6%8C%87%E5%8D%97.html">学习导览</a> · <a href="./%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B1%95%E5%BC%80.html">技术展开</a> · <a href="./%E4%B8%93%E5%AE%B6%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%85%A5%E7%AF%87.html">专家系统深入篇</a> · <a href="./%E5%8D%8E%E4%B8%BADME%E5%85%A8%E9%93%BE%E8%B7%AF%E8%A7%A3%E5%89%96.html">华为 DME 全链路解剖</a> · <a href="./lab/latency-replay.csv">下载合成遥测 CSV</a> · <a href="./PB%E7%BA%A7%E5%AD%98%E5%82%A8%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%93%8D.html">存储实操</a></p>
-<p>预计 60–90 分钟。先用文本编辑器或电子表格完成一轮排查。也可把同一阶段可见的数据交给支持结构化输出的模型，对照两份报告。这组自定义列名和合成数据用来观察 Ceph 的后台恢复怎样与前台 I/O 争用资源。追加 5 个问题和答案见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#6-ceph-%E5%AE%9E%E9%AA%8C%E8%BF%BD%E5%8A%A0-5-%E9%97%AE">答案册第 6 节</a>。</p>
+<p>预计 60–90 分钟。先用文本编辑器或电子表格手动排查。也可让支持结构化输出的模型用同一阶段的证据写报告，再与手动结果对照。CSV 使用自定义列名。5 道追加题见<a href="./%E7%BB%83%E4%B9%A0%E4%B8%8E%E8%80%83%E6%A0%B8%E7%AD%94%E6%A1%88.html#6-ceph-%E5%AE%9E%E9%AA%8C%E8%BF%BD%E5%8A%A0-5-%E9%97%AE">答案册第 6 节</a>。</p>
 <blockquote>
-<p>Ceph 和 Prometheus 的相关机制见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解 §1–§3</a>。原文链接见文末。</p>
+<p>Ceph 和 Prometheus 的相关机制可查<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解 §1–§3</a>。</p>
 </blockquote>
 <h2 id="任务与数据口径">要查什么，用哪些数据</h2>
-<p>02:16 UTC，值班人员收到 <code>orders</code> 写延迟投诉。请确定哪些业务受影响，给可能的原因排序，再列出还要查什么。</p>
-<p>每行时间是 5 分钟聚合窗口的结束时刻。相邻的密集窗口有重叠。请求总数包含错误。<code>healthy_writes_under_20ms</code> 统计成功且延迟不超过 20 ms 的请求。<code>write_iops</code> 是窗口内的平均提交速率，<code>write_p99_ms</code> 是应用端的窗口 P99。<code>osd_device_queue</code> 取目标路径上观测到的最高设备队列深度。<code>retransmits_per_s</code> 取已采集 TCP 路径的平均重传率。<code>backfill_mib_s</code> 是池相关活动的窗口平均速率。覆盖率看预期应上报的目标 OSD 中实际报了多少。已退出服务的旧 OSD 单独处理。</p>
-<p>本题的 SLO 要求每个窗口至少 99% 的写请求成功且延迟 ≤20 ms。只读 <code>observed_utc ≤ 调查时点</code> 的日志和遥测，按事发时间查拓扑。窗口未达标时，保留错误数和总请求数。以下事件、拓扑和结果均为合成数据。</p>
+<p>02:16 UTC，值班员接到投诉，<code>orders</code> 写入变慢。先确定哪些业务受影响，再按现有证据给原因排序，最后记下还要查什么。</p>
+<p>每行时间是 5 分钟窗口结束时刻，间隔不足 5 分钟的窗口有重叠。</p>
+<ul>
+<li><strong>业务。</strong> 请求总数包含错误。<code>healthy_writes_under_20ms</code> 统计成功且延迟 ≤20 ms 的写请求。<code>write_iops</code> 是窗口内平均提交速率，<code>write_p99_ms</code> 是应用端的窗口 P99。</li>
+<li><strong>存储。</strong> <code>osd_device_queue</code> 取目标路径上观测到的最高设备队列深度，<code>backfill_mib_s</code> 是池相关活动的窗口平均速率。</li>
+<li><strong>网络。</strong> <code>retransmits_per_s</code> 是已采集 TCP 路径的平均重传率。</li>
+<li><strong>覆盖率。</strong> 用实际有上报的目标 OSD 数除以预期上报数。已退出服务的旧 OSD 单独处理。</li>
+</ul>
+<p>本题每个窗口的 SLO 是至少 99% 的写请求成功且延迟 ≤20 ms。窗口未达标时保留错误数和总请求数。查询日志和遥测只取 <code>observed_utc ≤ 调查时点</code> 的记录，查询拓扑按事发时间。以下事件、拓扑和结果均为合成数据。</p>
 <h2 id="现场证据">现场证据</h2>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -129,31 +135,31 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>E01</td>
 <td>02:10:30</td>
 <td>02:10:45</td>
-<td>已批准的 <code>CHG-18</code> 在 <code>ceph-a</code> 对 <code>osd.11</code> 实施计划下线并显式标记 <code>out</code>。相关 PG 映射更新到包含 <code>osd.17</code>、<code>osd.18</code> 的目标集合</td>
+<td>按已批准的 <code>CHG-18</code>，<code>ceph-a</code> 的 <code>osd.11</code> 下线并被标记为 <code>out</code>。相关 PG 改用包含 <code>osd.17</code>、<code>osd.18</code> 的放置目标</td>
 </tr>
 <tr>
 <td>E02</td>
 <td>02:11:00</td>
 <td>02:11:20</td>
-<td><code>hot</code> 池观察到重映射与 backfill 开始，相关目标 OSD 队列上升</td>
+<td><code>hot</code> 池出现重映射并开始 backfill，相关目标 OSD 的队列上升</td>
 </tr>
 <tr>
 <td>E03</td>
 <td>02:12:00</td>
 <td>02:12:10</td>
-<td><code>ceph-b</code> 备份作业按计划启动，告警同样出现于汇总面板</td>
+<td><code>ceph-b</code> 按计划启动备份，告警也出现在汇总面板</td>
 </tr>
 <tr>
 <td>E04</td>
 <td>02:12:30</td>
 <td>02:18:00</td>
-<td>延迟上报的应用日志确认 <code>orders</code> 写请求最早从 02:12:30 开始积压</td>
+<td>晚到的应用日志显示，<code>orders</code> 写请求最早从 02:12:30 开始积压</td>
 </tr>
 <tr>
 <td>E05</td>
 <td>02:19:00</td>
 <td>02:19:10</td>
-<td>沙箱中模拟审批后的恢复调度调整，仅针对 <code>ceph-a</code> 受影响对象。记录变更前配置与退出条件</td>
+<td>沙箱模拟批准后调整恢复调度，范围限于 <code>ceph-a</code> 的受影响对象。记录变更前的配置和退出条件</td>
 </tr>
 </tbody>
 </table></div>
@@ -177,7 +183,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 <td>T02</td>
 <td>02:10:30 起</td>
 <td>02:11:00</td>
-<td><code>orders → vol01 → hot → PG group 1 → osd.12 / osd.17 / osd.18</code>。这条记录给出新的放置目标。现场还要分别查 <code>up</code>、<code>acting</code> 和实际服务路径</td>
+<td><code>orders → vol01 → hot → PG group 1 → osd.12 / osd.17 / osd.18</code>。这是新的放置目标，现场还要分别查 <code>up</code>、<code>acting</code> 和实际服务路径</td>
 </tr>
 <tr>
 <td>T03</td>
@@ -189,11 +195,11 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </table></div>
 <h2 id="操作顺序">操作顺序</h2>
 <ol>
-<li><strong>检测。</strong> 用 M01–M05 的 P99 算中位数和 MAD（各点距中位数的绝对差的中位数）。用 <code>z = 0.6745 × (值 − 中位数) / max(MAD, 1 ms)</code> 算 M06 和 M07 的分数。实验规定连续两条采样的 <code>z ≥ 3.5</code> 才触发。记下连续窗口有重叠，再算 M07 和 M08 的好请求比例。</li>
-<li><strong>定位。</strong> 只看 02:16 已可见的证据。比较 E02 的回填记录与 T02 的放置目标。再查 <code>up/acting</code> 和单个 OSD 的指标，确认实际服务路径。分别检查后端争用、备份流量和网络问题。</li>
-<li><strong>模拟 Agent。</strong> 在同一份 02:16 快照上先跑阈值规则，再用模型起草报告。可按下方模板分次给证据。记下模型要查什么、你返回了哪些条目。证据不足时，让模型提出一项限定时间和范围的查询，或把原因标为未决。每次使用同一输出结构，保留证据 ID。</li>
-<li><strong>缺数据的对照。</strong> 隐藏 E02、T02 和 M06–M07 的 backfill、队列字段。把这两行的 <code>reporting_osds</code> 改为 1，保留应用 SLO。检查报告是否仍识别出业务影响，并说明目前无法确认后台恢复争用。</li>
-<li><strong>处置验证。</strong> 把调查截止改为 02:35:15，加入 E04、E05 和 M09–M12。逐行计算好请求比例，核对请求强度和退化 PG 的变化。写下应用何时好转、冗余何时恢复，以及还需查什么才能确认两项都持续达标。</li>
+<li><strong>什么时候报警？</strong> 用 M01–M05 的 P99 算中位数和 MAD（各点到中位数距离的中位数）。用 <code>z = 0.6745 × (值 − 中位数) / max(MAD, 1 ms)</code> 算 M06 和 M07。连续两条采样的 <code>z ≥ 3.5</code> 才触发，注意窗口有重叠。再算 M07 和 M08 的好请求比例，划定影响范围。</li>
+<li><strong>延迟卡在哪里？</strong> 只看 02:16 已可见的证据。用 E02 和 T02 对照回填记录和放置目标。要确认实际服务路径，还需查 <code>up/acting</code> 和各 OSD 的指标。分别说明后端争用、备份流量和网络问题各有哪些证据、还缺什么。</li>
+<li><strong>模型会接着查什么？</strong> 在同一份 02:16 快照上跑阈值规则，再用模型写报告。按下方模板分次给证据，记录查询和返回的证据 ID。证据不足时，让模型限定下一次查询的时间和范围，或把原因标为未决。沿用同一组输出字段。</li>
+<li><strong>少了数据还能确认什么？</strong> 隐藏 E02、T02 和 M06–M07 的 backfill、队列字段。把这两行的 <code>reporting_osds</code> 改为 1，保留应用 SLO。看报告能否确认业务影响，并把后台恢复争用列为待查原因。</li>
+<li><strong>业务何时好转？退化 PG 何时降到 0？</strong> 把调查截止改为 02:35:15，加入 E04、E05 和 M09–M12。逐行算好请求比例，核对请求强度和退化 PG 数。记下应用何时好转、退化 PG 首次在哪个窗口降到 0。结案前再查受影响的 PG 是否均为 <code>active+clean</code>，确认业务和数据保护持续达标。</li>
 </ol>
 <h3 id="模型输入模板">模型输入模板</h3>
 <pre><code class="language-text">角色：只读取证的存储值班助手。
@@ -204,7 +210,7 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 输出字段：impact, timeline, hypotheses, missing_checks, recommendation。
 缺少证据时标记未决。返回操作建议与验证条件。
 </code></pre>
-<p>先开一个会话，只给 M01–M08、E01–E03 和 T01–T03。测试缺数据时另开会话，只给变体快照。验证处置效果时再加入晚到证据和干预数据。参考答案只用于人工评分。</p>
+<p>完整快照测试只给 M01–M08、E01–E03 和 T01–T03。缺数据测试另开会话，只给变体快照。到处置验证再加入晚到证据和干预数据。参考答案留给人工评分。</p>
 <h2 id="参考结果与验收">参考结果与验收</h2>
 <div class="table-wrap" role="region" aria-label="表格，可横向滚动" tabindex="0"><table>
 <thead>
@@ -224,24 +230,24 @@ footer { padding:0 0 2rem; color:var(--muted); font-size:.9rem; }
 </tr>
 <tr>
 <td>根因与传播</td>
-<td>E01 是最早的相关触发事件。E02 的回填记录与 T02 的放置目标相符。实际服务路径还要查 <code>up/acting</code>。M06/M07 的队列和延迟一同升高，IOPS 接近基线。T03 和 M08 削弱了备份干扰的解释。重传平稳只降低已观测 TCP 路径故障的可能性。还可查交换机端口丢包、其他客户端和设备服务耗时</td>
+<td>E01 是最早的相关变更。E02 的回填与 T02 的放置目标相符，实际服务路径还要查 <code>up/acting</code>。M06/M07 队列和延迟同时升高，IOPS 接近基线，后端争用排首位。T03 和 M08 降低了备份干扰的可能性。重传平稳只说明已观测 TCP 路径没有重传上升。可补查交换机端口丢包、其他客户端和设备服务耗时</td>
 </tr>
 <tr>
-<td>时间稽核</td>
-<td>02:16 的报告只写已观察到的故障窗。E04 到 02:18 才可用。事发拓扑用 T02，保留 T01 对照维护前后的变化</td>
+<td>截止时间和拓扑</td>
+<td>02:16 的报告只记录当时已观察到的故障窗，E04 到 02:18 才可用。按 T02 查事发拓扑，用 T01 对照维护前的关系</td>
 </tr>
 <tr>
-<td>缺失稽核</td>
-<td>变体覆盖率为 <code>1 / 3</code>，应用数据仍显示业务受影响。可把恢复争用列为候选，同时标出缺少的事件、路径和 OSD 实测数据</td>
+<td>数据缺口</td>
+<td>变体覆盖率为 <code>1 / 3</code>，应用数据仍能确认业务受影响。恢复争用列为待查原因，写明缺少哪些事件、路径和 OSD 实测数据</td>
 </tr>
 <tr>
 <td>处置后</td>
-<td>02:20 窗口跨越 02:19 的调度调整，好请求约 98.53%。02:25 是处置后首个完整且达标的观测窗口，好请求约 99.95%，仍有 11 个退化 PG。02:35 观测到 0 个退化 PG，应用继续达标。结案前查 <code>active+clean</code>、其他健康状态、更长的观测窗口和新故障域压力</td>
+<td>02:20 窗口跨过 02:19 的调度调整，好请求约 98.53%。02:25 是调整后首个完整且达标的观测窗口，好请求约 99.95%，仍有 11 个退化 PG。02:35 观测到 0 个退化 PG，应用继续达标。结案前确认 <code>active+clean</code>、其他健康状态和新故障域压力，并拉长观察窗口</td>
 </tr>
 </tbody>
 </table></div>
-<p>满分 10 分。检测与影响 2 分，根因和其他假设 3 分，证据引用与时间截止 2 分，缺数据时暂缓结论 1 分，业务与冗余验收 2 分。用了截止后才到的数据或编造了证据，报告需要重做。单次合成事故用来验证流程。要估计模型表现，还需加入无事故窗口、标注过的真实故障和预期不受影响的对照。</p>
-<p>进阶练习可在版本固定的本地 Ceph 环境采集 Prometheus 指标和健康事件。沿用报告结构，记录 PG 状态、采集缺口和变更时刻。还可选 Backblaze 的连续季度做硬盘风险练习。按时间切分数据，在给定误报预算下比较阈值。机制拆解见<a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解 §1–§3、§17</a>。</p>
+<p>满分 10 分。检测与影响 2 分，根因与其他假设 3 分，证据引用和调查截止 2 分，缺数据时暂缓结论 1 分，业务和冗余验收 2 分。提前引用晚到数据或编造证据，报告重做。这个合成事故可检验排查流程。测模型表现还要加入无事故窗口、已标注的真实故障和预期不受影响的业务对照。</p>
+<p>想用实测数据时，在版本固定的本地 Ceph 环境采集 Prometheus 指标和健康事件。沿用报告字段，记录 PG 状态、采集缺口和变更时刻。硬盘风险练习可选 Backblaze 的连续季度，按时间切分数据，在同一误报预算下比较阈值。 <a href="./%E5%A4%96%E9%83%A8%E8%B5%84%E6%96%99%E6%8B%86%E8%A7%A3.html">外部资料拆解 §1–§3、§17</a></p>
 <p>原文参考见 <a href="https://docs.ceph.com/en/squid/rados/operations/monitoring/">Ceph 监控</a>、<a href="https://docs.ceph.com/en/umbrella/mgr/prometheus/">Ceph Prometheus 模块</a>和 <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze 数据</a>。</p>
   </article>
 </main>
